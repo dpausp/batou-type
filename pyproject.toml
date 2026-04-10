@@ -11,14 +11,17 @@ license = "BSD-2-Clause"
 requires-python = ">=3.10"
 dependencies = [
     "batou-stubs",
+    "basedpyright",
+    "mypy",
     "ty",
+    "typer",
 ]
 
 [tool.uv.sources]
 batou-stubs = { path = "../batou/batou-stubs" }
 
 [project.scripts]
-batou-typecheck = "batou_typecheck:main"
+batou-typecheck = "batou_typecheck:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/batou_typecheck"]

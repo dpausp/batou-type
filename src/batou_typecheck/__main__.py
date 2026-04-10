@@ -1,3 +1,3 @@
-from batou_typecheck import main
+from batou_typecheck import app
 
-main()
+app()
