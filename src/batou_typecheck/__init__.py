@@ -118,7 +118,18 @@ def main(
     for c in checkers:
         print(f"--- {c.value} ---", file=sys.stderr)
         for path in paths:
-            cmd = [*CHECKER_COMMANDS[c], path]
+            if c == Checker.ty:
+                cmd = [sys.executable, "-m", "ty", "check", path]
+            elif c == Checker.mypy:
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "mypy",
+                    *CHECKER_COMMANDS[c][1:],
+                    path,
+                ]
+            else:
+                cmd = [*CHECKER_COMMANDS[c], path]
             if c == Checker.basedpyright:
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 filtered, has_errors = _filter_basedpyright_json(result.stdout)
