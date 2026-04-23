@@ -10,8 +10,8 @@ Your deployment directory must have the required stubs installed:
 
 ```
 cd /path/to/your/deployment
-pip install batou-stubs           # always required
-pip install batou_ext-stubs        # if your components import batou_ext
+uv add batou-stubs --source ../batou/stubs   # always required
+uv add batou_ext-stubs --source ../batou_ext/stubs  # if your components import batou_ext
 ```
 
 These provide type information for the type checkers. Without them, you'll see `error[unresolved-import]` for `batou` and `batou_ext` imports.

@@ -19,8 +19,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-batou-stubs = { path = "../batou/batou-stubs" }
-batou_ext-stubs = { path = "../batou_ext/batou_ext-stubs" }
+batou-stubs = { path = "../batou/stubs" }
+batou_ext-stubs = { path = "../batou_ext/stubs" }
 
 [project.scripts]
 batou-typecheck = "batou_typecheck:app"
