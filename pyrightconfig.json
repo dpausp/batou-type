@@ -1,0 +1,13 @@
+{
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "strict",
+  "reportExplicitAny": "none",
+  "reportAny": "none",
+  "reportMissingTypeStubs": true,
+  "reportImplicitOverride": "none",
+  "reportInvalidTypeArguments": "none",
+  "reportIncompatibleMethodOverride": "none",
+  "reportIncompatibleVariableOverride": "none",
+  "reportOverlappingOverload": "none",
+  "reportAttributeAccessIssue": "none"
+}
