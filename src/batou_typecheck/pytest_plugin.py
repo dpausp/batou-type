@@ -91,4 +91,15 @@ class BatouComponentItem(pytest.Item):
         output = output_results.get(file_key, "")
 
         if has_errors and output.strip():
-            pytest.fail(output.strip())
+            # Count errors in output
+            error_count = output.count("Found ") 
+            # Get diagnostic count from "Found X diagnostics"
+            import re
+            match = re.search(r"Found (\d+) diagnostic", output)
+            if match:
+                count = match.group(1)
+                msg = f"Type check failed with {count} error(s)"
+            else:
+                msg = "Type check failed"
+            
+            pytest.fail(msg + "\n" + output.strip())
