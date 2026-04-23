@@ -2,19 +2,7 @@
 
 Type-check batou deployment components against batou stubs.
 
-Finds all `components/**/*.py` files in the current directory and runs type checkers on them. No configuration needed — run it in your deployment root and it works.
-
-## Prerequisites
-
-Your deployment directory must have the required stubs installed:
-
-```
-cd /path/to/your/deployment
-uv add batou-stubs --source ../batou/stubs   # always required
-uv add batou_ext-stubs --source ../batou_ext/stubs  # if your components import batou_ext
-```
-
-These provide type information for the type checkers. Without them, you'll see `error[unresolved-import]` for `batou` and `batou_ext` imports.
+Finds all `components/**/*.py` files in the current directory and runs type checkers on them.
 
 ## Usage
 

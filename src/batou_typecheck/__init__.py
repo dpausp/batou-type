@@ -101,18 +101,6 @@ def main(
     """Type-check batou deployment components."""
     checkers = checker or [Checker.ty]
 
-    # Ensure stubs are installed (user must run: uv add --group dev batou-stubs batou_ext-stubs)
-    try:
-        import batou_stubs
-    except ImportError:
-        print(
-            "[batou-typecheck] ERROR: stubs not found. Run:\n"
-            "  uv add --group dev batou-stubs batou_ext-stubs\n"
-            "then try again.",
-            file=sys.stderr,
-        )
-        raise typer.Exit(1)
-
     cwd = Path.cwd()
     components = sorted(cwd.glob("components/**/*.py"))
 

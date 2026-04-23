@@ -18,10 +18,6 @@ dependencies = [
     "typer",
 ]
 
-[tool.uv.sources]
-batou-stubs = { path = "../batou/stubs" }
-batou_ext-stubs = { path = "../batou_ext/stubs" }
-
 [project.scripts]
 batou-typecheck = "batou_typecheck:app"
 
