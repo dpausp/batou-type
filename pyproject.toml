@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = ["hatchling>=1.27"]
 
 [project]
-name = "batou-typecheck"
+name = "batou-type"
 version = "2.8.0.dev0"
 description = "Type-check batou deployments"
 readme = "README.md"
@@ -20,13 +20,13 @@ dependencies = [
 ]
 
 [project.scripts]
-batou-typecheck = "batou_typecheck:app"
+batou-type = "batou_type:app"
 
 [project.entry-points.pytest11]
-batou_ty = "batou_typecheck.pytest_plugin"
+batou_type = "batou_type.pytest_plugin"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/batou_typecheck"]
+packages = ["src/batou_type"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/batou_typecheck"]
+include = ["src/batou_type"]

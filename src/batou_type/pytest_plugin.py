@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from batou_typecheck.core import Checker, check_all, find_components
+from batou_type.core import Checker, check_all, find_components
 
 
 _BATOU_TY_RESULTS_STASH_KEY = pytest.StashKey[dict[str, bool]]()
