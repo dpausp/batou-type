@@ -36,7 +36,7 @@ CHECKER_COMMANDS: dict[Checker, list[str]] = {
     Checker.basedpyright: ["basedpyright", "--outputjson"],
 }
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="none")
 
 
 def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
@@ -99,6 +99,18 @@ def main(
     ] = [],
 ) -> None:
     """Type-check batou deployment components."""
+    from importlib import metadata
+
+    # Show stub versions
+    for stub in ["batou-stubs", "batou_ext-stubs"]:
+        try:
+            version = metadata.version(stub)
+            _sys.stderr.write(f"[batou-typecheck] {stub} {version}\n")
+        except Exception:
+            _sys.stderr.write(f"[batou-typecheck] {stub} <not installed>\n")
+
+    _sys.stderr.flush()
+
     checkers = checker or [Checker.ty]
 
     cwd = Path.cwd()
