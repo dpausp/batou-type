@@ -63,20 +63,6 @@ def pytest_collection_modifyitems(session: pytest.Session, items: list[pytest.It
 
 class BatouTyError(Exception):
     """Raised when type checking fails."""
-
-    def __init__(self, output: str) -> None:
-        # Format the output nicely for pytest display
-        # First line as short message, full output in repr
-        first_line = output.strip().split("\n")[0] if output.strip() else "Type check failed"
-        super().__init__(first_line)
-        self.output = output
-
-    def __repr__(self) -> str:
-        return self.output
-
-
-class BatouTyError(Exception):
-    """Raised when type checking fails."""
     pass
 
 
@@ -105,6 +91,4 @@ class BatouComponentItem(pytest.Item):
         output = output_results.get(file_key, "")
 
         if has_errors and output.strip():
-            # Store output for later access in pytest_runtest_makereport
-            self._ty_output = output.strip()
-            raise BatouTyError(output.strip())
+            pytest.fail(output.strip())
