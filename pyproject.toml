@@ -15,6 +15,7 @@ dependencies = [
     "basedpyright",
     "mypy",
     "pytest",
+    "rich",
     "ty",
     "typer",
 ]
