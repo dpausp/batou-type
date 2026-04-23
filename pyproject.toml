@@ -11,6 +11,7 @@ license = "BSD-2-Clause"
 requires-python = ">=3.10"
 dependencies = [
     "batou-stubs",
+    "batou_ext-stubs",
     "basedpyright",
     "mypy",
     "ty",
@@ -19,6 +20,7 @@ dependencies = [
 
 [tool.uv.sources]
 batou-stubs = { path = "../batou/batou-stubs" }
+batou_ext-stubs = { path = "../batou_ext/batou_ext-stubs" }
 
 [project.scripts]
 batou-typecheck = "batou_typecheck:app"
