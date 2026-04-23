@@ -9,6 +9,12 @@ from typing import Annotated
 
 import typer
 
+app = typer.Typer(rich_markup_mode="none")
+
+# Import typer echo for output
+echo = typer.echo
+
+
 # basedpyright diagnostics that are noise for batou components (always false positives)
 BASEDPYRIGHT_NOISE_RULES = frozenset(
     {
@@ -36,56 +42,6 @@ CHECKER_COMMANDS: dict[Checker, list[str]] = {
     Checker.basedpyright: ["basedpyright", "--outputjson"],
 }
 
-app = typer.Typer(rich_markup_mode="none")
-
-
-def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
-    """Filter basedpyright JSON output, removing noise diagnostics.
-
-    Returns (human-readable filtered output, has_real_errors).
-    """
-    try:
-        data = json.loads(output)
-    except json.JSONDecodeError:
-        # Fallback: not JSON, return raw
-        return output, "error" in output.lower()
-
-    general = data.get("generalDiagnostics", [])
-    filtered = [
-        d for d in general if d.get("rule") not in BASEDPYRIGHT_NOISE_RULES
-    ]
-    has_errors = any(d.get("severity") == "error" for d in filtered)
-
-    if not filtered:
-        return "", False
-
-    # Reconstruct human-readable output for the filtered diagnostics
-    lines: list[str] = []
-    # Group by file
-    by_file: dict[str, list[dict]] = {}
-    for d in filtered:
-        f = d.get("file", "<unknown>")
-        by_file.setdefault(f, []).append(d)
-
-    for file_path, diags in by_file.items():
-        lines.append(file_path)
-        for d in diags:
-            loc = f":{d.get('range', {}).get('start', {}).get('line', '?') + 1}"
-            severity = d.get("severity", "unknown")
-            rule = d.get("rule", "")
-            message = d.get("message", "")
-            lines.append(f"  {file_path}{loc} - {severity}: {message} ({rule})")
-        errors = sum(1 for d in diags if d.get("severity") == "error")
-        warnings = sum(1 for d in diags if d.get("severity") == "warning")
-        notes = sum(1 for d in diags if d.get("severity") == "information")
-        lines.append(
-            f"{errors} error{'s' if errors != 1 else ''}, "
-            f"{warnings} warning{'s' if warnings != 1 else ''}, "
-            f"{notes} note{'s' if notes != 1 else ''}"
-        )
-
-    return "\n".join(lines), has_errors
-
 
 @app.command()
 def main(
@@ -100,16 +56,24 @@ def main(
 ) -> None:
     """Type-check batou deployment components."""
     from importlib import metadata
+    from importlib.resources import files
 
-    # Show stub versions
+    # Show stub versions and paths
     for stub in ["batou-stubs", "batou_ext-stubs"]:
         try:
             version = metadata.version(stub)
-            _sys.stderr.write(f"[batou-typecheck] {stub} {version}\n")
+            echo(f"[batou-typecheck] {stub} {version}")
         except Exception:
-            _sys.stderr.write(f"[batou-typecheck] {stub} <not installed>\n")
-
-    _sys.stderr.flush()
+            echo(f"[batou-typecheck] {stub} <not installed>")
+            continue
+        
+        # Try to get path
+        try:
+            pkg = stub.replace("-stubs", "")
+            stub_path = str(files(pkg).joinpath("lib").parent)
+            echo(f"[batou-typecheck]   {stub_path}")
+        except Exception:
+            pass
 
     checkers = checker or [Checker.ty]
 
