@@ -1,0 +1,16 @@
+# E2E Smoke Test Results
+
+- `batou_type --help` → exit code: 0, status: PASS
+  Displays usage with two subcommands (version, check) and standard Typer options.
+
+- `batou_type version` → exit code: 0, status: PASS
+  Shows version info: batou-type 2.8.0.dev0, batou-stubs <not installed>, batou_ext-stubs <not installed>.
+
+- `batou_type check --help` → exit code: 0, status: PASS
+  Shows check subcommand usage with --checker/-c option (choices: ty|mypy|basedpyright, default: ty).
+
+- `batou_type check` (no args) → exit code: 0, status: PASS
+  Runs without error. Reports stubs status and "No component files found in components/" (expected: no components dir in project root).
+
+- `batou_type nonexistent` → exit code: 2, status: PASS
+  Correctly rejects unknown subcommand with "No such command 'nonexistent'." and exit code 2.

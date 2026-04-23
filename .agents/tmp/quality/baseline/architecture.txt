@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.3, pluggy-1.6.0 -- /batou-type/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /batou-type
+configfile: pyproject.toml
+plugins: batou-type-2.8.0.dev0
+collecting ... ERROR: file or directory not found: tests/test_architecture.py
+
+collected 0 items
+
+============================ no tests ran in 0.01s =============================

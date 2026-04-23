@@ -67,8 +67,14 @@ def check_file(
                 *CHECKER_COMMANDS[c][1:],
                 file_path,
             ]
-        else:
-            cmd = [*CHECKER_COMMANDS[c], file_path]
+        elif c == Checker.basedpyright:
+            cmd = [
+                sys.executable,
+                "-m",
+                "basedpyright",
+                *CHECKER_COMMANDS[c][1:],
+                file_path,
+            ]
 
         if c == Checker.basedpyright:
             result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)

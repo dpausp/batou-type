@@ -1,0 +1,1 @@
+diff: .agents/tmp/quality/extreme/ruff-full.txt: No such file or directory

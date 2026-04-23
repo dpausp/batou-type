@@ -1,0 +1,16 @@
+tests/test_refactor_contract.py::test_cli_module_exists
+tests/test_refactor_contract.py::test_cli_module_has_typer_app
+tests/test_refactor_contract.py::test_init_no_typer_import
+tests/test_refactor_contract.py::test_init_no_rich_import
+tests/test_refactor_contract.py::test_init_exports_version
+tests/test_refactor_contract.py::test_main_imports_from_cli
+tests/test_refactor_contract.py::test_pyproject_entry_point_uses_cli
+tests/test_refactor_contract.py::test_core_no_lazy_json_import
+tests/test_refactor_contract.py::test_core_no_lazy_io_import
+tests/test_refactor_contract.py::test_plugin_no_batou_ty_error
+tests/test_refactor_contract.py::test_init_no_bare_except_exception
+tests/test_refactor_contract.py::test_core_imports_still_work
+tests/test_refactor_contract.py::test_cli_imports_work
+tests/test_refactor_contract.py::test_init_reexports_core
+
+14 tests collected in 0.02s
