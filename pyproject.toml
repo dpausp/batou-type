@@ -14,12 +14,16 @@ dependencies = [
     "batou_ext-stubs",
     "basedpyright",
     "mypy",
+    "pytest",
     "ty",
     "typer",
 ]
 
 [project.scripts]
 batou-typecheck = "batou_typecheck:app"
+
+[project.entry-points.pytest11]
+batou_ty = "batou_typecheck.pytest_plugin"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/batou_typecheck"]

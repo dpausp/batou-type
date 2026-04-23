@@ -1,63 +1,28 @@
-"""Type-check batou deployments against batou stubs."""
+"""Type-check batou deployments against batou stubs - CLI entry point."""
 
-import json
-import subprocess
 import sys
-from enum import Enum
+from importlib import metadata
+from importlib.resources import files
 from pathlib import Path
-from typing import Annotated
 
 import typer
 
+from batou_typecheck.core import Checker, check_all, find_components
+
 app = typer.Typer(rich_markup_mode="none")
-
-# Import typer echo for output
 echo = typer.echo
-
-
-# basedpyright diagnostics that are noise for batou components (always false positives)
-BASEDPYRIGHT_NOISE_RULES = frozenset(
-    {
-        "reportUninitializedInstanceVariable",
-        "reportImplicitOverride",
-        "reportUnannotatedClassAttribute",
-    }
-)
-
-
-class Checker(str, Enum):
-    ty = "ty"
-    mypy = "mypy"
-    basedpyright = "basedpyright"
-
-
-CHECKER_COMMANDS: dict[Checker, list[str]] = {
-    Checker.ty: ["ty", "check"],
-    Checker.mypy: [
-        "mypy",
-        "--explicit-package-bases",
-        "--check-untyped-defs",
-        "--no-incremental",
-    ],
-    Checker.basedpyright: ["basedpyright", "--outputjson"],
-}
 
 
 @app.command()
 def main(
-    checker: Annotated[
-        list[Checker],
-        typer.Option(
-            "--checker",
-            "-c",
-            help="Type checker(s) to run (default: ty)",
-        ),
-    ] = [],
+    checker: list[Checker] = typer.Option(
+        [],
+        "--checker",
+        "-c",
+        help="Type checker(s) to run (default: ty)",
+    ),
 ) -> None:
     """Type-check batou deployment components."""
-    from importlib import metadata
-    from importlib.resources import files
-
     # Show stub versions and paths
     for stub in ["batou-stubs", "batou_ext-stubs"]:
         try:
@@ -66,7 +31,7 @@ def main(
         except Exception:
             echo(f"[batou-typecheck] {stub} <not installed>")
             continue
-        
+
         # Try to get path
         try:
             pkg = stub.replace("-stubs", "")
@@ -78,63 +43,27 @@ def main(
     checkers = checker or [Checker.ty]
 
     cwd = Path.cwd()
-    components = sorted(cwd.glob("components/**/*.py"))
+    components = find_components(cwd)
 
     if not components:
         print("batou-typecheck: No component files found in components/", file=sys.stderr)
         raise typer.Exit(0)
 
-    paths = [str(p) for p in components]
-    print(
-        f"batou-typecheck: Checking {len(components)} component(s) with {', '.join(c.value for c in checkers)}",
-        file=sys.stderr,
-    )
-    print("---", file=sys.stderr)
+    echo(f"batou-typecheck: Checking {len(components)} component(s)")
 
-    any_failed = False
-    total_errors = 0
+    # Check all files
+    results = check_all(cwd, checkers)
 
-    for path in paths:
-        file_failed = False
-        print(f"[batou-typecheck] {path}", file=sys.stderr)
+    # Count errors
+    failed_results = [r for r in results if r.has_errors]
+    echo(f"batou-typecheck: {len(failed_results)} file(s) with errors")
 
-        for c in checkers:
-            if c == Checker.ty:
-                cmd = [sys.executable, "-m", "ty", "check", path]
-            elif c == Checker.mypy:
-                cmd = [
-                    sys.executable,
-                    "-m",
-                    "mypy",
-                    *CHECKER_COMMANDS[c][1:],
-                    path,
-                ]
-            else:
-                cmd = [*CHECKER_COMMANDS[c], path]
+    # Show errors at end (pytest-style)
+    for result in failed_results:
+        echo(f"\n{'='*60}")
+        echo(f"FAILED: {result.path}")
+        echo(f"{'='*60}")
+        if result.output.strip():
+            echo(result.output)
 
-            if c == Checker.basedpyright:
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                filtered, has_errors = _filter_basedpyright_json(result.stdout)
-                if filtered.strip():
-                    print(filtered)
-                if has_errors:
-                    file_failed = True
-                    any_failed = True
-            else:
-                result = subprocess.run(cmd)
-                if result.returncode != 0:
-                    file_failed = True
-                    any_failed = True
-
-        status = "FAILED" if file_failed else "OK"
-        print(f"[batou-typecheck] {path} → {status}", file=sys.stderr)
-        if file_failed:
-            total_errors += 1
-
-    print("---", file=sys.stderr)
-    print(
-        f"batou-typecheck: {total_errors} file(s) with errors",
-        file=sys.stderr,
-    )
-
-    raise typer.Exit(1 if any_failed else 0)
+    raise typer.Exit(1 if failed_results else 0)
