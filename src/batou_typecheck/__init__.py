@@ -99,24 +99,6 @@ def main(
     ] = [],
 ) -> None:
     """Type-check batou deployment components."""
-    from importlib import metadata
-
-    # Show stub versions
-    print(
-        f"[batou-typecheck] batou-stubs {metadata.version('batou-stubs')}",
-        file=sys.stderr,
-    )
-    try:
-        print(
-            f"[batou-typecheck] batou_ext-stubs {metadata.version('batou_ext-stubs')}",
-            file=sys.stderr,
-        )
-    except Exception:
-        print(
-            "[batou-typecheck] batou_ext-stubs <not installed>",
-            file=sys.stderr,
-        )
-
     checkers = checker or [Checker.ty]
 
     cwd = Path.cwd()
