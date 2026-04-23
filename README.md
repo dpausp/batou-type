@@ -8,6 +8,18 @@ Finds all `components/**/*.py` files in the current directory and runs type chec
 
 TODO: add pip/uv install instructions
 
+## Prerequisites
+
+Your deployment directory must have the required stubs installed:
+
+```
+cd /path/to/your/deployment
+pip install batou-stubs           # always required
+pip install batou_ext-stubs        # if your components import batou_ext
+```
+
+These provide type information for the type checkers. Without them, you'll see `error[unresolved-import]` for `batou` and `batou_ext` imports.
+
 ## Usage
 
 ```
