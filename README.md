@@ -4,10 +4,6 @@ Type-check batou deployment components against batou stubs.
 
 Finds all `components/**/*.py` files in the current directory and runs type checkers on them. No configuration needed — run it in your deployment root and it works.
 
-## Installation
-
-TODO: add pip/uv install instructions
-
 ## Prerequisites
 
 Your deployment directory must have the required stubs installed:
