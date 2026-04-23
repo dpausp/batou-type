@@ -56,7 +56,7 @@ def check_file(
 
     for c in checkers:
         if c == Checker.ty:
-            cmd = [sys.executable, "-m", "ty", "check", file_path]
+            cmd = [sys.executable, "-m", "ty", "check", "--color", "always", file_path]
         elif c == Checker.mypy:
             cmd = [
                 sys.executable,

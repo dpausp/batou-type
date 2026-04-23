@@ -60,10 +60,10 @@ def main(
 
     # Show errors at end (pytest-style)
     for result in failed_results:
-        echo(f"\n{'='*60}")
-        echo(f"FAILED: {result.path}")
-        echo(f"{'='*60}")
+        print(f"\n{'='*60}")
+        print(f"FAILED: {result.path}")
+        print(f"{'='*60}")
         if result.output.strip():
-            echo(result.output)
+            print(result.output)
 
     raise typer.Exit(1 if failed_results else 0)
