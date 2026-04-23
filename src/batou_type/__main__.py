@@ -1,3 +1,3 @@
-from batou_type import app
+from batou_type.cli import app
 
 app()

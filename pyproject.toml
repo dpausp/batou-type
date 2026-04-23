@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-batou-type = "batou_type:app"
+batou-type = "batou_type.cli:app"
 
 [project.entry-points.pytest11]
 batou_type = "batou_type.pytest_plugin"

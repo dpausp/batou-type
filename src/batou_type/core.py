@@ -1,5 +1,7 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
+import io
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -121,8 +123,6 @@ BASEDPYRIGHT_NOISE_RULES = frozenset(
 
 def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
     """Filter basedpyright JSON output, removing noise rules."""
-    import json
-
     try:
         data = json.loads(output)
     except json.JSONDecodeError:
@@ -135,9 +135,7 @@ def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
     diagnostics = data.get("generalDiagnostics", [])
 
     filtered = [
-        d
-        for d in diagnostics
-        if d.get("rule", "") not in BASEDPYRIGHT_NOISE_RULES
+        d for d in diagnostics if d.get("rule", "") not in BASEDPYRIGHT_NOISE_RULES
     ]
 
     if not filtered:
@@ -145,8 +143,7 @@ def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
 
     # Rebuild output with filtered diagnostics
     data["generalDiagnostics"] = filtered
-    import io
 
-    output = io.StringIO()
-    output.write(json.dumps(data, indent=2))
-    return output.getvalue(), True
+    buffer = io.StringIO()
+    buffer.write(json.dumps(data, indent=2))
+    return buffer.getvalue(), True

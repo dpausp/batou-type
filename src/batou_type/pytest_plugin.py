@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from batou_type.core import Checker, check_all, find_components
+from batou_type.core import Checker, check_all
 
 
 _BATOU_TY_RESULTS_STASH_KEY = pytest.StashKey[dict[str, bool]]()
@@ -40,7 +40,9 @@ def pytest_collect_file(
     return BatouComponentFile.from_parent(parent, path=file_path)
 
 
-def pytest_collection_modifyitems(session: pytest.Session, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    session: pytest.Session, items: list[pytest.Item]
+) -> None:
     config = session.config
     if not config.option.batou_ty:
         return
@@ -59,11 +61,6 @@ def pytest_collection_modifyitems(session: pytest.Session, items: list[pytest.It
 
     config.stash[_BATOU_TY_RESULTS_STASH_KEY] = error_results
     config.stash[_BATOU_TY_OUTPUT_STASH_KEY] = output_results
-
-
-class BatouTyError(Exception):
-    """Raised when type checking fails."""
-    pass
 
 
 class BatouComponentFile(pytest.File):
@@ -91,15 +88,14 @@ class BatouComponentItem(pytest.Item):
         output = output_results.get(file_key, "")
 
         if has_errors and output.strip():
-            # Count errors in output
-            error_count = output.count("Found ") 
             # Get diagnostic count from "Found X diagnostics"
             import re
+
             match = re.search(r"Found (\d+) diagnostic", output)
             if match:
                 count = match.group(1)
                 msg = f"Type check failed with {count} error(s)"
             else:
                 msg = "Type check failed"
-            
+
             pytest.fail(msg + "\n" + output.strip())
