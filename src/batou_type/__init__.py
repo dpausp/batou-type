@@ -11,11 +11,8 @@ from rich.table import Table
 from batou_type.core import Checker, check_all, find_components
 
 app = typer.Typer(
-    name="batou-type",
     no_args_is_help=True,
-    invoke_without_command=True,
     rich_markup_mode="rich",
-    context_settings={"allow_interspersed_args": False},
 )
 console = Console()
 
@@ -59,16 +56,16 @@ def _run_check(checker: list[Checker] | None) -> None:
 
     # Show errors at end (pytest-style)
     for result in failed_results:
-        console.print(f"\n[red]{'='*60}[/]")
+        console.print(f"\n[red]{'=' * 60}[/]")
         console.print(f"[red]FAILED: {result.path}[/]")
-        console.print(f"[red]{'='*60}[/]")
+        console.print(f"[red]{'=' * 60}[/]")
         if result.output.strip():
             console.print(result.output)
 
     raise typer.Exit(1 if failed_results else 0)
 
 
-@app.command("check")
+@app.command()
 def check(
     checker: list[Checker] | None = typer.Option(
         None,
@@ -79,7 +76,3 @@ def check(
 ) -> None:
     """Type-check batou deployment components."""
     _run_check(checker)
-
-
-if __name__ == "__main__":
-    app()
