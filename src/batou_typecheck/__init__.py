@@ -87,6 +87,43 @@ def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
     return "\n".join(lines), has_errors
 
 
+def _ensure_stubs_installed() -> bool:
+    """Check and install stubs if missing. Returns True if stubs are available."""
+    import importlib
+
+    stubs_missing: list[str] = []
+    for stub in ["batou_stubs", "batou_ext_stubs"]:
+        try:
+            importlib.import_module(stub)
+        except ImportError:
+            stubs_missing.append(stub.replace("_", "-"))
+
+    if not stubs_missing:
+        return True
+
+    # Try to install missing stubs from PyPI using uv
+    print(
+        f"[batou-typecheck] Stubs not found: {', '.join(stubs_missing)}",
+        file=sys.stderr,
+    )
+    print("[batou-typecheck] Installing via uv ...", file=sys.stderr)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "uv", "add", "--group", "dev", *stubs_missing],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(
+            f"[batou-typecheck] Failed to install stubs: {result.stderr}",
+            file=sys.stderr,
+        )
+        return False
+
+    print("[batou-typecheck] Stubs installed.", file=sys.stderr)
+    return True
+
+
 @app.command()
 def main(
     checker: Annotated[
@@ -100,6 +137,15 @@ def main(
 ) -> None:
     """Type-check batou deployment components."""
     checkers = checker or [Checker.ty]
+
+    # Auto-install stubs if missing (works with uvx, global installs)
+    if not _ensure_stubs_installed():
+        print(
+            "[batou-typecheck] ERROR: stubs not available. "
+            "Install manually: uv pip install batou-stubs batou_ext-stubs",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
 
     cwd = Path.cwd()
     components = sorted(cwd.glob("components/**/*.py"))
