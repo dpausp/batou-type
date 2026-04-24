@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 .agents/tmp/
 .ty-symbols.db
+.coverage
