@@ -1,0 +1,21 @@
+[project]
+name = "copier-fcio-batou-project"
+version = "0.1.0"
+description = ""
+dependencies = [
+    "batou",
+    "batou_ext",
+]
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "batou-ext-stubs",
+    "batou-stubs",
+    "batou-type",
+]
+
+[tool.uv.sources]
+batou-stubs = { path = "../batou/stubs" }
+batou-ext-stubs = { path = "../batou_ext/stubs" }
+batou-type = { path = "../batou-type", editable = true }

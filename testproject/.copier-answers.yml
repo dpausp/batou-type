@@ -1,0 +1,7 @@
+# Changes here will be overwritten by Copier
+_commit: a17ce56
+_src_path: ./copier-batou-fcio-project
+component: component
+project_name: test
+service_user: s-test
+vm_environment: fc-25.11-production
