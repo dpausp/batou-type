@@ -89,18 +89,24 @@ def _run_check(checker: list[Checker] | None, path: Path | None) -> None:
     # Check all files
     results = check_all(cwd, checkers, extra_search_paths=extra_search_paths)
 
-    # Count errors
+    # Show errors first
     failed_results = [r for r in results if r.has_errors]
-    status = f"[red]{len(failed_results)}[/]" if failed_results else "[green]0[/]"
-    console.print(f"{status} file(s) with errors")
-
-    # Show errors at end (pytest-style)
     for result in failed_results:
         console.print(f"\n[red]{'=' * 60}[/]")
         console.print(f"[red]FAILED: {result.path}[/]")
         console.print(f"[red]{'=' * 60}[/]")
         if result.output.strip():
             print(result.output.strip())
+
+    # Summary at the bottom
+    if failed_results:
+        console.print()
+        status = f"[red]{len(failed_results)}[/]"
+        console.print(f"{status} component(s) with errors:")
+        for result in failed_results:
+            console.print(f"  [red]{result.path}[/]")
+    else:
+        console.print("[green]All components passed type checking.[/]")
 
     raise typer.Exit(1 if failed_results else 0)
 
