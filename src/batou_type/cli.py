@@ -146,10 +146,10 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     # Summary at the bottom
     if all_failed:
         console.print()
-        status = f"[red]{len(all_failed)}[/]"
-        console.print(f"{status} component(s) with errors:")
+        console.print(f"[red]{'=' * 50} ERRORS {'=' * 50}[/]")
         for result in all_failed:
             console.print(f"  [red]{result.path}[/]")
+        console.print(f"[red]{'=' * 44} {len(all_failed)} failed {'=' * 44}[/]")
     else:
         console.print("[green]All components passed type checking.[/]")
 
