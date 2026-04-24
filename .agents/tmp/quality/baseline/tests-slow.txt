@@ -1,2 +1,2 @@
 
-no tests collected (14 deselected) in 0.02s
+no tests collected (27 deselected) in 0.01s

@@ -1,2 +1,20 @@
-..............                                                           [100%]
-14 passed in 0.29s
+..FF.......................                                              [100%]
+=================================== FAILURES ===================================
+________________ TestCheck.test_check_no_components_exits_zero _________________
+tests/test_functional.py:55: in test_check_no_components_exits_zero
+    assert "no component files found" in result.stdout.lower()
+E   AssertionError: assert 'no component files found' in '                                  loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...                      \npython: /batou-type/.venv/bin/python\n\nno batou projects found (need components/ directory)\n'
+E    +  where '                                  loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...                      \npython: /batou-type/.venv/bin/python\n\nno batou projects found (need components/ directory)\n' = <built-in method lower of str object at 0x7fdfdd1257c0>()
+E    +    where <built-in method lower of str object at 0x7fdfdd1257c0> = '                                  Loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...                      \nPython: /batou-type/.venv/bin/python\n\nNo batou projects found (need components/ directory)\n'.lower
+E    +      where '                                  Loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...                      \nPython: /batou-type/.venv/bin/python\n\nNo batou projects found (need components/ directory)\n' = CompletedProcess(args=['/batou-type/.venv/bin/python', '-m', 'batou_type', 'check'], returncode=0, stdout='           ...          \nPython: /batou-type/.venv/bin/python\n\nNo batou projects found (need components/ directory)\n', stderr='').stdout
+_______________ TestCheck.test_check_clean_component_exits_zero ________________
+tests/test_functional.py:64: in test_check_clean_component_exits_zero
+    assert "0 file" in result.stdout.lower()
+E   AssertionError: assert '0 file' in '                                  loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...ent(s) in \n/tmp/pytest-of-s-dev/pytest-257/test_check_clean_component_exi0...\nall components passed type checking.\n'
+E    +  where '                                  loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...ent(s) in \n/tmp/pytest-of-s-dev/pytest-257/test_check_clean_component_exi0...\nall components passed type checking.\n' = <built-in method lower of str object at 0x152bf690>()
+E    +    where <built-in method lower of str object at 0x152bf690> = '                                  Loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...ent(s) in \n/tmp/pytest-of-s-dev/pytest-257/test_check_clean_component_exi0...\nAll components passed type checking.\n'.lower
+E    +      where '                                  Loaded stubs                                  \n batou-stubs 2.8.0.dev0 @ /batou-ty...ent(s) in \n/tmp/pytest-of-s-dev/pytest-257/test_check_clean_component_exi0...\nAll components passed type checking.\n' = CompletedProcess(args=['/batou-type/.venv/bin/python', '-m', 'batou_type', 'check'], returncode=0, stdout='           .../tmp/pytest-of-s-dev/pytest-257/test_check_clean_component_exi0...\nAll components passed type checking.\n', stderr='').stdout
+=========================== short test summary info ============================
+FAILED tests/test_functional.py::TestCheck::test_check_no_components_exits_zero
+FAILED tests/test_functional.py::TestCheck::test_check_clean_component_exits_zero
+2 failed, 25 passed in 3.51s

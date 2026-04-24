@@ -1,1 +1,1 @@
-src/batou_type/cli.py:40:            stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+src/batou_type/cli.py:49:            stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]

@@ -2,109 +2,179 @@
 
 ## CLI Subcommands
 
-- `check` — source: [src/batou_type/cli.py:104](src/batou_type/cli.py#L104) — description: "Type-check batou deployment components." Options: `--checker` / `-c` (repeatable, default: `ty`)
-- `version` — source: [src/batou_type/cli.py:48](src/batou_type/cli.py#L48) — description: "Show version information." (prints batou-type version + stub package versions/paths)
+| Command | Source | Description |
+|---|---|---|
+| `check` | `src/batou_type/cli.py:155` | Type-check batou deployment components |
+| `version` | `src/batou_type/cli.py:58` | Show version information |
 
-Notes:
-- The Typer app is configured with `no_args_is_help=True`, so running bare `batou-type` shows help.
-- The README documents usage as `batou-typecheck` (the README title says "batou-typecheck") but the actual console script entry point is named `batou-type` (see pyproject.toml line 24). This is a naming inconsistency.
-- README examples show `batou-typecheck` as the command name, not `batou-type`.
-- The default subcommand is not set; users must explicitly use a subcommand (`check`, `version`).
+### `check` command options
+
+| Option | Type | Default | Source | Description |
+|---|---|---|---|---|
+| `paths` (positional) | `list[Path]` | `[Path.cwd()]` | `cli.py:156-159` | Project directories to check |
+| `--checker` / `-c` | `list[Checker] \| None` | `None` (falls back to `[Checker.ty]`) | `cli.py:160-165` | Type checker(s) to run |
+
+Internal helper:
+- `_run_check()` at `cli.py:68` — orchestrates project discovery, venv detection, stub loading, and result reporting. Called by `check`.
+
+### `version` command
+
+No options. Prints `batou-type` version plus stub package versions and paths.
 
 ## Scripts / Console Entry Points
 
-- `batou-type` — source: [pyproject.toml:24](pyproject.toml#L24) — purpose: CLI entry point, maps to `batou_type.cli:app` (Typer app)
-- `pytest11: batou_type` — source: [pyproject.toml:26-27](pyproject.toml#L26) — purpose: pytest plugin entry point, maps to `batou_type.pytest_plugin`. Registers the `--batou-ty` CLI flag and `batou_ty` marker.
+| Script | Entry Point | Source | Purpose |
+|---|---|---|---|
+| `batou-type` | `batou_type.cli:app` | `pyproject.toml:23` | Main CLI via `project.scripts` |
+| `python -m batou_type` | `__main__.py:1-3` (calls `batou_type.cli:app`) | `src/batou_type/__main__.py` | Module-executable entry point |
 
-## Public API (Library)
-
-Exported via `__all__` in [src/batou_type/__init__.py](src/batou_type/__init__.py):
-
-- `batou_type.Checker` — source: [src/batou_type/core.py:12](src/batou_type/core.py#L12) — `str, Enum` with values: `ty`, `mypy`, `basedpyright`
-- `batou_type.TypeCheckResult` — source: [src/batou_type/core.py:30](src/batou_type/core.py#L30) — `@dataclass` with fields: `path: str`, `has_errors: bool`, `output: str`
-- `batou_type.check_all` — source: [src/batou_type/core.py:96](src/batou_type/core.py#L96) — `(root: Path, checkers: list[Checker] | None = None) -> list[TypeCheckResult]`
-- `batou_type.check_file` — source: [src/batou_type/core.py:47](src/batou_type/core.py#L47) — `(file_path: str, checkers: list[Checker] | None = None, cwd: Path | None = None) -> TypeCheckResult`
-- `batou_type.find_components` — source: [src/batou_type/core.py:39](src/batou_type/core.py#L39) — `(root: Path) -> list[Path]` — globs `components/**/*.py`
-- `batou_type.__version__` — source: [src/batou_type/__init__.py:22](src/batou_type/__init__.py#L22) — from `importlib.metadata.version("batou-type")`, fallback `"0.0.0"`
-
-Internal (not in `__all__`, but importable):
-- `batou_type.core.CHECKER_COMMANDS` — source: [src/batou_type/core.py:18](src/batou_type/core.py#L18) — `dict[Checker, list[str]]` mapping checkers to CLI invocations
-- `batou_type.core.BASEDPYRIGHT_NOISE_RULES` — source: [src/batou_type/core.py:115](src/batou_type/core.py#L115) — `frozenset` of diagnostic rules filtered from basedpyright output
-- `batou_type.core._filter_basedpyright_json` — source: [src/batou_type/core.py:124](src/batou_type/core.py#L124) — private function, filters basedpyright JSON
-- `batou_type.cli.app` — source: [src/batou_type/cli.py:15](src/batou_type/cli.py#L15) — the Typer app instance
-- `batou_type.cli.STUB_PACKAGES` — source: [src/batou_type/cli.py:21](src/batou_type/cli.py#L21) — `["batou-stubs", "batou_ext-stubs"]`
-- `batou_type.cli.StubInfo` — source: [src/batou_type/cli.py:25](src/batou_type/cli.py#L25) — dataclass for stub version metadata
-- `batou_type.cli.get_stub_versions` — source: [src/batou_type/cli.py:33](src/batou_type/cli.py#L33) — collects version/path for stub packages
-- `batou_type.cli._run_check` — source: [src/batou_type/cli.py:59](src/batou_type/cli.py#L59) — shared logic between `check` command and potential future commands
-- `batou_type.pytest_plugin.BatouComponentFile` — source: [src/batou_type/pytest_plugin.py:66](src/batou_type/pytest_plugin.py#L66) — `pytest.File` subclass
-- `batou_type.pytest_plugin.BatouComponentItem` — source: [src/batou_type/pytest_plugin.py:73](src/batou_type/pytest_plugin.py#L73) — `pytest.Item` subclass
+Both invoke the same Typer `app` instance.
 
 ## Documented Features
 
-- **Default checker is ty** — claimed in: [README.md:10](README.md#L10), [src/batou_type/core.py:53](src/batou_type/core.py#L53), [src/batou_type/cli.py:74](src/batou_type/cli.py#L74) — tested by: [tests/test_refactor_contract.py:169](tests/test_refactor_contract.py#L169) (`assert Checker.ty.value == "ty"`)
-- **Multiple checkers via `-c` flag** — claimed in: [README.md:11-13](README.md#L11) — tested by: no dedicated test found
-- **Component discovery via `components/**/*.py` glob** — claimed in: [README.md:5](README.md#L5), [README.md:49-51](README.md#L49) — tested by: [tests/test_refactor_contract.py:159](tests/test_refactor_contract.py#L159) (imports `find_components`)
-- **Exit code 0 (no errors) / 1 (errors)** — claimed in: [README.md:27](README.md#L27) — tested by: no dedicated test found
-- **Exit code 0 when no component files found** — claimed in: [README.md:63](README.md#L63) — tested by: no dedicated test found
-- **basedpyright noise filtering** — claimed in: [README.md:35](README.md#L35) — tested by: no dedicated test found
-- **mypy flags** (`--explicit-package-bases --check-untyped-defs --no-incremental`) — claimed in: [README.md:34](README.md#L34) — tested by: no dedicated test found
-- **Status to stderr, checker output to stdout** — claimed in: [README.md:18-19](README.md#L18) — tested by: no dedicated test found
-- **Migration testing workflow** — claimed in: [README.md:39-47](README.md#L39) — tested by: N/A (documentation/workflow claim)
-- **`python -m batou_type` support** — implied by `__main__.py` — tested by: no dedicated test found
-- **pytest plugin `--batou-ty` flag** — claimed in: source code [src/batou_type/pytest_plugin.py:16](src/batou_type/pytest_plugin.py#L16) — tested by: no dedicated test found
-- **pytest `batou_ty` marker** — claimed in: source code [src/batou_type/pytest_plugin.py:24](src/batou_type/pytest_plugin.py#L24) — tested by: no dedicated test found
-- **Version command shows stub package info** — claimed in: source code [src/batou_type/cli.py:49](src/batou_type/cli.py#L49) — tested by: no dedicated test found
-- **Stubs table shown before checking** — claimed in: source code [src/batou_type/cli.py:62](src/batou_type/cli.py#L62) — tested by: no dedicated test found
+### From `README.md`
+
+| Feature | Claimed In | Tested By |
+|---|---|---|
+| Type-check batou deployment components against batou stubs | `README.md:3` | `test_functional.py:TestCheck` |
+| Discovers all `components/**/*.py` files | `README.md:5` | `test_functional.py:test_check_nested_components` |
+| Supports `ty` checker (default) | `README.md:10,33` | `test_functional.py:test_check_with_ty_checker` |
+| Supports `mypy` checker | `README.md:11,34` | `test_functional.py:test_check_with_mypy_checker` |
+| Supports `basedpyright` checker | `README.md:12,35` | **Not implemented** — `Checker` enum in `core.py:38-40` only has `ty` and `mypy` |
+| Run multiple checkers in sequence (`-c` repeated) | `README.md:13,37` | No explicit multi-checker test |
+| Status messages to stderr, checker output to stdout | `README.md:18-26` | `test_functional.py` verifies stdout/stderr behavior |
+| Exit code 0 on no errors or no component files | `README.md:27` | `test_functional.py:test_check_no_components_exits_zero`, `test_check_clean_component_exits_zero` |
+| Exit code 1 on type errors | `README.md:27` | `test_functional.py:test_check_component_with_type_error_exits_one` |
+| Migration testing (preview breaking changes) | `README.md:41-47` | No test |
+| Standard batou deployment layout detection | `README.md:51-61` | `test_functional.py` via `temp_project` fixture |
+| Automatic basedpyright noise filtering | `README.md:35` | **Not implemented** in `core.py` |
+| mypy `--explicit-package-bases --check-untyped-defs --no-incremental` | `README.md:34` | `core.py:44-51` defines these flags |
+
+### From module docstrings
+
+| Feature | Claimed In |
+|---|---|
+| "Type-check batou deployments" | `src/batou_type/__init__.py:1` |
+| "Batou type CLI" | `src/batou_type/cli.py:1` |
+| "Core type checking logic shared between CLI and pytest plugin" | `src/batou_type/core.py:1` |
+| "Batou type checking plugin for pytest" | `src/batou_type/pytest_plugin.py:1` |
+
+### Discrepancy: `basedpyright` documented but not implemented
+
+`README.md:12,35` and `testproject/README.md:31,38-39` document `basedpyright` as a supported checker. However, the `Checker` enum in `core.py:38-40` only defines `ty` and `mypy`. The `CHECKER_COMMANDS` dict in `core.py:43-51` has no `basedpyright` entry. The `-c basedpyright` flag would fail at Typer's enum validation.
+
+## Public API (if library)
+
+### `__all__` exports from `src/batou_type/__init__.py:13-20`
+
+| Symbol | Origin | Source | Description |
+|---|---|---|---|
+| `Checker` | `batou_type.core` | `core.py:38` | Enum of supported type checkers (`ty`, `mypy`) |
+| `TypeCheckResult` | `batou_type.core` | `core.py:55` | Dataclass: `path: str`, `has_errors: bool`, `output: str` |
+| `check_all` | `batou_type.core` | `core.py:119` | Type-check all components in a deployment root |
+| `check_file` | `batou_type.core` | `core.py:76` | Run type checker(s) on a single file |
+| `find_components` | `batou_type.core` | `core.py:68` | Find all `components/**/*.py` files under a root |
+| `__version__` | `batou_type.__init__` | `__init__.py:23` | Package version from `importlib.metadata.version()` |
+
+### Public symbols in `core.py` NOT in `__all__`
+
+These are importable from `batou_type.core` but not re-exported via `batou_type.__init__`:
+
+| Symbol | Source | Used By | Description |
+|---|---|---|---|
+| `find_project_venv` | `core.py:13` | `cli.py:20` | Detect project-level venv (`.venv` or `appenv`) |
+| `get_venv_site_packages` | `core.py:24` | `cli.py:21` | Extract site-packages paths from a venv |
+| `is_batou_project` | `core.py:63` | `cli.py:21` | Check if directory has a `components/` subdirectory |
+| `CHECKER_COMMANDS` | `core.py:43` | `core.py:99` | Map of Checker to CLI command arguments |
+
+### Internal-only symbols in `cli.py`
+
+| Symbol | Source | Description |
+|---|---|---|
+| `app` | `cli.py:24` | Typer application instance |
+| `console` | `cli.py:28` | Rich Console instance |
+| `STUB_PACKAGES` | `cli.py:30` | List of stub package names |
+| `StubInfo` | `cli.py:34` | Dataclass for stub version metadata |
+| `get_stub_versions` | `cli.py:42` | Collect version/path for stub packages |
+| `_run_check` | `cli.py:68` | Internal orchestrator for the `check` command |
+
+## Pytest Plugin Hooks
+
+**Entry point**: `batou_type = "batou_type.pytest_plugin"` (`pyproject.toml:26`)
+
+| Hook | Source | Description |
+|---|---|---|
+| `pytest_addoption` | `pytest_plugin.py:14` | Adds `--batou-ty` CLI flag under the "batou" option group |
+| `pytest_configure` | `pytest_plugin.py:23` | Registers the `batou_ty` marker |
+| `pytest_collect_file` | `pytest_plugin.py:27` | Collects `components/**/*.py` files as `BatouComponentFile` items (only when `--batou-ty` is active) |
+| `pytest_collection_modifyitems` | `pytest_plugin.py:43` | Runs `check_all()` upfront for the entire project, stashes results in `config.stash` for test items to read |
+
+### Pytest plugin classes
+
+| Class | Source | Description |
+|---|---|---|
+| `BatouComponentFile` | `pytest_plugin.py:66` | `pytest.File` subclass — collects a batou component `.py` file |
+| `BatouComponentItem` | `pytest_plugin.py:73` | `pytest.Item` subclass — runs the type-check assertion for one file; reads stashed results, fails with diagnostic count if errors |
+
+### Stash keys
+
+| Key | Source | Type | Description |
+|---|---|---|---|
+| `_BATOU_TY_RESULTS_STASH_KEY` | `pytest_plugin.py:10` | `dict[str, bool]` | Maps file path to `has_errors` |
+| `_BATOU_TY_OUTPUT_STASH_KEY` | `pytest_plugin.py:11` | `dict[str, str]` | Maps file path to checker output |
 
 ## Configuration Surface
 
-### pyproject.toml
+### CLI flags (Typer options on `check` command)
 
-| Section | Key | Value |
+| Name | Type | Default | Source | Description |
+|---|---|---|---|---|
+| `paths` | `list[Path]` (positional) | `[cwd]` | `cli.py:156-159` | Project directories to check; non-project dirs are scanned for subdirectories that are batou projects |
+| `--checker` / `-c` | `list[Checker]` (repeatable) | `[Checker.ty]` | `cli.py:160-165` | Which type checker(s) to run; values: `ty`, `mypy` |
+
+### CLI flags (Typer options on `version` command)
+
+No options.
+
+### Pytest plugin options
+
+| Name | Type | Default | Source | Description |
+|---|---|---|---|---|
+| `--batou-ty` | `bool` (store_true) | `False` | `pytest_plugin.py:16-19` | Enable batou type checking; activates component file collection and type-check test items |
+
+### Pytest markers
+
+| Marker | Source | Description |
 |---|---|---|
-| `[build-system]` | `build-backend` | `hatchling.build` |
-| `[build-system]` | `requires` | `hatchling>=1.27` |
-| `[project]` | `name` | `batou-type` |
-| `[project]` | `version` | `2.8.0.dev0` |
-| `[project]` | `description` | `Type-check batou deployments` |
-| `[project]` | `requires-python` | `>=3.10` |
-| `[project]` | `dependencies` | `batou-stubs`, `batou_ext-stubs`, `basedpyright`, `mypy`, `pytest`, `rich`, `ty`, `typer` |
-| `[project.scripts]` | `batou-type` | `batou_type.cli:app` |
-| `[project.entry-points.pytest11]` | `batou_type` | `batou_type.pytest_plugin` |
-| `[tool.hatch.build.targets.wheel]` | `packages` | `["src/batou_type"]` |
-| `[tool.hatch.build.targets.sdist]` | `include` | `["src/batou_type"]` |
-| `[tool.uv.sources]` | `batou-stubs` | `{ path = "../batou/stubs" }` |
-| `[tool.uv.sources]` | `batou-ext-stubs` | `{ path = "../batou_ext/stubs" }` |
-| `[dependency-groups]` | `dev` | `batou-ext-stubs`, `batou-stubs` |
+| `batou_ty` | `pytest_plugin.py:24` | Applied to all `BatouComponentItem` instances |
 
-### pyrightconfig.json
+### Pyright configuration (`pyrightconfig.json`)
 
-| Key | Value |
-|---|---|
-| `pythonVersion` | `"3.14"` |
-| `typeCheckingMode` | `"strict"` |
-| `reportExplicitAny` | `"none"` |
-| `reportAny` | `"none"` |
-| `reportMissingTypeStubs` | `true` |
-| `reportImplicitOverride` | `"none"` |
-| `reportInvalidTypeArguments` | `"none"` |
-| `reportIncompatibleMethodOverride` | `"none"` |
-| `reportIncompatibleVariableOverride` | `"none"` |
-| `reportOverlappingOverload` | `"none"` |
-| `reportAttributeAccessIssue` | `"none"` |
+| Setting | Value | Description |
+|---|---|---|
+| `pythonVersion` | `"3.14"` | Target Python version for type checking |
+| `typeCheckingMode` | `"strict"` | Strict mode |
+| `reportExplicitAny` | `"none"` | Suppress explicit-any warnings |
+| `reportAny` | `"none"` | Suppress any-type warnings |
+| `reportMissingTypeStubs` | `true` | Warn on missing stubs |
+| `reportImplicitOverride` | `"none"` | Suppress implicit-override warnings |
+| `reportInvalidTypeArguments` | `"none"` | Suppress invalid-type-arg warnings |
+| `reportIncompatibleMethodOverride` | `"none"` | Suppress method-override warnings |
+| `reportIncompatibleVariableOverride` | `"none"` | Suppress variable-override warnings |
+| `reportOverlappingOverload` | `"none"` | Suppress overlapping-overload warnings |
+| `reportAttributeAccessIssue` | `"none"` | Suppress attribute-access warnings |
 
-### Missing tool configs (no sections defined)
+This is the config for type-checking batou-type itself (not the projects it checks). Many strict-mode diagnostics are suppressed.
 
-- `[tool.ruff]` — no ruff configuration in pyproject.toml, no `.ruff.toml`
-- `[tool.pytest]` — no pytest configuration in pyproject.toml, no `conftest.py`, no `pytest.ini`
-- `[tool.mypy]` — no mypy configuration in pyproject.toml
-- `[tool.ty]` — no ty configuration in pyproject.toml
+### Hardcoded configuration in `core.py`
 
-## Discrepancies / Audit Notes
+| Setting | Value | Source | Description |
+|---|---|---|---|
+| `_VENV_CANDIDATES` | `[".venv", "appenv"]` | `core.py:10` | Venv directory names to probe, in priority order |
+| `CHECKER_COMMANDS[Checker.ty]` | `["ty", "check"]` | `core.py:44` | Ty CLI invocation |
+| `CHECKER_COMMANDS[Checker.mypy]` | `["mypy", "--explicit-package-bases", "--check-untyped-defs", "--no-incremental"]` | `core.py:45-51` | Mypy CLI invocation with batou-specific flags |
+| `STUB_PACKAGES` | `["batou-stubs", "batou_ext-stubs"]` | `cli.py:30` | Stub packages whose versions are displayed |
 
-1. **CLI name mismatch**: README consistently uses `batou-typecheck` but the actual console script is `batou-type`. The README never mentions the actual command name.
-2. **No default command**: The README shows bare `batou-typecheck` (no subcommand) as valid usage, but the Typer app has `no_args_is_help=True` and requires an explicit subcommand. The `check` subcommand must be invoked explicitly.
-3. **README missing `version` subcommand**: The `version` subcommand exists in the CLI but is not documented in the README.
-4. **README missing pytest plugin**: The pytest plugin (`--batou-ty`, `batou_ty` marker) is not documented in the README.
-5. **Stale .gitignore**: `.gitignore` references `src/batou_typecheck/` (old package name?) instead of `src/batou_type/`.
-6. **No dedicated functional tests**: The only test file (`test_refactor_contract.py`) tests structural/architectural contracts, not functional behavior. No tests for actual type-checking, exit codes, output format, or checker filtering.
+### Ty `--extra-search-path` (dynamic)
+
+When a project venv is detected, its `site-packages` directories are passed to `ty check --extra-search-path` for each component file (`core.py:93-94`). This is not a user-facing config option — it is derived from filesystem state.

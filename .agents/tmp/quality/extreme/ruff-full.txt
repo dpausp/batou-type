@@ -55,220 +55,366 @@ CPY001 Missing copyright notice at top of file
 CPY001 Missing copyright notice at top of file
 --> src/batou_type/cli.py:1:1
 
-DOC201 `return` is not documented in docstring
-  --> src/batou_type/cli.py:34:5
+I001 [*] Import block is un-sorted or un-formatted
+  --> src/batou_type/cli.py:3:1
    |
-33 | def get_stub_versions() -> list[StubInfo]:
-34 |     """Collect version and path for all stub packages."""
+ 1 |   """Batou type CLI."""
+ 2 |
+ 3 | / from dataclasses import dataclass
+ 4 | | from importlib import metadata
+ 5 | | from importlib.resources import files
+ 6 | | from pathlib import Path
+ 7 | | import sys
+ 8 | |
+ 9 | | import typer
+10 | | from rich.console import Console
+11 | | from rich.table import Table
+12 | |
+13 | | from batou_type import __version__
+14 | | from batou_type.core import (
+15 | |     Checker,
+16 | |     TypeCheckResult,
+17 | |     check_all,
+18 | |     find_components,
+19 | |     find_project_venv,
+20 | |     get_venv_site_packages,
+21 | |     is_batou_project,
+22 | | )
+   | |_^
+23 |
+24 |   app = typer.Typer(
+   |
+help: Organize imports
+1  | """Batou type CLI."""
+2  | 
+3  + import sys
+4  | from dataclasses import dataclass
+5  | from importlib import metadata
+6  | from importlib.resources import files
+7  | from pathlib import Path
+   - import sys
+8  | 
+9  | import typer
+10 | from rich.console import Console
+
+DOC201 `return` is not documented in docstring
+  --> src/batou_type/cli.py:43:5
+   |
+42 | def get_stub_versions() -> list[StubInfo]:
+43 |     """Collect version and path for all stub packages."""
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-35 |     infos: list[StubInfo] = []
-36 |     for name in STUB_PACKAGES:
+44 |     infos: list[StubInfo] = []
+45 |     for name in STUB_PACKAGES:
    |
 help: Add a "Returns" section to the docstring
 
 PERF203 `try`-`except` within a loop incurs performance overhead
-  --> src/batou_type/cli.py:41:9
+  --> src/batou_type/cli.py:50:9
    |
-39 |               pkg = name.replace("-stubs", "")
-40 |               stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-41 | /         except Exception:
-42 | |             infos.append(StubInfo(name=name, version=None, path=None))
+48 |               pkg = name.replace("-stubs", "")
+49 |               stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+50 | /         except Exception:
+51 | |             infos.append(StubInfo(name=name, version=None, path=None))
    | |______________________________________________________________________^
-43 |           else:
-44 |               infos.append(StubInfo(name=name, version=ver, path=stub_path))
+52 |           else:
+53 |               infos.append(StubInfo(name=name, version=ver, path=stub_path))
    |
 
 BLE001 Do not catch blind exception: `Exception`
-  --> src/batou_type/cli.py:41:16
+  --> src/batou_type/cli.py:50:16
    |
-39 |             pkg = name.replace("-stubs", "")
-40 |             stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-41 |         except Exception:
+48 |             pkg = name.replace("-stubs", "")
+49 |             stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+50 |         except Exception:
    |                ^^^^^^^^^
-42 |             infos.append(StubInfo(name=name, version=None, path=None))
-43 |         else:
+51 |             infos.append(StubInfo(name=name, version=None, path=None))
+52 |         else:
    |
 
 E501 Line too long (97 > 88)
-  --> src/batou_type/cli.py:54:89
+  --> src/batou_type/cli.py:63:89
    |
-52 |     for info in get_stub_versions():
-53 |         if info.version:
-54 |             console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+61 |     for info in get_stub_versions():
+62 |         if info.version:
+63 |             console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
    |                                                                                         ^^^^^^^^^
-55 |         else:
-56 |             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
+64 |         else:
+65 |             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
+   |
+
+C901 `_run_check` is too complex (16 > 10)
+  --> src/batou_type/cli.py:68:5
+   |
+68 | def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
+   |     ^^^^^^^^^^
+69 |     """Execute type checking."""
+70 |     # Show stub versions and paths
+   |
+
+PLR0912 Too many branches (19 > 12)
+  --> src/batou_type/cli.py:68:5
+   |
+68 | def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
+   |     ^^^^^^^^^^
+69 |     """Execute type checking."""
+70 |     # Show stub versions and paths
+   |
+
+PLR0915 Too many statements (56 > 50)
+  --> src/batou_type/cli.py:68:5
+   |
+68 | def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
+   |     ^^^^^^^^^^
+69 |     """Execute type checking."""
+70 |     # Show stub versions and paths
    |
 
 DOC501 Raised exception `Exit` missing from docstring
-  --> src/batou_type/cli.py:60:5
+  --> src/batou_type/cli.py:69:5
    |
-59 | def _run_check(checker: list[Checker] | None) -> None:
-60 |     """Execute type checking."""
+68 | def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
+69 |     """Execute type checking."""
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-61 |     # Show stub versions and paths
-62 |     table = Table(title="Loaded stubs", show_header=False, box=None)
+70 |     # Show stub versions and paths
+71 |     table = Table(title="Loaded stubs", show_header=False, box=None)
    |
 help: Add `Exit` to the docstring
 
 E501 Line too long (95 > 88)
-  --> src/batou_type/cli.py:67:89
+  --> src/batou_type/cli.py:78:89
    |
-65 |     for info in get_stub_versions():
-66 |         if info.version:
-67 |             table.add_row(f"[cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+76 |     for info in stub_infos:
+77 |         if info.version and info.path:
+78 |             table.add_row(f"[cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
    |                                                                                         ^^^^^^^
-68 |         else:
-69 |             table.add_row(f"[yellow]{info.name}[/] [dim]<not installed>[/]")
+79 |             extra_search_paths.append(str(Path(info.path).parent.resolve()))
+80 |         else:
    |
 
-B008 Do not perform function call `typer.Option` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
-   --> src/batou_type/cli.py:106:37
+E501 Line too long (100 > 88)
+  --> src/batou_type/cli.py:94:89
+   |
+92 |         else:
+93 |             projects.extend(
+94 |                 child for child in sorted(p.iterdir()) if child.is_dir() and is_batou_project(child)
+   |                                                                                         ^^^^^^^^^^^^
+95 |             )
+   |
+
+E501 Line too long (91 > 88)
+   --> src/batou_type/cli.py:128:89
     |
-104 |   @app.command()
-105 |   def check(
-106 |       checker: list[Checker] | None = typer.Option(
-    |  _____________________________________^
-107 | |         None,
-108 | |         "--checker",
-109 | |         "-c",
-110 | |         help="Type checker(s) to run (default: ty)",
-111 | |     ),
+126 |         console.print()
+127 |
+128 |         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
+    |                                                                                         ^^^
+129 |         results = check_all(project, checkers, extra_search_paths=project_search_paths)
+    |
+
+T201 `print` found
+   --> src/batou_type/cli.py:139:21
+    |
+137 |                 console.print(f"[red]{'=' * 60}[/]")
+138 |                 if result.output.strip():
+139 |                     print(result.output.strip())
+    |                     ^^^^^
+140 |
+141 |     # Summary at the bottom
+    |
+help: Remove `print`
+
+B008 Do not perform function call `typer.Argument` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+   --> src/batou_type/cli.py:156:25
+    |
+154 |   @app.command()
+155 |   def check(
+156 |       paths: list[Path] = typer.Argument(
+    |  _________________________^
+157 | |         None,
+158 | |         help="Project directories to check (default: current directory)",
+159 | |     ),
     | |_____^
-112 |   ) -> None:
-113 |       """Type-check batou deployment components."""
+160 |       checker: list[Checker] | None = typer.Option(
+161 |           None,
+    |
+
+B008 Do not perform function call `typer.Option` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+   --> src/batou_type/cli.py:160:37
+    |
+158 |           help="Project directories to check (default: current directory)",
+159 |       ),
+160 |       checker: list[Checker] | None = typer.Option(
+    |  _____________________________________^
+161 | |         None,
+162 | |         "--checker",
+163 | |         "-c",
+164 | |         help="Type checker(s) to run (default: ty)",
+165 | |     ),
+    | |_____^
+166 |   ) -> None:
+167 |       """Type-check batou deployment components."""
     |
 
 CPY001 Missing copyright notice at top of file
 --> src/batou_type/core.py:1:1
 
 S404 `subprocess` module is possibly insecure
- --> src/batou_type/core.py:5:8
+ --> src/batou_type/core.py:3:8
   |
-3 | import io
-4 | import json
-5 | import subprocess
+1 | """Core type checking logic shared between CLI and pytest plugin."""
+2 |
+3 | import subprocess
   |        ^^^^^^^^^^
-6 | import sys
-7 | from dataclasses import dataclass
+4 | import sys
+5 | from dataclasses import dataclass
   |
+
+DOC201 `return` is not documented in docstring
+  --> src/batou_type/core.py:14:5
+   |
+13 | def find_project_venv(project: Path) -> Path | None:
+14 |     """Detect a project-level venv (.venv for uv, appenv for batou)."""
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |     for candidate in _VENV_CANDIDATES:
+16 |         venv_dir = project / candidate
+   |
+help: Add a "Returns" section to the docstring
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+  --> src/batou_type/core.py:17:9
+   |
+15 |       for candidate in _VENV_CANDIDATES:
+16 |           venv_dir = project / candidate
+17 | /         if venv_dir.is_dir():
+18 | |             # Verify it looks like a venv: has a site-packages or pyvenv.cfg
+19 | |             if (venv_dir / "pyvenv.cfg").exists() or (venv_dir / "lib").is_dir():
+   | |_________________________________________________________________________________^
+20 |                   return venv_dir
+21 |       return None
+   |
+help: Combine `if` statements using `and`
+
+DOC201 `return` is not documented in docstring
+  --> src/batou_type/core.py:25:5
+   |
+24 | def get_venv_site_packages(venv: Path) -> list[str]:
+25 |     """Extract site-packages paths from a venv."""
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 |     paths: list[str] = []
+27 |     # Standard layout: lib/pythonX.Y/site-packages
+   |
+help: Add a "Returns" section to the docstring
+
+PERF401 Use a list comprehension to create a transformed list
+  --> src/batou_type/core.py:29:9
+   |
+27 |     # Standard layout: lib/pythonX.Y/site-packages
+28 |     for sp in sorted(venv.glob("lib/python*/site-packages")):
+29 |         paths.append(str(sp))
+   |         ^^^^^^^^^^^^^^^^^^^^^
+30 |     # lib64 symlink (some Linux distros)
+31 |     for sp in sorted(venv.glob("lib64/python*/site-packages")):
+   |
+help: Replace for loop with list comprehension
 
 D101 Missing docstring in public class
-  --> src/batou_type/core.py:12:7
+  --> src/batou_type/core.py:38:7
    |
-12 | class Checker(str, Enum):
+38 | class Checker(str, Enum):
    |       ^^^^^^^
-13 |     ty = "ty"
-14 |     mypy = "mypy"
+39 |     ty = "ty"
+40 |     mypy = "mypy"
    |
 
 DOC201 `return` is not documented in docstring
-  --> src/batou_type/core.py:40:5
+  --> src/batou_type/core.py:64:5
    |
-39 | def find_components(root: Path) -> list[Path]:
-40 |     """Find all component files in the components directory."""
+63 | def is_batou_project(directory: Path) -> bool:
+64 |     """Check whether a directory looks like a batou project."""
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-41 |     components_dir = root / "components"
-42 |     if not components_dir.exists():
+65 |     return (directory / "components").is_dir()
    |
 help: Add a "Returns" section to the docstring
 
 DOC201 `return` is not documented in docstring
-  --> src/batou_type/core.py:52:5
+  --> src/batou_type/core.py:69:5
    |
-50 |     cwd: Path | None = None,
-51 | ) -> TypeCheckResult:
-52 |     """Run type checker(s) on a single file."""
+68 | def find_components(root: Path) -> list[Path]:
+69 |     """Find all component files in the components directory."""
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+70 |     components_dir = root / "components"
+71 |     if not components_dir.exists():
+   |
+help: Add a "Returns" section to the docstring
+
+DOC201 `return` is not documented in docstring
+  --> src/batou_type/core.py:82:5
+   |
+80 |     extra_search_paths: list[str] | None = None,
+81 | ) -> TypeCheckResult:
+82 |     """Run type checker(s) on a single file."""
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-53 |     checkers = checkers or [Checker.ty]
-54 |     cwd = cwd or Path.cwd()
+83 |     checkers = checkers or [Checker.ty]
+84 |     cwd = cwd or Path.cwd()
    |
 help: Add a "Returns" section to the docstring
 
 S603 `subprocess` call: check for execution of untrusted input
-  --> src/batou_type/core.py:74:22
-   |
-73 |         if c == Checker.basedpyright:
-74 |             result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-   |                      ^^^^^^^^^^^^^^
-75 |             filtered, has_errors = _filter_basedpyright_json(result.stdout)
-76 |             if filtered.strip():
-   |
+   --> src/batou_type/core.py:104:18
+    |
+102 |             ]
+103 |
+104 |         result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    |                  ^^^^^^^^^^^^^^
+105 |         if result.returncode != 0:
+106 |             any_failed = True
+    |
 
 PLW1510 `subprocess.run` without explicit `check` argument
-  --> src/batou_type/core.py:74:22
-   |
-73 |         if c == Checker.basedpyright:
-74 |             result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-   |                      ^^^^^^^^^^^^^^
-75 |             filtered, has_errors = _filter_basedpyright_json(result.stdout)
-76 |             if filtered.strip():
-   |
-help: Add explicit `check=False`
-
-S603 `subprocess` call: check for execution of untrusted input
-  --> src/batou_type/core.py:81:22
-   |
-79 |                 any_failed = True
-80 |         else:
-81 |             result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-   |                      ^^^^^^^^^^^^^^
-82 |             if result.returncode != 0:
-83 |                 any_failed = True
-   |
-
-PLW1510 `subprocess.run` without explicit `check` argument
-  --> src/batou_type/core.py:81:22
-   |
-79 |                 any_failed = True
-80 |         else:
-81 |             result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-   |                      ^^^^^^^^^^^^^^
-82 |             if result.returncode != 0:
-83 |                 any_failed = True
-   |
+   --> src/batou_type/core.py:104:18
+    |
+102 |             ]
+103 |
+104 |         result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    |                  ^^^^^^^^^^^^^^
+105 |         if result.returncode != 0:
+106 |             any_failed = True
+    |
 help: Add explicit `check=False`
 
 DOC201 `return` is not documented in docstring
-   --> src/batou_type/core.py:100:5
+   --> src/batou_type/core.py:124:5
     |
- 98 |     checkers: list[Checker] | None = None,
- 99 | ) -> list[TypeCheckResult]:
-100 |     """Type check all component files in a deployment."""
+122 |     extra_search_paths: list[str] | None = None,
+123 | ) -> list[TypeCheckResult]:
+124 |     """Type check all component files in a deployment."""
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-101 |     checkers = checkers or [Checker.ty]
+125 |     checkers = checkers or [Checker.ty]
     |
 help: Add a "Returns" section to the docstring
 
-COM812 [*] Trailing comma missing
-   --> src/batou_type/core.py:120:6
+E501 Line too long (92 > 88)
+   --> src/batou_type/core.py:132:89
     |
-118 |         "reportImplicitOverride",
-119 |         "reportUnannotatedClassAttribute",
-120 |     }
-    |      ^
-121 | )
+130 |     for component in components:
+131 |         rel_path = str(component.relative_to(root))
+132 |         result = check_file(rel_path, checkers, root, extra_search_paths=extra_search_paths)
+    |                                                                                         ^^^^
+133 |         results.append(result)
     |
-help: Add trailing comma
-117 |         "reportUninitializedInstanceVariable",
-118 |         "reportImplicitOverride",
-119 |         "reportUnannotatedClassAttribute",
-    -     }
-120 +     },
-121 | )
-122 | 
-123 | 
 
-DOC201 `return` is not documented in docstring
-   --> src/batou_type/core.py:125:5
+W391 [*] Extra newline at end of file
+   --> src/batou_type/core.py:136:1
     |
-124 | def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
-125 |     """Filter basedpyright JSON output, removing noise rules."""
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-126 |     try:
-127 |         data = json.loads(output)
+135 |     return results
+136 |
+    | ^
     |
-help: Add a "Returns" section to the docstring
+help: Remove trailing newline
+133 |         results.append(result)
+134 | 
+135 |     return results
+    - 
 
 CPY001 Missing copyright notice at top of file
 --> src/batou_type/pytest_plugin.py:1:1
@@ -454,11 +600,1481 @@ PLC0415 `import` should be at the top-level of a file
 94 |             match = re.search(r"Found (\d+) diagnostic", output)
    |
 
+INP001 File `testproject/components/bad_address/bad_address.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/bad_address/bad_address.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/bad_address/bad_address.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/bad_address/bad_address.py:7:7
+  |
+7 | class BadAddress(Component):
+  |       ^^^^^^^^^^
+8 |     def configure(self):
+9 |         # BUG: connect_address should be str, not int
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/bad_address/bad_address.py:8:9
+   |
+ 7 | class BadAddress(Component):
+ 8 |     def configure(self):
+   |         ^^^^^^^^^
+ 9 |         # BUG: connect_address should be str, not int
+10 |         self.addr = Address(42, 8080)
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/bad_address/bad_address.py:8:9
+   |
+ 7 | class BadAddress(Component):
+ 8 |     def configure(self):
+   |         ^^^^^^^^^
+ 9 |         # BUG: connect_address should be str, not int
+10 |         self.addr = Address(42, 8080)
+   |
+
+INP001 File `testproject/components/bad_content/bad_content.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/bad_content/bad_content.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/bad_content/bad_content.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/bad_content/bad_content.py:7:7
+  |
+7 | class BadContent(Component):
+  |       ^^^^^^^^^^
+8 |     def configure(self):
+9 |         # BUG: content should be str, not int
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/bad_content/bad_content.py:8:9
+   |
+ 7 | class BadContent(Component):
+ 8 |     def configure(self):
+   |         ^^^^^^^^^
+ 9 |         # BUG: content should be str, not int
+10 |         self += File("config.txt", content=12345)
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/bad_content/bad_content.py:8:9
+   |
+ 7 | class BadContent(Component):
+ 8 |     def configure(self):
+   |         ^^^^^^^^^
+ 9 |         # BUG: content should be str, not int
+10 |         self += File("config.txt", content=12345)
+   |
+
+INP001 File `testproject/components/bad_default/bad_default.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/bad_default/bad_default.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/bad_default/bad_default.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/bad_default/bad_default.py:6:7
+  |
+6 | class BadDefault(Component):
+  |       ^^^^^^^^^^
+7 |     # BUG: default is int but conversion is str
+8 |     name = Attribute(str, default=42)
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/bad_default/bad_default.py:10:9
+   |
+ 8 |     name = Attribute(str, default=42)
+ 9 |
+10 |     def configure(self):
+   |         ^^^^^^^^^
+11 |         pass
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/bad_default/bad_default.py:10:9
+   |
+ 8 |     name = Attribute(str, default=42)
+ 9 |
+10 |     def configure(self):
+   |         ^^^^^^^^^
+11 |         pass
+   |
+
+INP001 File `testproject/components/boto_bad_usage/boto_bad_usage.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/boto_bad_usage/boto_bad_usage.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/boto_bad_usage/boto_bad_usage.py:1:1
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> testproject/components/boto_bad_usage/boto_bad_usage.py:3:1
+  |
+1 |   """BUG: Type error using boto + batou - content expects str, gets S3Connection."""
+2 |
+3 | / from boto.s3.connection import S3Connection
+4 | | from batou.component import Attribute, Component
+5 | | from batou.lib.file import File
+  | |_______________________________^
+  |
+help: Organize imports
+1 | """BUG: Type error using boto + batou - content expects str, gets S3Connection."""
+2 | 
+  - from boto.s3.connection import S3Connection
+3 | from batou.component import Attribute, Component
+4 | from batou.lib.file import File
+5 + from boto.s3.connection import S3Connection
+6 | 
+7 | 
+8 | class BotoBadUsage(Component):
+
+D101 Missing docstring in public class
+ --> testproject/components/boto_bad_usage/boto_bad_usage.py:8:7
+  |
+8 | class BotoBadUsage(Component):
+  |       ^^^^^^^^^^^^
+9 |     bucket_name = Attribute(str, default="my-bucket")
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/boto_bad_usage/boto_bad_usage.py:11:9
+   |
+ 9 |     bucket_name = Attribute(str, default="my-bucket")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         conn: S3Connection = S3Connection()
+13 |         # BUG: File content expects str, but we pass an S3Connection object
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/boto_bad_usage/boto_bad_usage.py:11:9
+   |
+ 9 |     bucket_name = Attribute(str, default="my-bucket")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         conn: S3Connection = S3Connection()
+13 |         # BUG: File content expects str, but we pass an S3Connection object
+   |
+
+INP001 File `testproject/components/boto_usage/boto_usage.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/boto_usage/boto_usage.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/boto_usage/boto_usage.py:1:1
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> testproject/components/boto_usage/boto_usage.py:3:1
+  |
+1 |   """Harmless boto usage - should pass type check."""
+2 |
+3 | / from boto.s3.connection import S3Connection
+4 | | from batou.component import Attribute, Component
+5 | | from batou.lib.file import File
+  | |_______________________________^
+  |
+help: Organize imports
+1 | """Harmless boto usage - should pass type check."""
+2 | 
+  - from boto.s3.connection import S3Connection
+3 | from batou.component import Attribute, Component
+4 | from batou.lib.file import File
+5 + from boto.s3.connection import S3Connection
+6 | 
+7 | 
+8 | class BotoUsage(Component):
+
+D101 Missing docstring in public class
+ --> testproject/components/boto_usage/boto_usage.py:8:7
+  |
+8 | class BotoUsage(Component):
+  |       ^^^^^^^^^
+9 |     bucket_name = Attribute(str, default="my-bucket")
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/boto_usage/boto_usage.py:11:9
+   |
+ 9 |     bucket_name = Attribute(str, default="my-bucket")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         # Harmless: just building an S3 connection string
+13 |         # boto is untyped, so this should pass without errors
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/boto_usage/boto_usage.py:11:9
+   |
+ 9 |     bucket_name = Attribute(str, default="my-bucket")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         # Harmless: just building an S3 connection string
+13 |         # boto is untyped, so this should pass without errors
+   |
+
+F841 Local variable `conn` is assigned to but never used
+  --> testproject/components/boto_usage/boto_usage.py:14:9
+   |
+12 |         # Harmless: just building an S3 connection string
+13 |         # boto is untyped, so this should pass without errors
+14 |         conn: S3Connection = S3Connection()
+   |         ^^^^
+15 |         self.endpoint: str = f"s3://{self.bucket_name}"
+16 |         self += File("s3_config.txt", content=self.endpoint)
+   |
+help: Remove assignment to unused variable `conn`
+
+INP001 File `testproject/components/common/component.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/common/component.py:1:1
+
+D100 Missing docstring in public module
+--> testproject/components/common/component.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/common/component.py:1:1
+
+PGH004 Use specific rule codes when using `noqa`
+ --> testproject/components/common/component.py:3:39
+  |
+1 | from batou.component import Component
+2 | from batou_ext import nix
+3 | from batou_ext.fcio import Provision  # noqa
+  |                                       ^^^^^^
+  |
+
+D101 Missing docstring in public class
+ --> testproject/components/common/component.py:6:7
+  |
+6 | class Common(Component):
+  |       ^^^^^^
+7 |     def configure(self):
+8 |         self += nix.Package(attribute="nixos.nixfmt")
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+ --> testproject/components/common/component.py:7:9
+  |
+6 | class Common(Component):
+7 |     def configure(self):
+  |         ^^^^^^^^^
+8 |         self += nix.Package(attribute="nixos.nixfmt")
+  |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+ --> testproject/components/common/component.py:7:9
+  |
+6 | class Common(Component):
+7 |     def configure(self):
+  |         ^^^^^^^^^
+8 |         self += nix.Package(attribute="nixos.nixfmt")
+  |
+
+INP001 File `testproject/components/ext_test/component.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/ext_test/component.py:1:1
+
+D100 Missing docstring in public module
+--> testproject/components/ext_test/component.py:1:1
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> testproject/components/ext_test/component.py:1:1
+  |
+1 | / from batou.component import Component
+2 | |
+3 | | from batou_ext.cron import CronJob, SystemdTimer
+4 | | from batou_ext.file import SymlinkAndCleanup
+5 | | from batou_ext.mail import Mailpit
+6 | | from batou_ext.postgres import DB, User as PGUser
+7 | | from batou_ext.redis import Redis
+8 | | from batou_ext.run import Run
+  | |_____________________________^
+  |
+help: Organize imports
+1 | from batou.component import Component
+  - 
+2 | from batou_ext.cron import CronJob, SystemdTimer
+3 | from batou_ext.file import SymlinkAndCleanup
+4 | from batou_ext.mail import Mailpit
+  - from batou_ext.postgres import DB, User as PGUser
+5 + from batou_ext.postgres import DB
+6 + from batou_ext.postgres import User as PGUser
+7 | from batou_ext.redis import Redis
+8 | from batou_ext.run import Run
+9 | 
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/ext_test/component.py:1:1
+
+D101 Missing docstring in public class
+  --> testproject/components/ext_test/component.py:11:7
+   |
+11 | class ExtTest(Component):
+   |       ^^^^^^^
+12 |     def configure(self) -> None:
+13 |         # No-namevar component (keyword-only args)
+   |
+
+D102 Missing docstring in public method
+  --> testproject/components/ext_test/component.py:12:9
+   |
+11 | class ExtTest(Component):
+12 |     def configure(self) -> None:
+   |         ^^^^^^^^^
+13 |         # No-namevar component (keyword-only args)
+14 |         self += Redis(db=0, port=6379)
+   |
+
+COM812 [*] Trailing comma missing
+  --> testproject/components/ext_test/component.py:19:69
+   |
+17 |         self += CronJob("myjob", command="echo hello", timing="@daily")
+18 |         self += SystemdTimer(
+19 |             "timer1", command="echo hi", onCalendar="*-*-* 00:00:00"
+   |                                                                     ^
+20 |         )
+21 |         self += DB("mydb", owner="postgres")
+   |
+help: Add trailing comma
+16 |         # Namevar components
+17 |         self += CronJob("myjob", command="echo hello", timing="@daily")
+18 |         self += SystemdTimer(
+   -             "timer1", command="echo hi", onCalendar="*-*-* 00:00:00"
+19 +             "timer1", command="echo hi", onCalendar="*-*-* 00:00:00",
+20 |         )
+21 |         self += DB("mydb", owner="postgres")
+22 |         self += PGUser("myuser", password="secret")
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> testproject/components/ext_test/component.py:22:34
+   |
+20 |         )
+21 |         self += DB("mydb", owner="postgres")
+22 |         self += PGUser("myuser", password="secret")
+   |                                  ^^^^^^^^^^^^^^^^^
+23 |         self += Run("echo test")
+24 |         self += SymlinkAndCleanup("/srv/app/current")
+   |
+
+INP001 File `testproject/components/foo/foo.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/foo/foo.py:1:1
+
+D100 Missing docstring in public module
+--> testproject/components/foo/foo.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/foo/foo.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/foo/foo.py:6:7
+  |
+6 | class Foo(Component):
+  |       ^^^
+7 |     # Secrets
+8 |     admin_password = Attribute(str, default=None)
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/foo/foo.py:15:9
+   |
+13 |     port = Attribute(int, default=8080)
+14 |
+15 |     def configure(self):
+   |         ^^^^^^^^^
+16 |         if self.create_admin:
+17 |             self += File(
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/foo/foo.py:15:9
+   |
+13 |     port = Attribute(int, default=8080)
+14 |
+15 |     def configure(self):
+   |         ^^^^^^^^^
+16 |         if self.create_admin:
+17 |             self += File(
+   |
+
+INP001 File `testproject/components/httpx_bad_usage/httpx_bad_usage.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/httpx_bad_usage/httpx_bad_usage.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/httpx_bad_usage/httpx_bad_usage.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/httpx_bad_usage/httpx_bad_usage.py:8:7
+  |
+8 | class HttpxBadUsage(Component):
+  |       ^^^^^^^^^^^^^
+9 |     api_url = Attribute(str, default="https://api.example.com")
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/httpx_bad_usage/httpx_bad_usage.py:11:9
+   |
+ 9 |     api_url = Attribute(str, default="https://api.example.com")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         # BUG: timeout expects float/Timeout, not str
+13 |         client = httpx.Client(
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/httpx_bad_usage/httpx_bad_usage.py:11:9
+   |
+ 9 |     api_url = Attribute(str, default="https://api.example.com")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         # BUG: timeout expects float/Timeout, not str
+13 |         client = httpx.Client(
+   |
+
+F841 Local variable `client` is assigned to but never used
+  --> testproject/components/httpx_bad_usage/httpx_bad_usage.py:13:9
+   |
+11 |     def configure(self):
+12 |         # BUG: timeout expects float/Timeout, not str
+13 |         client = httpx.Client(
+   |         ^^^^^^
+14 |             base_url=self.api_url,
+15 |             timeout="thirty seconds",
+   |
+help: Remove assignment to unused variable `client`
+
+INP001 File `testproject/components/httpx_usage/httpx_usage.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/httpx_usage/httpx_usage.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/httpx_usage/httpx_usage.py:1:1
+
+D101 Missing docstring in public class
+ --> testproject/components/httpx_usage/httpx_usage.py:8:7
+  |
+8 | class HttpxUsage(Component):
+  |       ^^^^^^^^^^
+9 |     api_url = Attribute(str, default="https://api.example.com")
+  |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/httpx_usage/httpx_usage.py:11:9
+   |
+ 9 |     api_url = Attribute(str, default="https://api.example.com")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         client = httpx.Client(
+13 |             base_url=self.api_url,
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/httpx_usage/httpx_usage.py:11:9
+   |
+ 9 |     api_url = Attribute(str, default="https://api.example.com")
+10 |
+11 |     def configure(self):
+   |         ^^^^^^^^^
+12 |         client = httpx.Client(
+13 |             base_url=self.api_url,
+   |
+
+F841 Local variable `client` is assigned to but never used
+  --> testproject/components/httpx_usage/httpx_usage.py:12:9
+   |
+11 |     def configure(self):
+12 |         client = httpx.Client(
+   |         ^^^^^^
+13 |             base_url=self.api_url,
+14 |             timeout=30.0,
+   |
+help: Remove assignment to unused variable `client`
+
+INP001 File `testproject/components/multi_error/multi_error.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/multi_error/multi_error.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/multi_error/multi_error.py:1:1
+
+E501 Line too long (98 > 88)
+ --> testproject/components/multi_error/multi_error.py:1:89
+  |
+1 | """BUG: Multiple errors — wrong Address args + wrong File content + calling nonexistent method."""
+  |                                                                                         ^^^^^^^^^^
+2 |
+3 | from batou.component import Component
+  |
+
+D101 Missing docstring in public class
+  --> testproject/components/multi_error/multi_error.py:8:7
+   |
+ 8 | class MultiError(Component):
+   |       ^^^^^^^^^^
+ 9 |     def configure(self):
+10 |         # BUG 1: Address expects str, gets list
+   |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/multi_error/multi_error.py:9:9
+   |
+ 8 | class MultiError(Component):
+ 9 |     def configure(self):
+   |         ^^^^^^^^^
+10 |         # BUG 1: Address expects str, gets list
+11 |         self.addr = Address(["not", "a", "string"], "not_a_port")
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/multi_error/multi_error.py:9:9
+   |
+ 8 | class MultiError(Component):
+ 9 |     def configure(self):
+   |         ^^^^^^^^^
+10 |         # BUG 1: Address expects str, gets list
+11 |         self.addr = Address(["not", "a", "string"], "not_a_port")
+   |
+
+INP001 File `testproject/components/silent_bugs/silent_bugs.py` is part of an implicit namespace package. Add an `__init__.py`.
+--> testproject/components/silent_bugs/silent_bugs.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> testproject/components/silent_bugs/silent_bugs.py:1:1
+
+D101 Missing docstring in public class
+  --> testproject/components/silent_bugs/silent_bugs.py:8:7
+   |
+ 8 | class SilentBugs(Component):
+   |       ^^^^^^^^^^
+ 9 |     fqdn = Attribute(str)
+10 |     port = Attribute(int, default=8080)
+   |
+
+ANN201 Missing return type annotation for public function `configure`
+  --> testproject/components/silent_bugs/silent_bugs.py:12:9
+   |
+10 |     port = Attribute(int, default=8080)
+11 |
+12 |     def configure(self):
+   |         ^^^^^^^^^
+13 |         self.address: Address = Address(self.fqdn, self.port)
+   |
+help: Add return type annotation: `None`
+
+D102 Missing docstring in public method
+  --> testproject/components/silent_bugs/silent_bugs.py:12:9
+   |
+10 |     port = Attribute(int, default=8080)
+11 |
+12 |     def configure(self):
+   |         ^^^^^^^^^
+13 |         self.address: Address = Address(self.fqdn, self.port)
+   |
+
+FBT003 Boolean positional value in function call
+  --> testproject/components/silent_bugs/silent_bugs.py:21:56
+   |
+19 |         # BUG: passing bool where int expected for port
+20 |         # Likely false negative: int/bool subtype relationship
+21 |         self.other_addr = Address("other.example.com", True)
+   |                                                        ^^^^
+22 |
+23 |         # BUG: sensitive_data expects bool, passing string "yes"
+   |
+
 D104 Missing docstring in public package
 --> tests/__init__.py:1:1
 
 CPY001 Missing copyright notice at top of file
 --> tests/__init__.py:1:1
+
+CPY001 Missing copyright notice at top of file
+--> tests/test_functional.py:1:1
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/test_functional.py:3:1
+  |
+1 |   """Functional E2E tests for batou-type CLI."""
+2 |
+3 | / import subprocess
+4 | | import sys
+5 | | from pathlib import Path
+6 | |
+7 | | import pytest
+  | |_____________^
+  |
+help: Organize imports
+6  | 
+7  | import pytest
+8  | 
+   - 
+9  | SRC = Path(__file__).parent.parent / "src"
+10 | BATOU_TYPE_CLI = [sys.executable, "-m", "batou_type"]
+11 | 
+
+S404 `subprocess` module is possibly insecure
+ --> tests/test_functional.py:3:8
+  |
+1 | """Functional E2E tests for batou-type CLI."""
+2 |
+3 | import subprocess
+  |        ^^^^^^^^^^
+4 | import sys
+5 | from pathlib import Path
+  |
+
+ANN201 Missing return type annotation for public function `temp_project`
+  --> tests/test_functional.py:15:5
+   |
+14 | @pytest.fixture
+15 | def temp_project(tmp_path):
+   |     ^^^^^^^^^^^^
+16 |     """Create a temporary batou project with components directory."""
+17 |     components = tmp_path / "components"
+   |
+help: Add return type annotation
+
+ANN001 Missing type annotation for function argument `tmp_path`
+  --> tests/test_functional.py:15:18
+   |
+14 | @pytest.fixture
+15 | def temp_project(tmp_path):
+   |                  ^^^^^^^^
+16 |     """Create a temporary batou project with components directory."""
+17 |     components = tmp_path / "components"
+   |
+
+DOC201 `return` is not documented in docstring
+  --> tests/test_functional.py:16:5
+   |
+14 | @pytest.fixture
+15 | def temp_project(tmp_path):
+16 |     """Create a temporary batou project with components directory."""
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |     components = tmp_path / "components"
+18 |     components.mkdir()
+   |
+help: Add a "Returns" section to the docstring
+
+ANN201 Missing return type annotation for public function `run_cli`
+  --> tests/test_functional.py:22:5
+   |
+22 | def run_cli(*args, cwd=None):
+   |     ^^^^^^^
+23 |     """Run batou-type CLI and return result."""
+24 |     result = subprocess.run(
+   |
+help: Add return type annotation
+
+ANN002 Missing type annotation for `*args`
+  --> tests/test_functional.py:22:13
+   |
+22 | def run_cli(*args, cwd=None):
+   |             ^^^^^
+23 |     """Run batou-type CLI and return result."""
+24 |     result = subprocess.run(
+   |
+
+ANN001 Missing type annotation for function argument `cwd`
+  --> tests/test_functional.py:22:20
+   |
+22 | def run_cli(*args, cwd=None):
+   |                    ^^^
+23 |     """Run batou-type CLI and return result."""
+24 |     result = subprocess.run(
+   |
+
+DOC201 `return` is not documented in docstring
+  --> tests/test_functional.py:23:5
+   |
+22 | def run_cli(*args, cwd=None):
+23 |     """Run batou-type CLI and return result."""
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |     result = subprocess.run(
+25 |         [*BATOU_TYPE_CLI, *args],
+   |
+help: Add a "Returns" section to the docstring
+
+S603 `subprocess` call: check for execution of untrusted input
+  --> tests/test_functional.py:24:14
+   |
+22 | def run_cli(*args, cwd=None):
+23 |     """Run batou-type CLI and return result."""
+24 |     result = subprocess.run(
+   |              ^^^^^^^^^^^^^^
+25 |         [*BATOU_TYPE_CLI, *args],
+26 |         cwd=cwd,
+   |
+
+PLW1510 `subprocess.run` without explicit `check` argument
+  --> tests/test_functional.py:24:14
+   |
+22 | def run_cli(*args, cwd=None):
+23 |     """Run batou-type CLI and return result."""
+24 |     result = subprocess.run(
+   |              ^^^^^^^^^^^^^^
+25 |         [*BATOU_TYPE_CLI, *args],
+26 |         cwd=cwd,
+   |
+help: Add explicit `check=False`
+
+RET504 Unnecessary assignment to `result` before `return` statement
+  --> tests/test_functional.py:30:12
+   |
+28 |         text=True,
+29 |     )
+30 |     return result
+   |            ^^^^^^
+   |
+help: Remove unnecessary assignment
+
+ANN201 Missing return type annotation for public function `test_version_shows_batou_type_version`
+  --> tests/test_functional.py:36:9
+   |
+34 |     """Tests for version command."""
+35 |
+36 |     def test_version_shows_batou_type_version(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+37 |         """Version command shows batou-type version."""
+38 |         result = run_cli("version", cwd=tmp_path)
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_version_shows_batou_type_version` could be a function, class method, or static method
+  --> tests/test_functional.py:36:9
+   |
+34 |     """Tests for version command."""
+35 |
+36 |     def test_version_shows_batou_type_version(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+37 |         """Version command shows batou-type version."""
+38 |         result = run_cli("version", cwd=tmp_path)
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `tmp_path`
+  --> tests/test_functional.py:36:53
+   |
+34 |     """Tests for version command."""
+35 |
+36 |     def test_version_shows_batou_type_version(self, tmp_path):
+   |                                                     ^^^^^^^^
+37 |         """Version command shows batou-type version."""
+38 |         result = run_cli("version", cwd=tmp_path)
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:39:9
+   |
+37 |         """Version command shows batou-type version."""
+38 |         result = run_cli("version", cwd=tmp_path)
+39 |         assert result.returncode == 0
+   |         ^^^^^^
+40 |         assert "batou-type" in result.stdout.lower()
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:40:9
+   |
+38 |         result = run_cli("version", cwd=tmp_path)
+39 |         assert result.returncode == 0
+40 |         assert "batou-type" in result.stdout.lower()
+   |         ^^^^^^
+41 |
+42 |     def test_version_shows_stub_info(self, tmp_path):
+   |
+
+ANN201 Missing return type annotation for public function `test_version_shows_stub_info`
+  --> tests/test_functional.py:42:9
+   |
+40 |         assert "batou-type" in result.stdout.lower()
+41 |
+42 |     def test_version_shows_stub_info(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+43 |         """Version command shows stub package info."""
+44 |         result = run_cli("version", cwd=tmp_path)
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_version_shows_stub_info` could be a function, class method, or static method
+  --> tests/test_functional.py:42:9
+   |
+40 |         assert "batou-type" in result.stdout.lower()
+41 |
+42 |     def test_version_shows_stub_info(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+43 |         """Version command shows stub package info."""
+44 |         result = run_cli("version", cwd=tmp_path)
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `tmp_path`
+  --> tests/test_functional.py:42:44
+   |
+40 |         assert "batou-type" in result.stdout.lower()
+41 |
+42 |     def test_version_shows_stub_info(self, tmp_path):
+   |                                            ^^^^^^^^
+43 |         """Version command shows stub package info."""
+44 |         result = run_cli("version", cwd=tmp_path)
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:45:9
+   |
+43 |         """Version command shows stub package info."""
+44 |         result = run_cli("version", cwd=tmp_path)
+45 |         assert "batou-stubs" in result.stdout.lower()
+   |         ^^^^^^
+   |
+
+ANN201 Missing return type annotation for public function `test_check_no_components_exits_zero`
+  --> tests/test_functional.py:51:9
+   |
+49 |     """Tests for check command."""
+50 |
+51 |     def test_check_no_components_exits_zero(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |         """Check with no component files exits 0."""
+53 |         result = run_cli("check", cwd=tmp_path)
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_no_components_exits_zero` could be a function, class method, or static method
+  --> tests/test_functional.py:51:9
+   |
+49 |     """Tests for check command."""
+50 |
+51 |     def test_check_no_components_exits_zero(self, tmp_path):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |         """Check with no component files exits 0."""
+53 |         result = run_cli("check", cwd=tmp_path)
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `tmp_path`
+  --> tests/test_functional.py:51:51
+   |
+49 |     """Tests for check command."""
+50 |
+51 |     def test_check_no_components_exits_zero(self, tmp_path):
+   |                                                   ^^^^^^^^
+52 |         """Check with no component files exits 0."""
+53 |         result = run_cli("check", cwd=tmp_path)
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:54:9
+   |
+52 |         """Check with no component files exits 0."""
+53 |         result = run_cli("check", cwd=tmp_path)
+54 |         assert result.returncode == 0
+   |         ^^^^^^
+55 |         assert "no component files found" in result.stdout.lower()
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:55:9
+   |
+53 |         result = run_cli("check", cwd=tmp_path)
+54 |         assert result.returncode == 0
+55 |         assert "no component files found" in result.stdout.lower()
+   |         ^^^^^^
+56 |
+57 |     def test_check_clean_component_exits_zero(self, temp_project):
+   |
+
+ANN201 Missing return type annotation for public function `test_check_clean_component_exits_zero`
+  --> tests/test_functional.py:57:9
+   |
+55 |         assert "no component files found" in result.stdout.lower()
+56 |
+57 |     def test_check_clean_component_exits_zero(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+58 |         """Check with valid component files exits 0."""
+59 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_clean_component_exits_zero` could be a function, class method, or static method
+  --> tests/test_functional.py:57:9
+   |
+55 |         assert "no component files found" in result.stdout.lower()
+56 |
+57 |     def test_check_clean_component_exits_zero(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+58 |         """Check with valid component files exits 0."""
+59 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+  --> tests/test_functional.py:57:53
+   |
+55 |         assert "no component files found" in result.stdout.lower()
+56 |
+57 |     def test_check_clean_component_exits_zero(self, temp_project):
+   |                                                     ^^^^^^^^^^^^
+58 |         """Check with valid component files exits 0."""
+59 |         component = temp_project / "components" / "mycomponent.py"
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:63:9
+   |
+62 |         result = run_cli("check", cwd=temp_project)
+63 |         assert result.returncode == 0
+   |         ^^^^^^
+64 |         assert "0 file" in result.stdout.lower()
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:64:9
+   |
+62 |         result = run_cli("check", cwd=temp_project)
+63 |         assert result.returncode == 0
+64 |         assert "0 file" in result.stdout.lower()
+   |         ^^^^^^
+65 |
+66 |     def test_check_component_with_type_error_exits_one(self, temp_project):
+   |
+
+ANN201 Missing return type annotation for public function `test_check_component_with_type_error_exits_one`
+  --> tests/test_functional.py:66:9
+   |
+64 |         assert "0 file" in result.stdout.lower()
+65 |
+66 |     def test_check_component_with_type_error_exits_one(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+67 |         """Check with type errors exits 1."""
+68 |         component = temp_project / "components" / "badcomponent.py"
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_component_with_type_error_exits_one` could be a function, class method, or static method
+  --> tests/test_functional.py:66:9
+   |
+64 |         assert "0 file" in result.stdout.lower()
+65 |
+66 |     def test_check_component_with_type_error_exits_one(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+67 |         """Check with type errors exits 1."""
+68 |         component = temp_project / "components" / "badcomponent.py"
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+  --> tests/test_functional.py:66:62
+   |
+64 |         assert "0 file" in result.stdout.lower()
+65 |
+66 |     def test_check_component_with_type_error_exits_one(self, temp_project):
+   |                                                              ^^^^^^^^^^^^
+67 |         """Check with type errors exits 1."""
+68 |         component = temp_project / "components" / "badcomponent.py"
+   |
+
+COM812 [*] Trailing comma missing
+  --> tests/test_functional.py:70:65
+   |
+68 |         component = temp_project / "components" / "badcomponent.py"
+69 |         component.write_text(
+70 |             "def configure() -> int:\n    return 'not an int'\n"
+   |                                                                 ^
+71 |         )
+   |
+help: Add trailing comma
+67 |         """Check with type errors exits 1."""
+68 |         component = temp_project / "components" / "badcomponent.py"
+69 |         component.write_text(
+   -             "def configure() -> int:\n    return 'not an int'\n"
+70 +             "def configure() -> int:\n    return 'not an int'\n",
+71 |         )
+72 | 
+73 |         result = run_cli("check", cwd=temp_project)
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:74:9
+   |
+73 |         result = run_cli("check", cwd=temp_project)
+74 |         assert result.returncode == 1
+   |         ^^^^^^
+75 |
+76 |     def test_check_with_ty_checker(self, temp_project):
+   |
+
+ANN201 Missing return type annotation for public function `test_check_with_ty_checker`
+  --> tests/test_functional.py:76:9
+   |
+74 |         assert result.returncode == 1
+75 |
+76 |     def test_check_with_ty_checker(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+77 |         """Check with explicit -c ty works."""
+78 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_with_ty_checker` could be a function, class method, or static method
+  --> tests/test_functional.py:76:9
+   |
+74 |         assert result.returncode == 1
+75 |
+76 |     def test_check_with_ty_checker(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+77 |         """Check with explicit -c ty works."""
+78 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+  --> tests/test_functional.py:76:42
+   |
+74 |         assert result.returncode == 1
+75 |
+76 |     def test_check_with_ty_checker(self, temp_project):
+   |                                          ^^^^^^^^^^^^
+77 |         """Check with explicit -c ty works."""
+78 |         component = temp_project / "components" / "mycomponent.py"
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:82:9
+   |
+81 |         result = run_cli("check", "-c", "ty", cwd=temp_project)
+82 |         assert result.returncode == 0
+   |         ^^^^^^
+83 |
+84 |     def test_check_with_mypy_checker(self, temp_project):
+   |
+
+ANN201 Missing return type annotation for public function `test_check_with_mypy_checker`
+  --> tests/test_functional.py:84:9
+   |
+82 |         assert result.returncode == 0
+83 |
+84 |     def test_check_with_mypy_checker(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+85 |         """Check with explicit -c mypy works."""
+86 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_with_mypy_checker` could be a function, class method, or static method
+  --> tests/test_functional.py:84:9
+   |
+82 |         assert result.returncode == 0
+83 |
+84 |     def test_check_with_mypy_checker(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+85 |         """Check with explicit -c mypy works."""
+86 |         component = temp_project / "components" / "mycomponent.py"
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+  --> tests/test_functional.py:84:44
+   |
+82 |         assert result.returncode == 0
+83 |
+84 |     def test_check_with_mypy_checker(self, temp_project):
+   |                                            ^^^^^^^^^^^^
+85 |         """Check with explicit -c mypy works."""
+86 |         component = temp_project / "components" / "mycomponent.py"
+   |
+
+S101 Use of `assert` detected
+  --> tests/test_functional.py:91:9
+   |
+89 |         result = run_cli("check", "-c", "mypy", cwd=temp_project)
+90 |         # mypy might not be installed, but command should not crash
+91 |         assert result.returncode in (0, 1, 2)  # 2 = checker not found
+   |         ^^^^^^
+92 |
+93 |     def test_check_multiple_components(self, temp_project):
+   |
+
+PLR6201 Use a set literal when testing for membership
+  --> tests/test_functional.py:91:37
+   |
+89 |         result = run_cli("check", "-c", "mypy", cwd=temp_project)
+90 |         # mypy might not be installed, but command should not crash
+91 |         assert result.returncode in (0, 1, 2)  # 2 = checker not found
+   |                                     ^^^^^^^^^
+92 |
+93 |     def test_check_multiple_components(self, temp_project):
+   |
+help: Convert to `set`
+
+ANN201 Missing return type annotation for public function `test_check_multiple_components`
+  --> tests/test_functional.py:93:9
+   |
+91 |         assert result.returncode in (0, 1, 2)  # 2 = checker not found
+92 |
+93 |     def test_check_multiple_components(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+94 |         """Check handles multiple component files."""
+95 |         (temp_project / "components" / "comp1.py").write_text("def foo():\n    pass\n")
+   |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_multiple_components` could be a function, class method, or static method
+  --> tests/test_functional.py:93:9
+   |
+91 |         assert result.returncode in (0, 1, 2)  # 2 = checker not found
+92 |
+93 |     def test_check_multiple_components(self, temp_project):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+94 |         """Check handles multiple component files."""
+95 |         (temp_project / "components" / "comp1.py").write_text("def foo():\n    pass\n")
+   |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+  --> tests/test_functional.py:93:46
+   |
+91 |         assert result.returncode in (0, 1, 2)  # 2 = checker not found
+92 |
+93 |     def test_check_multiple_components(self, temp_project):
+   |                                              ^^^^^^^^^^^^
+94 |         """Check handles multiple component files."""
+95 |         (temp_project / "components" / "comp1.py").write_text("def foo():\n    pass\n")
+   |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:99:9
+    |
+ 98 |         result = run_cli("check", cwd=temp_project)
+ 99 |         assert result.returncode == 0
+    |         ^^^^^^
+100 |         # Should check multiple files
+101 |         assert "2 component" in result.stdout.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:101:9
+    |
+ 99 |         assert result.returncode == 0
+100 |         # Should check multiple files
+101 |         assert "2 component" in result.stdout.lower()
+    |         ^^^^^^
+102 |
+103 |     def test_check_nested_components(self, temp_project):
+    |
+
+ANN201 Missing return type annotation for public function `test_check_nested_components`
+   --> tests/test_functional.py:103:9
+    |
+101 |         assert "2 component" in result.stdout.lower()
+102 |
+103 |     def test_check_nested_components(self, temp_project):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+104 |         """Check finds components in nested directories."""
+105 |         nested = temp_project / "components" / "subpackage"
+    |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_nested_components` could be a function, class method, or static method
+   --> tests/test_functional.py:103:9
+    |
+101 |         assert "2 component" in result.stdout.lower()
+102 |
+103 |     def test_check_nested_components(self, temp_project):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+104 |         """Check finds components in nested directories."""
+105 |         nested = temp_project / "components" / "subpackage"
+    |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+   --> tests/test_functional.py:103:44
+    |
+101 |         assert "2 component" in result.stdout.lower()
+102 |
+103 |     def test_check_nested_components(self, temp_project):
+    |                                            ^^^^^^^^^^^^
+104 |         """Check finds components in nested directories."""
+105 |         nested = temp_project / "components" / "subpackage"
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:110:9
+    |
+109 |         result = run_cli("check", cwd=temp_project)
+110 |         assert result.returncode == 0
+    |         ^^^^^^
+    |
+
+ANN201 Missing return type annotation for public function `test_help_shows_commands`
+   --> tests/test_functional.py:116:9
+    |
+114 |     """Tests for help output."""
+115 |
+116 |     def test_help_shows_commands(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+117 |         """--help shows available commands."""
+118 |         result = run_cli("--help")
+    |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_help_shows_commands` could be a function, class method, or static method
+   --> tests/test_functional.py:116:9
+    |
+114 |     """Tests for help output."""
+115 |
+116 |     def test_help_shows_commands(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+117 |         """--help shows available commands."""
+118 |         result = run_cli("--help")
+    |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:119:9
+    |
+117 |         """--help shows available commands."""
+118 |         result = run_cli("--help")
+119 |         assert result.returncode == 0
+    |         ^^^^^^
+120 |         assert "check" in result.stdout.lower()
+121 |         assert "version" in result.stdout.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:120:9
+    |
+118 |         result = run_cli("--help")
+119 |         assert result.returncode == 0
+120 |         assert "check" in result.stdout.lower()
+    |         ^^^^^^
+121 |         assert "version" in result.stdout.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:121:9
+    |
+119 |         assert result.returncode == 0
+120 |         assert "check" in result.stdout.lower()
+121 |         assert "version" in result.stdout.lower()
+    |         ^^^^^^
+122 |
+123 |     def test_check_help_shows_options(self):
+    |
+
+ANN201 Missing return type annotation for public function `test_check_help_shows_options`
+   --> tests/test_functional.py:123:9
+    |
+121 |         assert "version" in result.stdout.lower()
+122 |
+123 |     def test_check_help_shows_options(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+124 |         """check --help shows options."""
+125 |         result = run_cli("check", "--help")
+    |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_check_help_shows_options` could be a function, class method, or static method
+   --> tests/test_functional.py:123:9
+    |
+121 |         assert "version" in result.stdout.lower()
+122 |
+123 |     def test_check_help_shows_options(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+124 |         """check --help shows options."""
+125 |         result = run_cli("check", "--help")
+    |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+D403 [*] First word of the docstring should be capitalized: `check` -> `Check`
+   --> tests/test_functional.py:124:9
+    |
+123 |     def test_check_help_shows_options(self):
+124 |         """check --help shows options."""
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+125 |         result = run_cli("check", "--help")
+126 |         assert result.returncode == 0
+    |
+help: Capitalize `check` to `Check`
+121 |         assert "version" in result.stdout.lower()
+122 | 
+123 |     def test_check_help_shows_options(self):
+    -         """check --help shows options."""
+124 +         """Check --help shows options."""
+125 |         result = run_cli("check", "--help")
+126 |         assert result.returncode == 0
+127 |         assert "--checker" in result.stdout.lower()
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:126:9
+    |
+124 |         """check --help shows options."""
+125 |         result = run_cli("check", "--help")
+126 |         assert result.returncode == 0
+    |         ^^^^^^
+127 |         assert "--checker" in result.stdout.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:127:9
+    |
+125 |         result = run_cli("check", "--help")
+126 |         assert result.returncode == 0
+127 |         assert "--checker" in result.stdout.lower()
+    |         ^^^^^^
+128 |
+129 |     def test_bad_command_shows_error(self):
+    |
+
+ANN201 Missing return type annotation for public function `test_bad_command_shows_error`
+   --> tests/test_functional.py:129:9
+    |
+127 |         assert "--checker" in result.stdout.lower()
+128 |
+129 |     def test_bad_command_shows_error(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+130 |         """Invalid command shows error message."""
+131 |         result = run_cli("nonexistent")
+    |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_bad_command_shows_error` could be a function, class method, or static method
+   --> tests/test_functional.py:129:9
+    |
+127 |         assert "--checker" in result.stdout.lower()
+128 |
+129 |     def test_bad_command_shows_error(self):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+130 |         """Invalid command shows error message."""
+131 |         result = run_cli("nonexistent")
+    |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:132:9
+    |
+130 |         """Invalid command shows error message."""
+131 |         result = run_cli("nonexistent")
+132 |         assert result.returncode == 2
+    |         ^^^^^^
+133 |         # Typer outputs errors to stderr
+134 |         assert "no such command" in result.stderr.lower()
+    |
+
+PLR2004 Magic value used in comparison, consider replacing `2` with a constant variable
+   --> tests/test_functional.py:132:37
+    |
+130 |         """Invalid command shows error message."""
+131 |         result = run_cli("nonexistent")
+132 |         assert result.returncode == 2
+    |                                     ^
+133 |         # Typer outputs errors to stderr
+134 |         assert "no such command" in result.stderr.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:134:9
+    |
+132 |         assert result.returncode == 2
+133 |         # Typer outputs errors to stderr
+134 |         assert "no such command" in result.stderr.lower()
+    |         ^^^^^^
+    |
+
+ANN201 Missing return type annotation for public function `test_invalid_checker_shows_error`
+   --> tests/test_functional.py:140:9
+    |
+138 |     """Tests for error handling."""
+139 |
+140 |     def test_invalid_checker_shows_error(self, temp_project):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+141 |         """Invalid checker name shows clear error."""
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+    |
+help: Add return type annotation: `None`
+
+PLR6301 Method `test_invalid_checker_shows_error` could be a function, class method, or static method
+   --> tests/test_functional.py:140:9
+    |
+138 |     """Tests for error handling."""
+139 |
+140 |     def test_invalid_checker_shows_error(self, temp_project):
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+141 |         """Invalid checker name shows clear error."""
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+    |
+help: Consider adding `@typing.override` if this method overrides a method from a superclass
+
+ANN001 Missing type annotation for function argument `temp_project`
+   --> tests/test_functional.py:140:48
+    |
+138 |     """Tests for error handling."""
+139 |
+140 |     def test_invalid_checker_shows_error(self, temp_project):
+    |                                                ^^^^^^^^^^^^
+141 |         """Invalid checker name shows clear error."""
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:143:9
+    |
+141 |         """Invalid checker name shows clear error."""
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+143 |         assert result.returncode == 2
+    |         ^^^^^^
+144 |         # Typer outputs errors to stderr
+145 |         assert "invalid" in result.stderr.lower()
+    |
+
+PLR2004 Magic value used in comparison, consider replacing `2` with a constant variable
+   --> tests/test_functional.py:143:37
+    |
+141 |         """Invalid checker name shows clear error."""
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+143 |         assert result.returncode == 2
+    |                                     ^
+144 |         # Typer outputs errors to stderr
+145 |         assert "invalid" in result.stderr.lower()
+    |
+
+S101 Use of `assert` detected
+   --> tests/test_functional.py:145:9
+    |
+143 |         assert result.returncode == 2
+144 |         # Typer outputs errors to stderr
+145 |         assert "invalid" in result.stderr.lower()
+    |         ^^^^^^
+    |
+
+W292 [*] No newline at end of file
+   --> tests/test_functional.py:145:50
+    |
+143 |         assert result.returncode == 2
+144 |         # Typer outputs errors to stderr
+145 |         assert "invalid" in result.stderr.lower()
+    |                                                  ^
+    |
+help: Add trailing newline
+142 |         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
+143 |         assert result.returncode == 2
+144 |         # Typer outputs errors to stderr
+    -         assert "invalid" in result.stderr.lower()
+145 +         assert "invalid" in result.stderr.lower()
 
 CPY001 Missing copyright notice at top of file
 --> tests/test_refactor_contract.py:1:1
@@ -905,5 +2521,5 @@ S101 Use of `assert` detected
     |     ^^^^^^
     |
 
-Found 84 errors.
-[*] 9 fixable with the `--fix` option (15 hidden fixes can be enabled with the `--unsafe-fixes` option).
+Found 245 errors.
+[*] 18 fixable with the `--fix` option (46 hidden fixes can be enabled with the `--unsafe-fixes` option).

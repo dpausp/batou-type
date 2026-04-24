@@ -1,1 +1,37 @@
-All checks passed!
+F841 Local variable `conn` is assigned to but never used
+  --> testproject/components/boto_usage/boto_usage.py:14:9
+   |
+12 |         # Harmless: just building an S3 connection string
+13 |         # boto is untyped, so this should pass without errors
+14 |         conn: S3Connection = S3Connection()
+   |         ^^^^
+15 |         self.endpoint: str = f"s3://{self.bucket_name}"
+16 |         self += File("s3_config.txt", content=self.endpoint)
+   |
+help: Remove assignment to unused variable `conn`
+
+F841 Local variable `client` is assigned to but never used
+  --> testproject/components/httpx_bad_usage/httpx_bad_usage.py:13:9
+   |
+11 |     def configure(self):
+12 |         # BUG: timeout expects float/Timeout, not str
+13 |         client = httpx.Client(
+   |         ^^^^^^
+14 |             base_url=self.api_url,
+15 |             timeout="thirty seconds",
+   |
+help: Remove assignment to unused variable `client`
+
+F841 Local variable `client` is assigned to but never used
+  --> testproject/components/httpx_usage/httpx_usage.py:12:9
+   |
+11 |     def configure(self):
+12 |         client = httpx.Client(
+   |         ^^^^^^
+13 |             base_url=self.api_url,
+14 |             timeout=30.0,
+   |
+help: Remove assignment to unused variable `client`
+
+Found 3 errors.
+No fixes available (3 hidden fixes can be enabled with the `--unsafe-fixes` option).

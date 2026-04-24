@@ -1,3 +1,16 @@
+tests/test_functional.py::TestVersion::test_version_shows_batou_type_version
+tests/test_functional.py::TestVersion::test_version_shows_stub_info
+tests/test_functional.py::TestCheck::test_check_no_components_exits_zero
+tests/test_functional.py::TestCheck::test_check_clean_component_exits_zero
+tests/test_functional.py::TestCheck::test_check_component_with_type_error_exits_one
+tests/test_functional.py::TestCheck::test_check_with_ty_checker
+tests/test_functional.py::TestCheck::test_check_with_mypy_checker
+tests/test_functional.py::TestCheck::test_check_multiple_components
+tests/test_functional.py::TestCheck::test_check_nested_components
+tests/test_functional.py::TestHelp::test_help_shows_commands
+tests/test_functional.py::TestHelp::test_check_help_shows_options
+tests/test_functional.py::TestHelp::test_bad_command_shows_error
+tests/test_functional.py::TestErrorHandling::test_invalid_checker_shows_error
 tests/test_refactor_contract.py::test_cli_module_exists
 tests/test_refactor_contract.py::test_cli_module_has_typer_app
 tests/test_refactor_contract.py::test_init_no_typer_import
@@ -13,4 +26,4 @@ tests/test_refactor_contract.py::test_core_imports_still_work
 tests/test_refactor_contract.py::test_cli_imports_work
 tests/test_refactor_contract.py::test_init_reexports_core
 
-14 tests collected in 0.02s
+27 tests collected in 0.01s

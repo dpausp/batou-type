@@ -1,16 +1,19 @@
 # E2E Smoke Test Results
 
-- `batou_type --help` → exit code: 0, status: PASS
-  Displays usage with two subcommands (version, check) and standard Typer options.
-
-- `batou_type version` → exit code: 0, status: PASS
-  Shows version info: batou-type 2.8.0.dev0, batou-stubs <not installed>, batou_ext-stubs <not installed>.
-
-- `batou_type check --help` → exit code: 0, status: PASS
-  Shows check subcommand usage with --checker/-c option (choices: ty|mypy|basedpyright, default: ty).
-
-- `batou_type check` (no args) → exit code: 0, status: PASS
-  Runs without error. Reports stubs status and "No component files found in components/" (expected: no components dir in project root).
-
-- `batou_type nonexistent` → exit code: 2, status: PASS
-  Correctly rejects unknown subcommand with "No such command 'nonexistent'." and exit code 2.
+- `uv run python -m batou_type --help` → exit code: 0, status: PASS
+- `uv run python -m batou_type version` → exit code: 0, status: PASS
+- `uv run python -m batou_type check --help` → exit code: 0, status: PASS
+- `uv run python -m batou_type check` → exit code: 1, status: FAIL
+  Found 1 project(s): /batou-type/testproject
+  6 component(s) with errors detected by ty (expected — test components contain intentional type errors)
+  Failed components: bad_address, bad_content, boto_bad_usage, httpx_bad_usage, multi_error, silent_bugs
+- `cd /batou-type/testproject && uv run python -m batou_type check` → exit code: 1, status: FAIL
+  Error: /batou-type/testproject/.venv/bin/python3: No module named batou_type
+  The testproject has its own .venv which does not have batou_type installed.
+  Running from testproject/ picks up the wrong venv instead of the project-level one.
+- `uv run batou-type --help` → exit code: 0, status: PASS
+- `uv run batou-type version` → exit code: 0, status: PASS
+- `uv run python -m batou_type nonexistent` → exit code: 2, status: PASS
+  Clean error: "No such command 'nonexistent'" (Typer handles unknown commands gracefully)
+- `uv run python -m batou_type check --checker invalid` → exit code: 2, status: PASS
+  Clean error: "'invalid' is not one of 'ty', 'mypy'" (Typer validates enum choices)

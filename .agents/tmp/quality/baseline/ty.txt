@@ -1,1 +1,8 @@
-All checks passed!
+error[unresolved-attribute]: Object of type `Traversable` has no attribute `parent`
+  --> src/batou_type/cli.py:49:29
+   |
+49 |             stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+Found 1 diagnostic
