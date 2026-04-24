@@ -1,0 +1,3 @@
+from batou_ext import mail
+
+class Mailhog(mail.Mailhog): ...

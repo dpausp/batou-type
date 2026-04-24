@@ -29,9 +29,6 @@ packages = ["src/batou_type"]
 [tool.hatch.build.targets.sdist]
 include = ["src/batou_type"]
 
-[project.optional-dependencies]
-ext = ["batou_ext-stubs"]
-
 [tool.ruff]
 extend-exclude = ["testproject"]
 

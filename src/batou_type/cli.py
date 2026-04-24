@@ -30,7 +30,10 @@ console = Console()
 
 VENDOR_STUBS_PATH = Path(__file__).resolve().parent / "vendor"
 
-STUB_PACKAGES = ["batou_ext-stubs"]
+VENDOR_STUBS = {
+    "batou-stubs": ("batou", "batou"),
+    "batou_ext-stubs": ("batou_ext", "batou_ext"),
+}
 
 
 @dataclass(slots=True)
@@ -43,46 +46,32 @@ class StubInfo:
     vendored: bool = False
 
 
-def _detect_batou_stubs() -> StubInfo:
-    """Detect batou-stubs: prefer external package, fall back to vendored."""
+def _detect_stub(name: str, pkg: str, vendor_subdir: str) -> StubInfo:
+    """Detect stub: prefer external package, fall back to vendored."""
     try:
-        ver = metadata.version("batou-stubs")
-        stub_path = str(files("batou").joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-        return StubInfo(name="batou-stubs", version=ver, path=stub_path, vendored=False)
+        ver = metadata.version(name)
+        stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+        return StubInfo(name=name, version=ver, path=stub_path, vendored=False)
     except (metadata.PackageNotFoundError, AttributeError, TypeError, FileNotFoundError):
-        if VENDOR_STUBS_PATH.is_dir():
-            return StubInfo(name="batou-stubs", version="vendored", path=str(VENDOR_STUBS_PATH), vendored=True)
-        return StubInfo(name="batou-stubs", version=None, path=None, vendored=False)
+        vendor_path = VENDOR_STUBS_PATH / vendor_subdir
+        if vendor_path.is_dir():
+            return StubInfo(name=name, version="vendored", path=str(vendor_path), vendored=True)
+        return StubInfo(name=name, version=None, path=None, vendored=False)
 
 
-def get_stub_versions() -> list[StubInfo]:
-    """Collect version and path for all stub packages."""
-    infos: list[StubInfo] = []
-    for name in STUB_PACKAGES:
-        try:
-            ver = metadata.version(name)
-            pkg = name.replace("-stubs", "")
-            stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-        except (metadata.PackageNotFoundError, AttributeError, TypeError, FileNotFoundError):
-            infos.append(StubInfo(name=name, version=None, path=None))
-        else:
-            infos.append(StubInfo(name=name, version=ver, path=stub_path))
-    return infos
+def _detect_all_stubs() -> list[StubInfo]:
+    """Detect all stub packages with vendor fallback."""
+    return [_detect_stub(name, pkg, subdir) for name, (pkg, subdir) in VENDOR_STUBS.items()]
 
 
 @app.command()
 def version() -> None:
     """Show version information."""
     console.print(f"batou-type [cyan]{__version__}[/]")
-    batou_stubs = _detect_batou_stubs()
-    if batou_stubs.version and batou_stubs.path:
-        label = "vendored" if batou_stubs.vendored else batou_stubs.version
-        console.print(f"  [cyan]{batou_stubs.name}[/] [dim]{label}[/] @ [dim]{batou_stubs.path}[/]")
-    else:
-        console.print(f"  [yellow]{batou_stubs.name}[/] [dim]<not installed>[/]")
-    for info in get_stub_versions():
-        if info.version:
-            console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+    for info in _detect_all_stubs():
+        if info.version and info.path:
+            label = "vendored" if info.vendored else info.version
+            console.print(f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]")
         else:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
@@ -91,21 +80,12 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     console.print("Loaded stubs:")
-    batou_stubs = _detect_batou_stubs()
-    stub_infos = get_stub_versions()
+    stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
-
-    # batou-stubs: external or vendored (never both)
-    if batou_stubs.version and batou_stubs.path:
-        label = "vendored" if batou_stubs.vendored else batou_stubs.version
-        console.print(f"  [cyan]{batou_stubs.name}[/] [dim]{label}[/] @ [dim]{batou_stubs.path}[/]")
-        extra_search_paths.append(str(Path(batou_stubs.path).parent.resolve()))
-    else:
-        console.print(f"  [yellow]{batou_stubs.name}[/] [dim]<not installed>[/]")
-
     for info in stub_infos:
         if info.version and info.path:
-            console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+            label = "vendored" if info.vendored else info.version
+            console.print(f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]")
             extra_search_paths.append(str(Path(info.path).parent.resolve()))
         else:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
