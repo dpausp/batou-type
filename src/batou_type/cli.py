@@ -74,6 +74,12 @@ def get_stub_versions() -> list[StubInfo]:
 def version() -> None:
     """Show version information."""
     console.print(f"batou-type [cyan]{__version__}[/]")
+    batou_stubs = _detect_batou_stubs()
+    if batou_stubs.version and batou_stubs.path:
+        label = "vendored" if batou_stubs.vendored else batou_stubs.version
+        console.print(f"  [cyan]{batou_stubs.name}[/] [dim]{label}[/] @ [dim]{batou_stubs.path}[/]")
+    else:
+        console.print(f"  [yellow]{batou_stubs.name}[/] [dim]<not installed>[/]")
     for info in get_stub_versions():
         if info.version:
             console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
