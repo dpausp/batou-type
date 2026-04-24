@@ -1,0 +1,14 @@
+[project]
+name = "example-mixed-project"
+version = "0.1.0"
+description = "Example batou project with some type errors"
+dependencies = [
+    "batou",
+    "batou_ext",
+    "boto",
+    "httpx>=0.28.1",
+]
+requires-python = ">=3.12"
+
+[tool.ty.rules]
+undefined-reveal = "ignore"

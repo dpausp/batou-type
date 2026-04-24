@@ -1,0 +1,11 @@
+[project]
+name = "example-error-project"
+version = "0.1.0"
+description = "Example batou project full of type errors"
+dependencies = [
+    "batou",
+    "batou_ext",
+    "boto",
+    "httpx>=0.28.1",
+]
+requires-python = ">=3.12"
