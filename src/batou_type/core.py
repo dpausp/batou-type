@@ -6,6 +6,34 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+# Venv detection patterns, ordered by priority
+_VENV_CANDIDATES = [".venv", "appenv"]
+
+
+def find_project_venv(project: Path) -> Path | None:
+    """Detect a project-level venv (.venv for uv, appenv for batou)."""
+    for candidate in _VENV_CANDIDATES:
+        venv_dir = project / candidate
+        if venv_dir.is_dir():
+            # Verify it looks like a venv: has a site-packages or pyvenv.cfg
+            if (venv_dir / "pyvenv.cfg").exists() or (venv_dir / "lib").is_dir():
+                return venv_dir
+    return None
+
+
+def get_venv_site_packages(venv: Path) -> list[str]:
+    """Extract site-packages paths from a venv."""
+    paths: list[str] = []
+    # Standard layout: lib/pythonX.Y/site-packages
+    for sp in sorted(venv.glob("lib/python*/site-packages")):
+        paths.append(str(sp))
+    # lib64 symlink (some Linux distros)
+    for sp in sorted(venv.glob("lib64/python*/site-packages")):
+        p = str(sp)
+        if p not in paths:
+            paths.append(p)
+    return paths
+
 
 class Checker(str, Enum):
     ty = "ty"
