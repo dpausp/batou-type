@@ -1,6 +1,6 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
-import subprocess
+import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
 from enum import Enum
@@ -101,7 +101,7 @@ def check_file(
                 file_path,
             ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)  # nosec B603
         if result.returncode != 0:
             any_failed = True
             if result.stdout:

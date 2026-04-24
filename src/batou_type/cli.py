@@ -46,7 +46,7 @@ def get_stub_versions() -> list[StubInfo]:
             ver = metadata.version(name)
             pkg = name.replace("-stubs", "")
             stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-        except Exception:
+        except (metadata.PackageNotFoundError, AttributeError, TypeError, FileNotFoundError):
             infos.append(StubInfo(name=name, version=None, path=None))
         else:
             infos.append(StubInfo(name=name, version=ver, path=stub_path))
