@@ -59,6 +59,7 @@ class TypeCheckResult:
     path: str
     has_errors: bool
     output: str
+    command: str = ""
 
 
 def is_batou_project(directory: Path) -> bool:
@@ -92,6 +93,7 @@ def check_file(
 
     full_output = []
     any_failed = False
+    display_command = ""
 
     for c in checkers:
         if c == Checker.ty:
@@ -107,6 +109,8 @@ def check_file(
                 file_path,
             ]
 
+        display_command = " ".join(cmd).replace(sys.executable, "python", 1)
+
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, env=env)  # nosec B603
         if result.returncode != 0:
             any_failed = True
@@ -119,6 +123,7 @@ def check_file(
         path=file_path,
         has_errors=any_failed,
         output="".join(full_output),
+        command=display_command,
     )
 
 

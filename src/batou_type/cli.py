@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
+import os
 from pathlib import Path
 import sys
 
@@ -121,8 +122,15 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
             console.print("[yellow]No project venv found (checked .venv, appenv)[/]")
         console.print()
 
+        if project_search_paths:
+            console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
+            console.print()
+
         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
         results = check_all(project, checkers, extra_search_paths=project_search_paths)
+
+        if results:
+            console.print(f"[dim]Running: {results[0].command}[/]")
 
         # Show errors for this project
         for result in results:
