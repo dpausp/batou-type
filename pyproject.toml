@@ -35,7 +35,5 @@ extend-exclude = ["testproject"]
 [dependency-groups]
 dev = [
     "batou>=2.7.0",
-    "batou-ext-stubs",
-    "batou-stubs",
     "pytest-cov>=7.1.0",
 ]
