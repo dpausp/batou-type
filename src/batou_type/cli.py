@@ -96,7 +96,7 @@ def _run_check(checker: list[Checker] | None) -> None:
         console.print(f"[red]FAILED: {result.path}[/]")
         console.print(f"[red]{'=' * 60}[/]")
         if result.output.strip():
-            console.print(result.output)
+            print(result.output.strip())
 
     raise typer.Exit(1 if failed_results else 0)
 
