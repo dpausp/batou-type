@@ -35,6 +35,9 @@ include = ["src/batou_type"]
 batou-stubs = { path = "../batou/stubs" }
 batou-ext-stubs = { path = "../batou_ext/stubs" }
 
+[tool.ruff]
+extend-exclude = ["testproject"]
+
 [dependency-groups]
 dev = [
     "batou-ext-stubs",

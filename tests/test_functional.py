@@ -52,7 +52,7 @@ class TestCheck:
         """Check with no component files exits 0."""
         result = run_cli("check", cwd=tmp_path)
         assert result.returncode == 0
-        assert "no component files found" in result.stdout.lower()
+        assert "no batou projects found" in result.stdout.lower()
 
     def test_check_clean_component_exits_zero(self, temp_project):
         """Check with valid component files exits 0."""
@@ -61,7 +61,7 @@ class TestCheck:
 
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 0
-        assert "0 file" in result.stdout.lower()
+        assert "passed type checking" in result.stdout.lower()
 
     def test_check_component_with_type_error_exits_one(self, temp_project):
         """Check with type errors exits 1."""

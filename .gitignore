@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 *.pyo
+.agents/tmp/
+.ty-symbols.db

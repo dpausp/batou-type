@@ -1,11 +1,9 @@
 # Quality Audit Report — 2026-04-24
 
 ## Human Summary
-
-The quality meta-audit of batou-type found one broken entry point (basedpyright subprocess crash due to missing `sys.executable -m` invocation) and fixed it. The test suite consists entirely of structural contract tests — zero functional tests exist. The core value proposition (running type checkers on batou components) has no automated test coverage. Ruff runs on zero configuration, hiding 84 issues including blind exception catches and missing annotations. Architecture is clean by convention but not enforced.
+Quality meta-audit of batou-type project revealed solid fundamentals: zero mocking, real subprocess E2E tests, clean module separation. Two critical issues found and fixed: (1) README documented `basedpyright` as supported checker but the `Checker` enum only has `ty` and `mypy` — removed inaccurate docs, (2) two tests had stale string assertions after CLI output format changes — updated to match current output. Additional fixes: excluded `testproject/` from ruff (intentional bad fixtures), changed bare `print()` to `console.print()` in cli.py for consistency. Remaining gaps: pytest plugin has zero test coverage, `_run_check()` is a 56-statement god function, inverted test pyramid (all E2E, zero unit).
 
 ## Completion Checklist
-
 - [x] Entry point inventory completed (all subcommands, scripts, APIs catalogued)
 - [x] E2E smoke test completed (basic invocation tested)
 - [x] All raw data collected in `.agents/tmp/quality/` (baseline/, extreme/, analysis/, e2e/)
@@ -13,132 +11,98 @@ The quality meta-audit of batou-type found one broken entry point (basedpyright 
 - [x] Tool tolerance audit produced with per-tool signals (ruff/ty/noqa)
 - [x] Test structure report with mock health metrics
 - [x] E2E coverage assessed for every entry point (PROVEN/SUSPECTED/UNKNOWN/BROKEN)
-- [x] Full CLI test executed (triggered by synthesis — 62% UNKNOWN entry points)
-- [x] Fixes applied for critical findings (basedpyright subprocess invocation)
+- [ ] Full CLI test executed: SKIPPED — evidence sufficient, no crash conditions requiring deeper investigation
+- [x] Fixes applied for critical findings (2 stale tests, README docs mismatch, ruff config, print consistency)
 - [x] Baseline re-run confirms no regressions
-- [x] Git commit: pending on branch main
+- [ ] Git commit: pending
 
 ## Entry Point Inventory
 
 | Entry Point | Type | Source | E2E Status | Evidence |
 |-------------|------|--------|------------|----------|
-| version | cli-subcommand | src/batou_type/cli.py:48 | PROVEN | E2E: exit 0, correct output |
-| check --help | cli-subcommand | src/batou_type/cli.py:104 | PROVEN | E2E: exit 0 |
-| check (no components) | cli-subcommand | src/batou_type/cli.py:104 | PROVEN | E2E: exit 0, graceful message |
-| check (with components, ty) | cli-subcommand | src/batou_type/core.py:47 | PROVEN | Full CLI test: exit 0/1 |
-| check (with components, mypy) | cli-subcommand | src/batou_type/core.py:47 | PROVEN | Full CLI test: exit 0/1 |
-| check (with components, basedpyright) | cli-subcommand | src/batou_type/core.py:47 | PROVEN (post-fix) | Full CLI test: was BROKEN, fixed |
-| check exit codes | behavior | src/batou_type/cli.py:101 | PROVEN | Full CLI test verified exit 0 and exit 1 |
-| pytest plugin --batou-ty | pytest-plugin | src/batou_type/pytest_plugin.py:16 | UNKNOWN | Zero test coverage, never exercised |
-| check_all() / check_file() | public-api | src/batou_type/core.py:47,96 | UNKNOWN | Core execution path, only proven via CLI invocation |
-| python -m batou_type | entry-point | src/batou_type/__main__.py | PROVEN | E2E: all tests used this invocation |
+| batou-type check | CLI command | src/batou_type/cli.py:154 | PROVEN | 6 tests in test_functional.py::TestCheck + smoke test PASS |
+| batou-type version | CLI command | src/batou_type/cli.py:57 | PROVEN | 2 tests + smoke test PASS |
+| batou-type --help | CLI option | src/batou_type/cli.py:24 | PROVEN | test_help_shows_commands + smoke test PASS |
+| python -m batou_type | Module entry | src/batou_type/__main__.py:1 | PROVEN | All tests use -m invocation |
+| -c ty checker | CLI option | src/batou_type/core.py:39 | PROVEN | test_check_with_ty_checker |
+| -c mypy checker | CLI option | src/batou_type/core.py:40 | SUSPECTED | test_check_with_mypy_checker accepts 0,1,2 — doesn't verify mypy runs |
+| -c basedpyright checker | CLI option | REMOVED from README | N/A | Was documented but never implemented in Checker enum |
+| --batou-ty pytest plugin | Pytest hook | src/batou_type/pytest_plugin.py:14 | UNKNOWN | Zero test coverage for 101-line plugin |
+| Multi-checker sequential | CLI option | README.md | UNKNOWN | Documented but no test exercises -c ty -c mypy |
+| Venv detection (.venv/appenv) | Feature | src/batou_type/core.py:13 | PROVEN | Smoke test detects testproject/.venv correctly |
+| Migration testing | Documented feature | README.md | UNKNOWN | No test evidence |
 
 ## Tool Tolerance Audit
 
 | Tool | Baseline | Extreme | Delta | Signal |
 |------|----------|---------|-------|--------|
-| ruff | 0 issues (defaults only) | **84 issues** | **+84 suppressed** | orange |
-| ty | 0 errors | 0 errors | 0 | green |
-| noqa density | 0 | 0 | 0 | green |
-| type:ignore | 1 (scoped) | 1 | 0 | green |
+| ruff | 3 issues (testproject F841) → **0 post-fix** | ~120 issues (47 rule codes) | 117 suppressed | **green** |
+| ty | 1 diagnostic (unresolved-attribute) | 1 diagnostic | 1 type:ignore (properly scoped) | **green** |
 
 ### Ruff Suppression Breakdown
 
-- **Legitimate** (~39): CPY001 (5), S101 in tests (14), D-rules (9), DOC201/DOC501 (6), COM812 (3), RUF022 (1), RUF067 (1)
-- **Questionable** (~20): E501 (2), PLW1510 (2), BLE001 (1), PERF203 (1), ANN (7+), PLC0415 (2), I001 (1), RUF100 (4)
-- **Critical Hiding** (~4): S404 (1), S603 (2), B008 (1)
-
-### Key Issue: Zero Ruff Configuration
-
-The project has **no `[tool.ruff]` section** in pyproject.toml, no `.ruff.toml`, no `ruff.toml`. Running on pure defaults means most quality rules are silently skipped. Notable gaps: no line length enforcement, no annotation requirements, no security rule awareness.
+- **Legitimate**: CPY001 (copyright), B008 (typer defaults), S101 (assert in tests), INP001 (test fixtures), D100-D107/ANN* in tests, S106/S404/S603 in test fixtures
+- **Questionable**: BLE001 (blind except Exception in cli.py:50), I001 (import sorting 4 files), E501 (4 line-length violations), W391 (trailing newline)
+- **Critical hiding**: C901+PLR0912+PLR0915 (_run_check complexity invisible in baseline)
 
 ## Test Structure
 
-- **Total tests**: 14
-- **Distribution**: structural/AST: 14, unit: 0, integration: 0, e2e: 0
-- **Mock health**: 0 MagicMock, 0 with spec=, 0 with autospec= (N/A — no mocks because no functional tests)
-- **RED FLAGS**: 3/10 — no real subprocess testing, suite passes without dependencies, no conftest/infrastructure
-- **Signal**: red
-
-### Test Gap Summary
-
-All 14 tests are in `test_refactor_contract.py` — a one-time migration guard verifying module structure. The following behaviors have **zero test coverage**:
-
-1. `check_file()` — subprocess invocation against real type checkers
-2. `check_all()` — multi-file type checking
-3. `find_components()` — real filesystem component discovery
-4. `_filter_basedpyright_json()` — JSON parsing and filtering
-5. CLI `check` command — exit codes, output format
-6. CLI `version` command — output format
-7. `get_stub_versions()` — stub version collection
-8. Pytest plugin — collection, --batou-ty flag, batou_ty marker
-9. Exit code semantics (0 = success, 1 = errors)
-10. Error output format (Rich-formatted display)
+- Total tests: 27
+- Distribution: unit 0, integration 15, e2e 12
+- Mock health: 0 MagicMock, 0 with spec=, 0 with autospec=
+- RED FLAGS: 2/10 — inverted pyramid (all E2E, zero unit), class-based tests without class state
+- Signal: orange
 
 ## E2E Coverage Assessment
 
-- **PROVEN**: 7 entry points (version, check basic/ty/mypy/basedpyright, exit codes, python -m)
-- **UNKNOWN**: 2 entry points (pytest plugin, check_all/check_file library API)
-- **BROKEN**: 0 (basedpyright was broken, now fixed)
-- **Full CLI test triggered**: YES — 62% UNKNOWN triggered systematic testing
-- **Signal**: orange
+- PROVEN: 6 entry points (check, version, --help, python -m, -c ty, venv detection)
+- SUSPECTED: 1 entry point (-c mypy checker — non-committal test)
+- UNKNOWN: 2 entry points (--batou-ty pytest plugin, multi-checker)
+- BROKEN: 0 entry points post-fix (basedpyright removed from docs, not a code break)
+- Full CLI test triggered: NO
+- Signal: orange (improved from red after fixing docs mismatch)
 
 ## Stream Signals
 
-- Code Architecture: **red** — no architecture tests, no pytest-archon, convention-only enforcement
-- Code Quality: **orange** — zero ruff config, 84 suppressed issues, 1 scoped type:ignore, ty clean
-- Test Structure: **red** — zero functional tests, AST-only contract tests, 3 RED FLAGS
-- E2E Coverage + Production Reality: **orange** — smoke tests pass, core value untested in automation
+- Code Architecture: orange (no test_architecture.py, god function in _run_check)
+- Code Quality: orange (117 suppressed ruff rules mostly legit, 1 questionable BLE001, complexity hidden)
+- Test Structure: orange (zero mocks excellent, but inverted pyramid, pytest plugin untested)
+- E2E Coverage + Production Reality: orange (core commands PROVEN, gaps in plugin and multi-checker)
 
 ## Critical Findings Fixed
 
-### BUG-1: basedpyright FileNotFoundError (severity: HIGH)
-
-**Root cause**: `core.py:71` used bare `["basedpyright", "--outputjson"]` for subprocess invocation while ty and mypy used `sys.executable -m`. When venv isn't activated, `basedpyright` isn't on PATH.
-
-**Fix**: Changed to explicit `elif c == Checker.basedpyright:` branch using `[sys.executable, "-m", "basedpyright", *CHECKER_COMMANDS[c][1:], file_path]`.
-
-**File**: `src/batou_type/core.py` lines 70-71 → new explicit branch
+1. **Stale test assertions** (tests/test_functional.py lines 55, 64): Updated to match current CLI output messages after format change
+2. **README basedpyright mismatch** (README.md): Removed basedpyright documentation — Checker enum only supports ty and mypy
+3. **Ruff config gap** (pyproject.toml): Added [tool.ruff] extend-exclude for testproject/ (intentional bad fixtures)
+4. **Print inconsistency** (src/batou_type/cli.py:139): Changed bare print() to console.print() for output consistency
 
 ## Code Volume
 
 | File | Change |
 |------|--------|
-| src/batou_type/core.py | +2 lines (explicit basedpyright branch with sys.executable) |
+| tests/test_functional.py | 2 assertions updated |
+| README.md | Removed 4 lines (basedpyright references) |
+| src/batou_type/cli.py | 1 line changed (print → console.print) |
+| pyproject.toml | 2 lines added ([tool.ruff] config) |
 
 ## Post-Fix Quality Gates
 
 | Tool | Result |
 |------|--------|
-| pytest | 14 passed |
+| pytest | 27 passed |
 | ruff | 0 issues |
-| ty | 0 errors |
+| ty | 1 diagnostic (pre-existing, type:ignore present) |
 | architecture | N/A (no test_architecture.py) |
-| E2E smoke (all commands) | PASS |
-| E2E basedpyright (post-fix) | PASS |
+| E2E smoke | PASS (all core commands working) |
 
 ## Recommendations
 
-### High Priority
-
-1. **Add functional tests** — at minimum: `check_file()` with mock subprocess, `find_components()` with temp directory, `_filter_basedpyright_json()` with sample JSON, exit code verification via `subprocess.run` of the CLI
-2. **Add ruff configuration** — select at minimum: E, W, F, I, UP, ANN, S, BLE, PL, RUF. This would have caught the basedpyright bug at lint time (PLW1510 flags subprocess.run without check=)
-3. **Add pytest-archon rules** — enforce that `core.py` never imports from `cli.py` or `pytest_plugin.py`, that `cli.py` imports from `core.py` only
-
-### Medium Priority
-
-4. **Narrow `except Exception`** in `cli.py:41` (`get_stub_versions()`) to `PackageNotFoundError` — currently silently swallows all errors
-5. **Fix README naming** — README uses `batou-typecheck` everywhere, actual command is `batou-type`
-6. **Document `version` subcommand and pytest plugin** in README
-7. **Fix stale `.gitignore`** — references `src/batou_typecheck/` (old package name)
-8. **Add `conftest.py`** with shared fixtures (SRC path, temp components directory)
-9. **Add `[tool.pytest.ini_options]`** with `import_mode = "importlib"`
-
-### Low Priority
-
-10. **Add copyright headers** (CPY001) or add to ruff ignore list as explicit decision
-11. **Add return type annotations** (ANN201) to all public functions
-12. **Add D-rules** to ruff config or add to ignore list as explicit decision
+1. **HIGH**: Add tests for pytest_plugin.py — 101 lines of hook logic completely untested. The --batou-ty feature could be silently broken.
+2. **MEDIUM**: Decompose _run_check() god function (56 statements, complexity 16). Extract stub display, project discovery, and result display into separate functions.
+3. **MEDIUM**: Add unit tests for core.py functions (find_project_venv, get_venv_site_packages, check_file, check_all) — currently only tested via subprocess E2E.
+4. **LOW**: Fix mypy checker test to verify mypy actually runs instead of accepting any exit code.
+5. **LOW**: Add test exercising multi-checker mode (-c ty -c mypy).
+6. **LOW**: Consider adding test_architecture.py with pytest-archon rules to enforce module boundaries.
 
 ## Raw Data Location
 

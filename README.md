@@ -9,8 +9,7 @@ Finds all `components/**/*.py` files in the current directory and runs type chec
 ```
 batou-typecheck                          # ty (default)
 batou-typecheck -c mypy                  # mypy only
-batou-typecheck -c basedpyright          # basedpyright only
-batou-typecheck -c ty -c mypy -c basedpyright  # all three
+batou-typecheck -c ty -c mypy            # both checkers
 ```
 
 ### Output
@@ -32,7 +31,6 @@ Exit code **0** — no errors (or no component files found). Exit code **1** —
 |---|---|
 | `ty` | Default. Fast, modern Python type checker. |
 | `mypy` | Runs with `--explicit-package-bases --check-untyped-defs --no-incremental`. |
-| `basedpyright` | Strict pyright fork. Known batou false positives (uninitialized variables, implicit overrides, unannotated class attributes) are filtered automatically. |
 
 Pass `-c` multiple times to run several checkers in sequence. Each checker sees each component file individually.
 

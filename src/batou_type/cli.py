@@ -136,7 +136,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
                 console.print(f"[red]FAILED: {result.path}[/]")
                 console.print(f"[red]{'=' * 60}[/]")
                 if result.output.strip():
-                    print(result.output.strip())
+                    console.print(result.output.strip())
 
     # Summary at the bottom
     if all_failed:
