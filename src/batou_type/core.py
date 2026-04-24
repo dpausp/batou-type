@@ -32,6 +32,11 @@ class TypeCheckResult:
     output: str
 
 
+def is_batou_project(directory: Path) -> bool:
+    """Check whether a directory looks like a batou project."""
+    return (directory / "components").is_dir()
+
+
 def find_components(root: Path) -> list[Path]:
     """Find all component files in the components directory."""
     components_dir = root / "components"

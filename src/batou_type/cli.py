@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from batou_type import __version__
-from batou_type.core import Checker, check_all, find_components
+from batou_type.core import Checker, TypeCheckResult, check_all, find_components, is_batou_project
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -56,7 +56,7 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
-def _run_check(checker: list[Checker] | None, path: Path | None) -> None:
+def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     table = Table(title="Loaded stubs", show_header=False, box=None)
@@ -67,7 +67,6 @@ def _run_check(checker: list[Checker] | None, path: Path | None) -> None:
     for info in stub_infos:
         if info.version and info.path:
             table.add_row(f"[cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
-            # site-packages is the parent of the stub package directory
             extra_search_paths.append(str(Path(info.path).parent))
         else:
             table.add_row(f"[yellow]{info.name}[/] [dim]<not installed>[/]")
@@ -75,47 +74,56 @@ def _run_check(checker: list[Checker] | None, path: Path | None) -> None:
     console.print(table)
     console.print()
 
-    checkers = checker or [Checker.ty]
-
-    cwd = path or Path.cwd()
-    components = find_components(cwd)
-
-    if not components:
-        console.print("[yellow]No component files found in components/[/]")
+    # Discover batou projects
+    projects = [p for p in paths if is_batou_project(p)]
+    if not projects:
+        console.print("[yellow]No batou projects found (need components/ directory)[/]")
         raise typer.Exit(0)
 
-    console.print(f"[green]Checking {len(components)} component(s)...[/]")
+    console.print(f"[green]Found {len(projects)} project(s):[/]")
+    for project in projects:
+        console.print(f"  [dim]{project}[/]")
+    console.print()
 
-    # Check all files
-    results = check_all(cwd, checkers, extra_search_paths=extra_search_paths)
+    checkers = checker or [Checker.ty]
+    all_failed: list[TypeCheckResult] = []
 
-    # Show errors first
-    failed_results = [r for r in results if r.has_errors]
-    for result in failed_results:
-        console.print(f"\n[red]{'=' * 60}[/]")
-        console.print(f"[red]FAILED: {result.path}[/]")
-        console.print(f"[red]{'=' * 60}[/]")
-        if result.output.strip():
-            print(result.output.strip())
+    for project in projects:
+        components = find_components(project)
+        if not components:
+            continue
+
+        console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
+        results = check_all(project, checkers, extra_search_paths=extra_search_paths)
+
+        # Show errors for this project
+        for result in results:
+            if result.has_errors:
+                all_failed.append(result)
+                console.print(f"\n[red]{'=' * 60}[/]")
+                console.print(f"[red]FAILED: {result.path}[/]")
+                console.print(f"[red]{'=' * 60}[/]")
+                if result.output.strip():
+                    print(result.output.strip())
 
     # Summary at the bottom
-    if failed_results:
+    if all_failed:
         console.print()
-        status = f"[red]{len(failed_results)}[/]"
+        status = f"[red]{len(all_failed)}[/]"
         console.print(f"{status} component(s) with errors:")
-        for result in failed_results:
+        for result in all_failed:
             console.print(f"  [red]{result.path}[/]")
     else:
         console.print("[green]All components passed type checking.[/]")
 
-    raise typer.Exit(1 if failed_results else 0)
+    raise typer.Exit(1 if all_failed else 0)
 
 
 @app.command()
 def check(
-    path: Path | None = typer.Argument(
-        None,
-        help="Project directory to check (default: current directory)",
+    paths: list[Path] = typer.Argument(
+        ...,
+        help="Project directories to check (default: current directory)",
     ),
     checker: list[Checker] | None = typer.Option(
         None,
@@ -125,4 +133,4 @@ def check(
     ),
 ) -> None:
     """Type-check batou deployment components."""
-    _run_check(checker, path)
+    _run_check(checker, paths)
