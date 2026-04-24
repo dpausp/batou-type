@@ -139,7 +139,8 @@ def check_all(
     venv = find_project_venv(root)
     if venv is not None:
         venv_sp = get_venv_site_packages(venv)
-        extra_search_paths = extra_search_paths + venv_sp
+        # Convert to relative paths (ty runs with cwd=root)
+        extra_search_paths = extra_search_paths + [str(Path(sp).relative_to(root)) for sp in venv_sp]
 
     components = find_components(root)
     results = []

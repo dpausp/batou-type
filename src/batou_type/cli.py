@@ -120,7 +120,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
         if not components:
             continue
 
-        # Detect project venv and add its site-packages
+        # Detect project venv (check_all adds its site-packages to search paths)
         project_search_paths = list(extra_search_paths)
         venv = find_project_venv(project)
         if venv:
@@ -128,8 +128,6 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
             console.print(f"[cyan]Project venv:[/] [dim]{venv}[/]")
             for sp in site_pkgs:
                 console.print(f"  [dim]{sp}[/]")
-            # Resolve to absolute paths (ty resolves relative to cwd)
-            project_search_paths.extend(str(Path(sp).resolve()) for sp in site_pkgs)
         else:
             console.print("[yellow]No project venv found (checked .venv, appenv)[/]")
         console.print()
