@@ -8,7 +8,6 @@ import sys
 
 import typer
 from rich.console import Console
-from rich.table import Table
 
 from batou_type import __version__
 from batou_type.core import (
@@ -68,19 +67,16 @@ def version() -> None:
 def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     """Execute type checking."""
     # Show stub versions and paths
-    table = Table(title="Loaded stubs", show_header=False, box=None)
-    table.add_column(style="dim")
-
+    console.print("Loaded stubs:")
     stub_infos = get_stub_versions()
     extra_search_paths: list[str] = []
     for info in stub_infos:
         if info.version and info.path:
-            table.add_row(f"[cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+            console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
             extra_search_paths.append(str(Path(info.path).parent.resolve()))
         else:
-            table.add_row(f"[yellow]{info.name}[/] [dim]<not installed>[/]")
+            console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
-    console.print(table)
     console.print(f"Python: [dim]{sys.executable}[/]")
     console.print()
 

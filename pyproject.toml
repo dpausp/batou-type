@@ -42,4 +42,5 @@ extend-exclude = ["testproject"]
 dev = [
     "batou-ext-stubs",
     "batou-stubs",
+    "pytest-cov>=7.1.0",
 ]
