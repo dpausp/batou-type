@@ -12,7 +12,6 @@ requires-python = ">=3.10"
 dependencies = [
     "batou-stubs",
     "batou_ext-stubs",
-    "basedpyright",
     "mypy",
     "pytest",
     "rich",

@@ -1,7 +1,5 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
-import io
-import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -12,7 +10,6 @@ from pathlib import Path
 class Checker(str, Enum):
     ty = "ty"
     mypy = "mypy"
-    basedpyright = "basedpyright"
 
 
 CHECKER_COMMANDS: dict[Checker, list[str]] = {
@@ -23,7 +20,6 @@ CHECKER_COMMANDS: dict[Checker, list[str]] = {
         "--check-untyped-defs",
         "--no-incremental",
     ],
-    Checker.basedpyright: ["basedpyright", "--outputjson"],
 }
 
 
@@ -59,38 +55,21 @@ def check_file(
     for c in checkers:
         if c == Checker.ty:
             cmd = [sys.executable, "-m", "ty", "check", "--color", "always", file_path]
-        elif c == Checker.mypy:
+        else:
             cmd = [
                 sys.executable,
                 "-m",
-                "mypy",
-                *CHECKER_COMMANDS[c][1:],
-                file_path,
-            ]
-        elif c == Checker.basedpyright:
-            cmd = [
-                sys.executable,
-                "-m",
-                "basedpyright",
-                *CHECKER_COMMANDS[c][1:],
+                *CHECKER_COMMANDS[c],
                 file_path,
             ]
 
-        if c == Checker.basedpyright:
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-            filtered, has_errors = _filter_basedpyright_json(result.stdout)
-            if filtered.strip():
-                full_output.append(filtered)
-            if has_errors:
-                any_failed = True
-        else:
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-            if result.returncode != 0:
-                any_failed = True
-                if result.stdout:
-                    full_output.append(result.stdout)
-                if result.stderr:
-                    full_output.append(result.stderr)
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+        if result.returncode != 0:
+            any_failed = True
+            if result.stdout:
+                full_output.append(result.stdout)
+            if result.stderr:
+                full_output.append(result.stderr)
 
     return TypeCheckResult(
         path=file_path,
@@ -116,40 +95,3 @@ def check_all(
 
     return results
 
-
-# basedpyright diagnostics that are noise for batou components
-BASEDPYRIGHT_NOISE_RULES = frozenset(
-    {
-        "reportUninitializedInstanceVariable",
-        "reportImplicitOverride",
-        "reportUnannotatedClassAttribute",
-    }
-)
-
-
-def _filter_basedpyright_json(output: str) -> tuple[str, bool]:
-    """Filter basedpyright JSON output, removing noise rules."""
-    try:
-        data = json.loads(output)
-    except json.JSONDecodeError:
-        return output, bool(output.strip())
-
-    if not isinstance(data, dict):
-        return output, bool(output.strip())
-
-    # Basedpyright outputs diagnostics under "generalDiagnostics" or similar
-    diagnostics = data.get("generalDiagnostics", [])
-
-    filtered = [
-        d for d in diagnostics if d.get("rule", "") not in BASEDPYRIGHT_NOISE_RULES
-    ]
-
-    if not filtered:
-        return "", False
-
-    # Rebuild output with filtered diagnostics
-    data["generalDiagnostics"] = filtered
-
-    buffer = io.StringIO()
-    buffer.write(json.dumps(data, indent=2))
-    return buffer.getvalue(), True

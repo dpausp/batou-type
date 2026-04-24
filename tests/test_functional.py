@@ -90,15 +90,6 @@ class TestCheck:
         # mypy might not be installed, but command should not crash
         assert result.returncode in (0, 1, 2)  # 2 = checker not found
 
-    def test_check_with_basedpyright_checker(self, temp_project):
-        """Check with explicit -c basedpyright works."""
-        component = temp_project / "components" / "mycomponent.py"
-        component.write_text("def configure():\n    pass\n")
-
-        result = run_cli("check", "-c", "basedpyright", cwd=temp_project)
-        # basedpyright might not be installed, but command should not crash
-        assert result.returncode in (0, 1, 2)
-
     def test_check_multiple_components(self, temp_project):
         """Check handles multiple component files."""
         (temp_project / "components" / "comp1.py").write_text("def foo():\n    pass\n")
