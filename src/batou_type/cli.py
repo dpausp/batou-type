@@ -28,7 +28,9 @@ app = typer.Typer(
 )
 console = Console()
 
-STUB_PACKAGES = ["batou-stubs", "batou_ext-stubs"]
+VENDOR_STUBS_PATH = Path(__file__).resolve().parent / "vendor"
+
+STUB_PACKAGES = ["batou_ext-stubs"]
 
 
 @dataclass(slots=True)
@@ -38,6 +40,19 @@ class StubInfo:
     name: str
     version: str | None
     path: str | None
+    vendored: bool = False
+
+
+def _detect_batou_stubs() -> StubInfo:
+    """Detect batou-stubs: prefer external package, fall back to vendored."""
+    try:
+        ver = metadata.version("batou-stubs")
+        stub_path = str(files("batou").joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+        return StubInfo(name="batou-stubs", version=ver, path=stub_path, vendored=False)
+    except (metadata.PackageNotFoundError, AttributeError, TypeError, FileNotFoundError):
+        if VENDOR_STUBS_PATH.is_dir():
+            return StubInfo(name="batou-stubs", version="vendored", path=str(VENDOR_STUBS_PATH), vendored=True)
+        return StubInfo(name="batou-stubs", version=None, path=None, vendored=False)
 
 
 def get_stub_versions() -> list[StubInfo]:
@@ -70,8 +85,18 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     console.print("Loaded stubs:")
+    batou_stubs = _detect_batou_stubs()
     stub_infos = get_stub_versions()
     extra_search_paths: list[str] = []
+
+    # batou-stubs: external or vendored (never both)
+    if batou_stubs.version and batou_stubs.path:
+        label = "vendored" if batou_stubs.vendored else batou_stubs.version
+        console.print(f"  [cyan]{batou_stubs.name}[/] [dim]{label}[/] @ [dim]{batou_stubs.path}[/]")
+        extra_search_paths.append(str(Path(batou_stubs.path).parent.resolve()))
+    else:
+        console.print(f"  [yellow]{batou_stubs.name}[/] [dim]<not installed>[/]")
+
     for info in stub_infos:
         if info.version and info.path:
             console.print(f"  [cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
