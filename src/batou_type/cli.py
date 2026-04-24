@@ -74,8 +74,16 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     console.print(table)
     console.print()
 
-    # Discover batou projects
-    projects = [p for p in paths if is_batou_project(p)]
+    # Discover batou projects: direct paths + scan subdirs of non-project dirs
+    projects: list[Path] = []
+    for p in paths:
+        if is_batou_project(p):
+            projects.append(p)
+        else:
+            projects.extend(
+                child for child in sorted(p.iterdir()) if child.is_dir() and is_batou_project(child)
+            )
+
     if not projects:
         console.print("[yellow]No batou projects found (need components/ directory)[/]")
         raise typer.Exit(0)
@@ -122,7 +130,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
 @app.command()
 def check(
     paths: list[Path] = typer.Argument(
-        ...,
+        None,
         help="Project directories to check (default: current directory)",
     ),
     checker: list[Checker] | None = typer.Option(
@@ -133,4 +141,4 @@ def check(
     ),
 ) -> None:
     """Type-check batou deployment components."""
-    _run_check(checker, paths)
+    _run_check(checker, paths or [Path.cwd()])
