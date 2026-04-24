@@ -1,1 +1,3 @@
-src/batou_typecheck/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
