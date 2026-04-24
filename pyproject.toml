@@ -31,10 +31,6 @@ packages = ["src/batou_type"]
 [tool.hatch.build.targets.sdist]
 include = ["src/batou_type"]
 
-[tool.uv.sources]
-batou-stubs = { path = "../batou/stubs" }
-batou-ext-stubs = { path = "../batou_ext/stubs" }
-
 [tool.ruff]
 extend-exclude = ["testproject"]
 
