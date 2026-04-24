@@ -8,6 +8,7 @@ This creates inconsistent behavior depending on where the attribute is accessed.
 
 from batou.component import Attribute, Component
 from batou.lib.file import File
+from batou.utils import Address
 
 
 class DualUsage(Component):
@@ -26,6 +27,16 @@ class DualUsage(Component):
     # Declared bool, default is int — batou coerces 1 to True
     # Code uses it as both bool and int
     enabled = Attribute(bool, default=1)
+
+    # Declared int, default is float — batou coerces 3.14 to int(3.14) = 3
+    # Code assumes float precision
+    rate = Attribute(int, default=3.14)
+
+    # Declared str, default is bytes — bytes is not str
+    encoding = Attribute(str, default=b"utf-8")
+
+    # Declared dict, default is list — completely wrong container type
+    config = Attribute(dict, default=["a", "b"])
 
     def configure(self):
         # USE AS STR: correct per declaration
@@ -66,3 +77,24 @@ class DualUsage(Component):
 
         # PASS TO API expecting int: crashes after coercion
         self += File("count.txt", content=self.count)
+
+        # FLOAT USAGE: code assumes float but got int after coercion
+        # int(3.14) = 3 — silently loses precision
+        precise = self.rate / 3.0  # type: ignore[unused]
+        # But code treating it as float for string formatting
+        formatted = f"{self.rate:.2f}"  # int has no format spec .2f
+
+        # BYTES USAGE: code assumes bytes methods
+        decoded = self.encoding.decode("utf-8")
+
+        # DICT USAGE: code assumes dict methods on list
+        value = self.config["key"]
+
+        # PASS TO CONSTRUCTOR: str attribute passed to Address (expects str)
+        # Works when default is used (int gets coerced to str)
+        # But type checker sees str | int, Address wants str
+        self.addr = Address(self.port, 8080)
+
+        # PASS TO CONSTRUCTOR: int attribute used as string for content
+        # int gets coerced to str, but type checker sees int | str
+        self += File("rate.txt", content=self.rate)
