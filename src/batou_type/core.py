@@ -44,17 +44,22 @@ def check_file(
     file_path: str,
     checkers: list[Checker] | None = None,
     cwd: Path | None = None,
+    extra_search_paths: list[str] | None = None,
 ) -> TypeCheckResult:
     """Run type checker(s) on a single file."""
     checkers = checkers or [Checker.ty]
     cwd = cwd or Path.cwd()
+    extra_search_paths = extra_search_paths or []
 
     full_output = []
     any_failed = False
 
     for c in checkers:
         if c == Checker.ty:
-            cmd = [sys.executable, "-m", "ty", "check", "--color", "always", file_path]
+            cmd = [sys.executable, "-m", "ty", "check", "--color", "always"]
+            for sp in extra_search_paths:
+                cmd.extend(["--extra-search-path", sp])
+            cmd.append(file_path)
         else:
             cmd = [
                 sys.executable,
@@ -81,6 +86,7 @@ def check_file(
 def check_all(
     root: Path,
     checkers: list[Checker] | None = None,
+    extra_search_paths: list[str] | None = None,
 ) -> list[TypeCheckResult]:
     """Type check all component files in a deployment."""
     checkers = checkers or [Checker.ty]
@@ -90,7 +96,7 @@ def check_all(
 
     for component in components:
         rel_path = str(component.relative_to(root))
-        result = check_file(rel_path, checkers, root)
+        result = check_file(rel_path, checkers, root, extra_search_paths=extra_search_paths)
         results.append(result)
 
     return results

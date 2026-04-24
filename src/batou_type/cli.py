@@ -56,15 +56,19 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
-def _run_check(checker: list[Checker] | None) -> None:
+def _run_check(checker: list[Checker] | None, path: Path | None) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     table = Table(title="Loaded stubs", show_header=False, box=None)
     table.add_column(style="dim")
 
-    for info in get_stub_versions():
-        if info.version:
+    stub_infos = get_stub_versions()
+    extra_search_paths: list[str] = []
+    for info in stub_infos:
+        if info.version and info.path:
             table.add_row(f"[cyan]{info.name}[/] [dim]{info.version}[/] @ [dim]{info.path}[/]")
+            # site-packages is the parent of the stub package directory
+            extra_search_paths.append(str(Path(info.path).parent))
         else:
             table.add_row(f"[yellow]{info.name}[/] [dim]<not installed>[/]")
 
@@ -73,7 +77,7 @@ def _run_check(checker: list[Checker] | None) -> None:
 
     checkers = checker or [Checker.ty]
 
-    cwd = Path.cwd()
+    cwd = path or Path.cwd()
     components = find_components(cwd)
 
     if not components:
@@ -83,7 +87,7 @@ def _run_check(checker: list[Checker] | None) -> None:
     console.print(f"[green]Checking {len(components)} component(s)...[/]")
 
     # Check all files
-    results = check_all(cwd, checkers)
+    results = check_all(cwd, checkers, extra_search_paths=extra_search_paths)
 
     # Count errors
     failed_results = [r for r in results if r.has_errors]
@@ -103,6 +107,10 @@ def _run_check(checker: list[Checker] | None) -> None:
 
 @app.command()
 def check(
+    path: Path | None = typer.Argument(
+        None,
+        help="Project directory to check (default: current directory)",
+    ),
     checker: list[Checker] | None = typer.Option(
         None,
         "--checker",
@@ -111,4 +119,4 @@ def check(
     ),
 ) -> None:
     """Type-check batou deployment components."""
-    _run_check(checker)
+    _run_check(checker, path)
