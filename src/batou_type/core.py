@@ -1,5 +1,6 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
+import os
 import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
@@ -84,6 +85,11 @@ def check_file(
     cwd = cwd or Path.cwd()
     extra_search_paths = extra_search_paths or []
 
+    env = os.environ.copy()
+    if extra_search_paths:
+        existing = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = os.pathsep.join(extra_search_paths + ([existing] if existing else []))
+
     full_output = []
     any_failed = False
 
@@ -101,7 +107,7 @@ def check_file(
                 file_path,
             ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)  # nosec B603
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, env=env)  # nosec B603
         if result.returncode != 0:
             any_failed = True
             if result.stdout:
@@ -123,6 +129,12 @@ def check_all(
 ) -> list[TypeCheckResult]:
     """Type check all component files in a deployment."""
     checkers = checkers or [Checker.ty]
+    extra_search_paths = list(extra_search_paths or [])
+
+    venv = find_project_venv(root)
+    if venv is not None:
+        venv_sp = get_venv_site_packages(venv)
+        extra_search_paths = venv_sp + extra_search_paths
 
     components = find_components(root)
     results = []
