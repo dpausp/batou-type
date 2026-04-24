@@ -11,7 +11,6 @@ license = "BSD-2-Clause"
 requires-python = ">=3.10"
 dependencies = [
     "batou-stubs",
-    "batou_ext-stubs",
     "mypy",
     "pytest",
     "rich",
@@ -30,6 +29,9 @@ packages = ["src/batou_type"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/batou_type"]
+
+[project.optional-dependencies]
+ext = ["batou_ext-stubs"]
 
 [tool.ruff]
 extend-exclude = ["testproject"]
