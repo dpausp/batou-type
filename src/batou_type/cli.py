@@ -154,12 +154,14 @@ def _run_check(
     total_failed = sum(len(v) for v in failed_by_project.values())
     if failed_by_project:
         checker_names = "/".join(c.value for c in checkers)
+        multi_project = len(failed_by_project) > 1
         for project, failures in failed_by_project.items():
-            prefix = f"[red]{project.name}>[/] "
+            prefix = f"[red]{project.name}>[/] " if multi_project else ""
             for result in failures:
                 if result.output.strip():
                     for line in result.output.strip().splitlines():
-                        console.print(prefix, end="")
+                        if prefix:
+                            console.print(prefix, end="")
                         console.print(Text.from_ansi(line))
         console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
     else:
