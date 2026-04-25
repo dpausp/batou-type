@@ -10,12 +10,14 @@ readme = "README.md"
 license = "BSD-2-Clause"
 requires-python = ">=3.10"
 dependencies = [
-    "mypy",
-    "pytest",
     "rich",
     "ty",
     "typer",
 ]
+
+[project.optional-dependencies]
+mypy = ["mypy"]
+pytest = ["pytest"]
 
 [project.scripts]
 batou-type = "batou_type.cli:app"
@@ -36,4 +38,5 @@ extend-exclude = ["testproject"]
 dev = [
     "batou>=2.7.0",
     "pytest-cov>=7.1.0",
+    "batou-type[pytest,mypy]",
 ]

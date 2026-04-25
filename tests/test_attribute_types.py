@@ -5,8 +5,9 @@ Runtime:    pytest instantiates AttributeTypes and checks type() matches expecte
 """
 
 import os
+import sys
+from pathlib import Path
 from types import NoneType
-from typing import Any
 
 import pytest
 
@@ -14,7 +15,11 @@ from batou.component import Component, ComponentDefinition
 from batou.environment import Environment
 from batou.host import Host
 
-from testproject.components.attribute_types.attribute_types import (
+# Example project uses hyphenated directory name — add to sys.path for import
+_example_project = Path(__file__).resolve().parent.parent / "examples" / "clean-project"
+sys.path.insert(0, str(_example_project))
+
+from components.attribute_types.attribute_types import (
     EXPECTED_TYPES,
     AttributeTypes,
 )
