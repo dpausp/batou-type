@@ -154,7 +154,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
                     console.print(Text.from_ansi(result.output.strip()))
         console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
         for project, failures in failed_by_project.items():
-            comp_names = [Path(r.path).stem for r in failures]
+            comp_names = [Path(r.path).parent.name for r in failures]
             console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
         console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
     else:
