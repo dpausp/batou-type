@@ -129,7 +129,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
             for sp in site_pkgs:
                 console.print(f"  [dim]{sp}[/]")
         else:
-            console.print("[yellow]No project venv found (checked .venv, appenv)[/]")
+            console.print(f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]")
         console.print()
 
         if project_search_paths:
