@@ -1,12 +1,14 @@
 """Unit tests for batou_type.core pure path functions."""
 
+import os
+import stat
 from pathlib import Path
 
-from batou_type.core import find_components, find_project_venv, get_venv_site_packages, is_batou_project
+from batou_type.core import find_components, find_project_venv, is_batou_project
 
 
 class TestFindProjectVenv:
-    """Tests for find_project_venv(project: Path) -> Path | None."""
+    """Tests for find_project_venv(project: Path) -> VenvInfo | None."""
 
     def test_no_venv_returns_none(self, tmp_path: Path) -> None:
         assert find_project_venv(tmp_path) is None
@@ -15,23 +17,45 @@ class TestFindProjectVenv:
         venv = tmp_path / ".venv"
         venv.mkdir()
         (venv / "pyvenv.cfg").touch()
-        assert find_project_venv(tmp_path) == venv
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert result.label == ".venv"
+        assert result.path == str(venv)
+        assert not result.is_appenv
 
     def test_dot_venv_with_lib_dir(self, tmp_path: Path) -> None:
         venv = tmp_path / ".venv"
         venv.mkdir()
         (venv / "lib").mkdir()
-        assert find_project_venv(tmp_path) == venv
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert result.label == ".venv"
 
     def test_dot_venv_empty_returns_none(self, tmp_path: Path) -> None:
         (tmp_path / ".venv").mkdir()
         assert find_project_venv(tmp_path) is None
 
-    def test_appenv_with_pyvenv_cfg(self, tmp_path: Path) -> None:
-        venv = tmp_path / "appenv"
-        venv.mkdir()
-        (venv / "pyvenv.cfg").touch()
-        assert find_project_venv(tmp_path) == venv
+    def test_appenv_script(self, tmp_path: Path) -> None:
+        site_pkg = tmp_path / "appenv_lib" / "python3.14" / "site-packages"
+        site_pkg.mkdir(parents=True)
+        appenv = tmp_path / "appenv"
+        appenv.write_text(f"#!/bin/sh\nshift\necho '{site_pkg}'\n")
+        appenv.chmod(appenv.stat().st_mode | stat.S_IEXEC)
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert result.label == "appenv"
+        assert result.is_appenv
+        assert result.site_packages == [str(site_pkg)]
+
+    def test_appenv_failing_script_returns_none(self, tmp_path: Path) -> None:
+        appenv = tmp_path / "appenv"
+        appenv.write_text("#!/bin/sh\nexit 1\n")
+        appenv.chmod(appenv.stat().st_mode | stat.S_IEXEC)
+        assert find_project_venv(tmp_path) is None
+
+    def test_appenv_directory_returns_none(self, tmp_path: Path) -> None:
+        (tmp_path / "appenv").mkdir()
+        assert find_project_venv(tmp_path) is None
 
     def test_dot_venv_takes_priority_over_appenv(self, tmp_path: Path) -> None:
         dot_venv = tmp_path / ".venv"
@@ -39,68 +63,34 @@ class TestFindProjectVenv:
         (dot_venv / "pyvenv.cfg").touch()
 
         appenv = tmp_path / "appenv"
-        appenv.mkdir()
-        (appenv / "pyvenv.cfg").touch()
+        appenv.write_text("#!/bin/sh\nshift\necho '/fake'\n")
+        appenv.chmod(appenv.stat().st_mode | stat.S_IEXEC)
 
-        assert find_project_venv(tmp_path) == dot_venv
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert result.label == ".venv"
 
     def test_dot_venv_is_file_returns_none(self, tmp_path: Path) -> None:
         (tmp_path / ".venv").touch()  # file, not directory
         assert find_project_venv(tmp_path) is None
 
-
-class TestGetVenvSitePackages:
-    """Tests for get_venv_site_packages(venv: Path) -> list[str]."""
-
-    def test_empty_venv_returns_empty(self, tmp_path: Path) -> None:
-        venv = tmp_path / ".venv"
-        venv.mkdir()
-        assert get_venv_site_packages(venv) == []
-
-    def test_standard_layout(self, tmp_path: Path) -> None:
+    def test_dot_venv_site_packages(self, tmp_path: Path) -> None:
         venv = tmp_path / ".venv"
         sp = venv / "lib" / "python3.14" / "site-packages"
         sp.mkdir(parents=True)
-        result = get_venv_site_packages(venv)
-        assert result == [str(sp)]
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert str(sp) in result.site_packages
 
-    def test_multiple_python_versions(self, tmp_path: Path) -> None:
+    def test_dot_venv_multiple_python_versions(self, tmp_path: Path) -> None:
         venv = tmp_path / ".venv"
         sp1 = venv / "lib" / "python3.12" / "site-packages"
         sp1.mkdir(parents=True)
         sp2 = venv / "lib" / "python3.14" / "site-packages"
         sp2.mkdir(parents=True)
-        result = get_venv_site_packages(venv)
-        assert result == [str(sp1), str(sp2)]
-
-    def test_lib64_deduplicated_when_same_as_lib(self, tmp_path: Path) -> None:
-        venv = tmp_path / ".venv"
-        sp = venv / "lib" / "python3.14" / "site-packages"
-        sp.mkdir(parents=True)
-        # lib64 pointing to same resolved path
-        lib64 = venv / "lib64"
-        lib64.symlink_to(venv / "lib")
-        # The glob finds the same resolved path string
-        result = get_venv_site_packages(venv)
-        # Dedup: lib64/python3.14/site-packages resolves to same str as lib entry
-        assert len([p for p in result if "site-packages" in p]) >= 1
-
-    def test_lib64_independent_path_included(self, tmp_path: Path) -> None:
-        venv = tmp_path / ".venv"
-        sp_lib = venv / "lib" / "python3.14" / "site-packages"
-        sp_lib.mkdir(parents=True)
-        sp_lib64 = venv / "lib64" / "python3.14" / "site-packages"
-        sp_lib64.mkdir(parents=True)
-        result = get_venv_site_packages(venv)
-        assert str(sp_lib) in result
-        assert str(sp_lib64) in result
-        assert len(result) == 2
-
-    def test_no_lib_dir_returns_empty(self, tmp_path: Path) -> None:
-        venv = tmp_path / ".venv"
-        venv.mkdir()
-        (venv / "pyvenv.cfg").touch()
-        assert get_venv_site_packages(venv) == []
+        result = find_project_venv(tmp_path)
+        assert result is not None
+        assert len(result.site_packages) == 2
 
 
 class TestIsBatouProject:

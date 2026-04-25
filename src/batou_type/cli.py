@@ -15,10 +15,10 @@ from batou_type import __version__
 from batou_type.core import (
     Checker,
     TypeCheckResult,
+    VenvInfo,
     check_all,
     find_components,
     find_project_venv,
-    get_venv_site_packages,
     is_batou_project,
 )
 
@@ -124,10 +124,10 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
         project_search_paths = list(extra_search_paths)
         venv = find_project_venv(project)
         if venv:
-            site_pkgs = get_venv_site_packages(venv)
-            project_search_paths.extend(site_pkgs)
-            console.print(f"[cyan]Project venv:[/] [dim]{venv}[/]")
-            for sp in site_pkgs:
+            project_search_paths.extend(venv.site_packages)
+            kind = "appenv" if venv.is_appenv else "venv"
+            console.print(f"[cyan]Project {kind}:[/] [dim]{venv.path}[/]")
+            for sp in venv.site_packages:
                 console.print(f"  [dim]{sp}[/]")
             console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
             console.print()

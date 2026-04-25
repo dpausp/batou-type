@@ -7,28 +7,64 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-# Venv detection patterns, ordered by priority
-_VENV_CANDIDATES = [".venv", "appenv"]
+@dataclass(frozen=True)
+class VenvInfo:
+    """Detected venv information."""
+
+    label: str  # e.g. ".venv" or "appenv"
+    path: str  # venv dir or appenv script path
+    site_packages: list[str]
+    is_appenv: bool = False
 
 
-def find_project_venv(project: Path) -> Path | None:
+def _detect_dotvenv(project: Path) -> VenvInfo | None:
+    """Detect a standard .venv directory."""
+    venv_dir = project / ".venv"
+    if not venv_dir.is_dir():
+        return None
+    if not ((venv_dir / "pyvenv.cfg").exists() or (venv_dir / "lib").is_dir()):
+        return None
+    return VenvInfo(
+        label=".venv",
+        path=str(venv_dir),
+        site_packages=_glob_site_packages(venv_dir),
+    )
+
+
+def _detect_appenv(project: Path) -> VenvInfo | None:
+    """Detect an appenv script and resolve its site-packages via ./appenv python."""
+    appenv = project / "appenv"
+    if not appenv.is_file():
+        return None
+    result = subprocess.run(  # nosec B603
+        [str(appenv), "python", "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+        capture_output=True,
+        text=True,
+        cwd=project,
+    )
+    if result.returncode != 0:
+        return None
+    site_packages = result.stdout.strip()
+    if not site_packages:
+        return None
+    return VenvInfo(
+        label="appenv",
+        path=str(appenv),
+        site_packages=[site_packages],
+        is_appenv=True,
+    )
+
+
+def find_project_venv(project: Path) -> VenvInfo | None:
     """Detect a project-level venv (.venv for uv, appenv for batou)."""
-    for candidate in _VENV_CANDIDATES:
-        venv_dir = project / candidate
-        if venv_dir.is_dir():
-            # Verify it looks like a venv: has a site-packages or pyvenv.cfg
-            if (venv_dir / "pyvenv.cfg").exists() or (venv_dir / "lib").is_dir():
-                return venv_dir
-    return None
+    return _detect_dotvenv(project) or _detect_appenv(project)
 
 
-def get_venv_site_packages(venv: Path) -> list[str]:
-    """Extract site-packages paths from a venv."""
+def _glob_site_packages(venv: Path) -> list[str]:
+    """Extract site-packages paths from a standard venv directory."""
     paths: list[str] = []
-    # Standard layout: lib/pythonX.Y/site-packages
     for sp in sorted(venv.glob("lib/python*/site-packages")):
         paths.append(str(sp))
-    # lib64 symlink (some Linux distros)
     for sp in sorted(venv.glob("lib64/python*/site-packages")):
         p = str(sp)
         if p not in paths:
@@ -138,9 +174,10 @@ def check_all(
 
     venv = find_project_venv(root)
     if venv is not None:
-        venv_sp = get_venv_site_packages(venv)
         # Convert to relative paths (ty runs with cwd=root)
-        extra_search_paths = extra_search_paths + [str(Path(sp).relative_to(root)) for sp in venv_sp]
+        extra_search_paths = extra_search_paths + [
+            str(Path(sp).relative_to(root)) for sp in venv.site_packages
+        ]
 
     components = find_components(root)
     results = []
