@@ -1,6 +1,7 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
 import os
+import shlex
 import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
@@ -116,11 +117,13 @@ def check_file(
     checkers: list[Checker] | None = None,
     cwd: Path | None = None,
     extra_search_paths: list[str] | None = None,
+    ty_args: list[str] | None = None,
 ) -> TypeCheckResult:
     """Run type checker(s) on a single file."""
     checkers = checkers or [Checker.ty]
     cwd = cwd or Path.cwd()
     extra_search_paths = extra_search_paths or []
+    ty_args = ty_args or []
 
     env = os.environ.copy()
     if extra_search_paths:
@@ -136,6 +139,7 @@ def check_file(
             cmd = [sys.executable, "-m", "ty", "check", "--color", "always"]
             for sp in extra_search_paths:
                 cmd.extend(["--extra-search-path", sp])
+            cmd.extend(ty_args)
             cmd.append(file_path)
         else:
             cmd = [
@@ -167,10 +171,12 @@ def check_all(
     root: Path,
     checkers: list[Checker] | None = None,
     extra_search_paths: list[str] | None = None,
+    ty_args: list[str] | None = None,
 ) -> list[TypeCheckResult]:
     """Type check all component files in a deployment."""
     checkers = checkers or [Checker.ty]
     extra_search_paths = list(extra_search_paths or [])
+    ty_args = ty_args or []
 
     venv = find_project_venv(root)
     if venv is not None:
@@ -184,7 +190,7 @@ def check_all(
 
     for component in components:
         rel_path = str(component.relative_to(root))
-        result = check_file(rel_path, checkers, root, extra_search_paths=extra_search_paths)
+        result = check_file(rel_path, checkers, root, extra_search_paths=extra_search_paths, ty_args=ty_args)
         results.append(result)
 
     return results

@@ -5,6 +5,7 @@ from importlib import metadata
 from importlib.resources import files
 import os
 from pathlib import Path
+import shlex
 import sys
 
 import typer
@@ -76,7 +77,13 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
-def _run_check(checker: list[Checker] | None, paths: list[Path], *, verbose: bool = False) -> None:
+def _run_check(
+    checker: list[Checker] | None,
+    paths: list[Path],
+    *,
+    verbose: bool = False,
+    ty_args: list[str] | None = None,
+) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     console.print("Loaded stubs:")
@@ -137,7 +144,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path], *, verbose: boo
             console.print()
 
         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
-        results = check_all(project, checkers, extra_search_paths=project_search_paths)
+        results = check_all(project, checkers, extra_search_paths=project_search_paths, ty_args=ty_args or [])
 
         for result in results:
             if result.has_errors:
@@ -181,6 +188,12 @@ def check(
         "-v",
         help="Show detailed debug info (PYTHONPATH, site-packages)",
     ),
+    ty_args: str = typer.Option(
+        "",
+        "--ty-args",
+        help='Extra flags passed to ty, e.g. --ty-args "--output-format concise"',
+    ),
 ) -> None:
     """Type-check batou deployment components."""
-    _run_check(checker, paths or [Path.cwd()], verbose=verbose)
+    parsed_ty_args = shlex.split(ty_args) if ty_args else []
+    _run_check(checker, paths or [Path.cwd()], verbose=verbose, ty_args=parsed_ty_args)
