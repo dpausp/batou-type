@@ -113,7 +113,7 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
     console.print()
 
     checkers = checker or [Checker.ty]
-    all_failed: list[TypeCheckResult] = []
+    failed_by_project: dict[Path, list[TypeCheckResult]] = {}
 
     for project in projects:
         components = find_components(project)
@@ -139,30 +139,28 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
         results = check_all(project, checkers, extra_search_paths=project_search_paths)
 
-        if results:
-            console.print(f"[dim]Running: {results[0].command}[/]")
-
-        # Show errors for this project
         for result in results:
             if result.has_errors:
-                all_failed.append(result)
-                console.print(f"\n[red]{'=' * 60}[/]")
-                console.print(f"[red]FAILED: {result.path}[/]")
-                console.print(f"[red]{'=' * 60}[/]")
+                failed_by_project.setdefault(project, []).append(result)
+
+    # Summary: error block + project lines at the bottom
+    total_failed = sum(len(v) for v in failed_by_project.values())
+    if failed_by_project:
+        checker_names = "/".join(c.value for c in checkers)
+        console.print(f"[red]{'=' * 50} ERRORS ({checker_names}) {'=' * 50}[/]")
+        for failures in failed_by_project.values():
+            for result in failures:
                 if result.output.strip():
                     console.print(Text.from_ansi(result.output.strip()))
-
-    # Summary at the bottom
-    if all_failed:
-        console.print()
-        console.print(f"[red]{'=' * 50} ERRORS {'=' * 50}[/]")
-        for result in all_failed:
-            console.print(f"  [red]{result.path}[/]")
-        console.print(f"[red]{'=' * 44} {len(all_failed)} failed {'=' * 44}[/]")
+        console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
+        for project, failures in failed_by_project.items():
+            comp_names = [Path(r.path).stem for r in failures]
+            console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
+        console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
     else:
         console.print("[green]All components passed type checking.[/]")
 
-    raise typer.Exit(1 if all_failed else 0)
+    raise typer.Exit(1 if failed_by_project else 0)
 
 
 @app.command()
