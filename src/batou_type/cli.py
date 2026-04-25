@@ -130,23 +130,22 @@ def _run_check(
             continue
 
         # Detect project venv (check_all adds its site-packages to search paths)
-        project_search_paths = list(extra_search_paths)
         venv = find_project_venv(project)
         if venv:
-            project_search_paths.extend(venv.site_packages)
             kind = "appenv" if venv.is_appenv else "venv"
             console.print(f"[cyan]Project {kind}:[/] [dim]{venv.path}[/]")
             if verbose:
                 for sp in venv.site_packages:
                     console.print(f"  [dim]{sp}[/]")
-                console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
+                all_paths = list(extra_search_paths) + venv.site_packages
+                console.print(f"[dim]PYTHONPATH: {os.pathsep.join(all_paths)}[/]")
             console.print()
         else:
             console.print(f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]")
             console.print()
 
         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
-        results = check_all(project, checkers, extra_search_paths=project_search_paths, ty_args=ty_args or [])
+        results = check_all(project, checkers, extra_search_paths=extra_search_paths, ty_args=ty_args or [])
 
         prefix = f"[red]{project.name}>[/] " if multi_project else ""
         project_failed: list[str] = []
