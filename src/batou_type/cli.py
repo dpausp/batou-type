@@ -154,15 +154,13 @@ def _run_check(
     total_failed = sum(len(v) for v in failed_by_project.values())
     if failed_by_project:
         checker_names = "/".join(c.value for c in checkers)
-        console.print(f"[red]{'=' * 50} ERRORS ({checker_names}) {'=' * 50}[/]")
-        for failures in failed_by_project.values():
+        for project, failures in failed_by_project.items():
+            prefix = f"[red]{project.name}>[/] "
             for result in failures:
                 if result.output.strip():
-                    console.print(Text.from_ansi(result.output.strip()))
-        console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
-        for project, failures in failed_by_project.items():
-            comp_names = [Path(r.path).parent.name for r in failures]
-            console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
+                    for line in result.output.strip().splitlines():
+                        console.print(prefix, end="")
+                        console.print(Text.from_ansi(line))
         console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
     else:
         console.print("[green]All components passed type checking.[/]")
