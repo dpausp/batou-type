@@ -76,7 +76,7 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
-def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
+def _run_check(checker: list[Checker] | None, paths: list[Path], *, verbose: bool = False) -> None:
     """Execute type checking."""
     # Show stub versions and paths
     console.print("Loaded stubs:")
@@ -127,9 +127,10 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
             project_search_paths.extend(venv.site_packages)
             kind = "appenv" if venv.is_appenv else "venv"
             console.print(f"[cyan]Project {kind}:[/] [dim]{venv.path}[/]")
-            for sp in venv.site_packages:
-                console.print(f"  [dim]{sp}[/]")
-            console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
+            if verbose:
+                for sp in venv.site_packages:
+                    console.print(f"  [dim]{sp}[/]")
+                console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
             console.print()
         else:
             console.print(f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]")
@@ -174,6 +175,12 @@ def check(
         "-c",
         help="Type checker(s) to run (default: ty)",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed debug info (PYTHONPATH, site-packages)",
+    ),
 ) -> None:
     """Type-check batou deployment components."""
-    _run_check(checker, paths or [Path.cwd()])
+    _run_check(checker, paths or [Path.cwd()], verbose=verbose)
