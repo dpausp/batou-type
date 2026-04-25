@@ -125,15 +125,14 @@ def _run_check(checker: list[Checker] | None, paths: list[Path]) -> None:
         venv = find_project_venv(project)
         if venv:
             site_pkgs = get_venv_site_packages(venv)
+            project_search_paths.extend(site_pkgs)
             console.print(f"[cyan]Project venv:[/] [dim]{venv}[/]")
             for sp in site_pkgs:
                 console.print(f"  [dim]{sp}[/]")
+            console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
+            console.print()
         else:
             console.print(f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]")
-        console.print()
-
-        if project_search_paths:
-            console.print(f"[dim]PYTHONPATH: {os.pathsep.join(project_search_paths)}[/]")
             console.print()
 
         console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
