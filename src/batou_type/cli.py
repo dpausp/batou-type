@@ -122,6 +122,7 @@ def _run_check(
     checkers = checker or [Checker.ty]
     total_failed = 0
     multi_project = len(projects) > 1
+    failed_summary: dict[str, list[str]] = {}
 
     for project in projects:
         components = find_components(project)
@@ -148,20 +149,25 @@ def _run_check(
         results = check_all(project, checkers, extra_search_paths=project_search_paths, ty_args=ty_args or [])
 
         prefix = f"[red]{project.name}>[/] " if multi_project else ""
-        project_failed = 0
+        project_failed: list[str] = []
         for result in results:
             if result.has_errors:
-                project_failed += 1
+                project_failed.append(Path(result.path).parent.name)
                 if result.output.strip():
                     for line in result.output.strip().splitlines():
                         if prefix:
                             console.print(prefix, end="")
                         console.print(Text.from_ansi(line))
-        total_failed += project_failed
+        total_failed += len(project_failed)
+        if project_failed:
+            failed_summary[str(project)] = project_failed
 
     # Final summary
     if total_failed:
         checker_names = "/".join(c.value for c in checkers)
+        console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
+        for project, comp_names in failed_summary.items():
+            console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
         console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
     else:
         console.print("[green]All components passed type checking.[/]")
