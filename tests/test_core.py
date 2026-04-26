@@ -1,6 +1,5 @@
 """Unit tests for batou_type.core pure path functions."""
 
-import os
 import stat
 from pathlib import Path
 

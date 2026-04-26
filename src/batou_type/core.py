@@ -1,7 +1,6 @@
 """Core type checking logic shared between CLI and pytest plugin."""
 
 import os
-import shlex
 import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass

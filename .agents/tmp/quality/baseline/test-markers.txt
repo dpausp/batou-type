@@ -1,4 +1,8 @@
+@pytest.mark.pytester_example_path(*path_segments): join the given path segments to `pytester_example_dir` for this test.
+
 @pytest.mark.batou_ty: Tests which run batou type checking.
+
+@pytest.mark.no_cover: disable coverage for this test.
 
 @pytest.mark.filterwarnings(warning): add a warning filter to the given test. see https://docs.pytest.org/en/stable/how-to/capture-warnings.html#pytest-mark-filterwarnings 
 

@@ -15,8 +15,6 @@ from rich.text import Text
 from batou_type import __version__
 from batou_type.core import (
     Checker,
-    TypeCheckResult,
-    VenvInfo,
     check_all,
     find_components,
     find_project_venv,

@@ -1,8 +1,1416 @@
 error[unresolved-attribute]: Object of type `Traversable` has no attribute `parent`
-  --> src/batou_type/cli.py:49:29
+  --> src/batou_type/cli.py:54:25
    |
-49 |             stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
-   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+54 |         stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
 
-Found 1 diagnostic
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:51:9
+    |
+ 51 |       def from_context(  # type: ignore[override]
+    |  _________^
+ 52 | |         cls,
+ 53 | |         component: Component,
+ 54 | |         key: str,
+ 55 | |         value: object,
+ 56 | |         error: Exception,
+ 57 | |     ) -> AttributeExpansionError: ...
+    | |________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:83:9
+    |
+ 83 |       def from_context(cls, message: str) -> ComponentUsageError: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:94:9
+    |
+ 94 |       def from_context(  # type: ignore[override]
+    |  _________^
+ 95 | |         cls,
+ 96 | |         components: list[Component],
+ 97 | |         roots: list[Component],
+ 98 | |     ) -> ComponentWithUpdateWithoutVerify: ...
+    | |_________________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `components` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:123:9
+    |
+123 |       def from_context(  # type: ignore[override]
+    |  _________^
+124 | |         cls,
+125 | |         component: Component,
+126 | |         key: str,
+127 | |         value: object,
+128 | |         conversion: type | str | Callable[..., object],
+129 | |         error: Exception,
+130 | |     ) -> ConversionError: ...
+    | |________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:140:9
+    |
+140 |       def from_context(  # type: ignore[override]
+    |  _________^
+141 | |         cls,
+142 | |         error: object,
+143 | |     ) -> CycleErrorDetected: ...
+    | |___________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `error` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:156:9
+    |
+156 |       def from_context(  # type: ignore[override]
+    |  _________^
+157 | |         cls,
+158 | |         a: ComponentDefinition,
+159 | |         b: ComponentDefinition,
+160 | |     ) -> DuplicateComponent: ...
+    | |___________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `a` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:166:9
+    |
+166 |       def from_context(cls, hostname: str) -> DuplicateHostError: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `hostname` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:175:9
+    |
+175 |       def from_context(  # type: ignore[override]
+    |  _________^
+176 | |         cls,
+177 | |         hostname: str,
+178 | |         a: str,
+179 | |         b: str,
+180 | |     ) -> DuplicateHostMapping: ...
+    | |_____________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `hostname` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:189:9
+    |
+189 |       def from_context(  # type: ignore[override]
+    |  _________^
+190 | |         cls,
+191 | |         component_name: str,
+192 | |         attribute: str,
+193 | |     ) -> DuplicateOverride: ...
+    | |__________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component_name` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:200:9
+    |
+200 |       def from_context(  # type: ignore[override]
+    |  _________^
+201 | |         cls,
+202 | |         component_name: str,
+203 | |         attribute: str,
+204 | |     ) -> DuplicateSecretsComponentAttribute: ...
+    | |___________________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component_name` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:239:9
+    |
+239 |       def from_context(  # type: ignore[override]
+    |  _________^
+240 | |         cls,
+241 | |         address: object,
+242 | |         kind: int,
+243 | |     ) -> IPAddressConfigurationError: ...
+    | |____________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `address` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:249:9
+    |
+249 |       def from_context(cls, address: str) -> InvalidIPAddressError: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `address` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:255:9
+    |
+255 |       def from_context(  # type: ignore[override]
+    |  _________^
+256 | |         cls,
+257 | |         component_name: str,
+258 | |         hostname: str,
+259 | |     ) -> MissingComponent: ...
+    | |_________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component_name` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:265:9
+    |
+265 |       def from_context(  # type: ignore[override]
+    |  _________^
+266 | |         cls,
+267 | |         environment: Environment,
+268 | |     ) -> MissingEnvironment: ...
+    | |___________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `environment` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:275:9
+    |
+275 |       def from_context(  # type: ignore[override]
+    |  _________^
+276 | |         cls,
+277 | |         component: Component,
+278 | |         attributes: list[str],
+279 | |     ) -> MissingOverrideAttributes: ...
+    | |__________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:290:9
+    |
+290 |       def from_context(  # type: ignore[override]
+    |  _________^
+291 | |         cls,
+292 | |         roots: Sequence[RootComponent],
+293 | |     ) -> NonConvergingWorkingSet: ...
+    | |________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `roots` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:308:9
+    |
+308 |       def from_context(cls, component_name: str) -> SuperfluousComponentSection: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component_name` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:314:9
+    |
+314 |       def from_context(cls, component_name: str) -> SuperfluousSecretsSection: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `component_name` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:320:9
+    |
+320 |       def from_context(cls, section: str) -> SuperfluousSection: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `section` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:342:9
+    |
+342 |       def from_context(  # type: ignore[override]
+    |  _________^
+343 | |         cls,
+344 | |         root: RootComponent,
+345 | |         exception: Exception,
+346 | |         tb: TracebackType,
+347 | |     ) -> UnknownComponentConfigurationError: ...
+    | |___________________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `root` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:355:9
+    |
+355 |       def from_context(cls, hostname: str) -> UnknownHostSecretsSection: ...  # type: ignore[override]
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `hostname` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:361:9
+    |
+361 |       def from_context(  # type: ignore[override]
+    |  _________^
+362 | |         cls,
+363 | |         resources: object,
+364 | |     ) -> UnsatisfiedResources: ...
+    | |_____________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `resources` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:376:9
+    |
+376 |       def from_context(  # type: ignore[override]
+    |  _________^
+377 | |         cls,
+378 | |         components: list[Component],
+379 | |         root: RootComponent,
+380 | |     ) -> UnusedComponentsInitialized: ...
+    | |____________________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `components` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `from_context`
+   --> src/batou_type/vendor/batou/__init__.pyi:388:9
+    |
+388 |       def from_context(  # type: ignore[override]
+    |  _________^
+389 | |         cls,
+390 | |         resources: object,
+391 | |     ) -> UnusedResources: ...
+    | |________________________^ Definition is incompatible with `ConfigurationError.from_context`
+    |
+   ::: src/batou_type/vendor/batou/__init__.pyi:106:9
+    |
+106 |       def from_context(  # type: ignore[override]
+    |  _________-
+107 | |         cls,
+108 | |         message: str,
+109 | |         component: Component | None = ...,
+110 | |     ) -> ConfigurationError: ...
+    | |___________________________- `ConfigurationError.from_context` defined here
+    |
+info: the parameter named `resources` does not match `message` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[unresolved-import]: Module `typing` has no member `Self`
+ --> src/batou_type/vendor/batou/component.pyi:7:34
+  |
+7 | from typing import Any, Literal, Self, overload
+  |                                  ^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[invalid-syntax]: Cannot use type parameter lists on Python 3.10 (syntax was added in Python 3.12)
+  --> src/batou_type/vendor/batou/component.pyi:34:16
+   |
+34 | class Attribute[T]:
+   |                ^^^
+   |
+info: Python 3.10 was assumed when parsing syntax
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/appenv.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `Self`
+ --> src/batou_type/vendor/batou/lib/archive.pyi:2:36
+  |
+2 | from typing import Final, Literal, Self, override
+  |                                    ^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/archive.pyi:2:42
+  |
+2 | from typing import Final, Literal, Self, override
+  |                                          ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/cmmi.pyi:1:34
+  |
+1 | from typing import Any, Literal, override
+  |                                  ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/debian.pyi:1:20
+  |
+1 | from typing import override
+  |                    ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:54:6
+   |
+54 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:56:6
+   |
+56 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:59:6
+   |
+59 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:79:6
+   |
+79 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:81:6
+   |
+81 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:84:6
+   |
+84 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:86:6
+   |
+86 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+  --> src/batou_type/vendor/batou/lib/file.pyi:88:6
+   |
+88 |     @typing.override
+   |      ^^^^^^^^^^^^^^^
+   |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:108:6
+    |
+108 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:113:6
+    |
+113 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:115:6
+    |
+115 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:117:6
+    |
+117 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:139:6
+    |
+139 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:141:6
+    |
+141 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:144:6
+    |
+144 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:146:6
+    |
+146 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:148:6
+    |
+148 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:163:6
+    |
+163 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:166:6
+    |
+166 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:190:6
+    |
+190 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:192:6
+    |
+192 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:194:6
+    |
+194 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:267:6
+    |
+267 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:269:6
+    |
+269 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:282:6
+    |
+282 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:284:6
+    |
+284 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:299:6
+    |
+299 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:301:6
+    |
+301 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:303:6
+    |
+303 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:317:6
+    |
+317 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:319:6
+    |
+319 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:321:6
+    |
+321 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:332:6
+    |
+332 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:334:6
+    |
+334 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-attribute]: Module `typing` has no member `override`
+   --> src/batou_type/vendor/batou/lib/file.pyi:336:6
+    |
+336 |     @typing.override
+    |      ^^^^^^^^^^^^^^^
+    |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving the `override` attribute
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/git.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/logrotate.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/mercurial.pyi:2:29
+  |
+2 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/mysql.pyi:1:36
+  |
+1 | from typing import Final, Literal, override
+  |                                    ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/nagios.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/python.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/supervisor.pyi:1:34
+  |
+1 | from typing import Any, Literal, override
+  |                                  ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `override`
+ --> src/batou_type/vendor/batou/lib/svn.pyi:1:29
+  |
+1 | from typing import Literal, override
+  |                             ^^^^^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `typing` has no member `Self`
+ --> src/batou_type/vendor/batou/nullable_attribute.pyi:2:25
+  |
+2 | from typing import Any, Self, overload
+  |                         ^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[invalid-syntax]: Cannot use type parameter lists on Python 3.10 (syntax was added in Python 3.12)
+ --> src/batou_type/vendor/batou/nullable_attribute.pyi:7:24
+  |
+7 | class NullableAttribute[T](Attribute[T]):
+  |                        ^^^
+  |
+info: Python 3.10 was assumed when parsing syntax
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[not-subscriptable]: Cannot subscript object of type `<class 'Attribute'>` with no `__class_getitem__` method
+ --> src/batou_type/vendor/batou/nullable_attribute.pyi:7:28
+  |
+7 | class NullableAttribute[T](Attribute[T]):
+  |                            ^^^^^^^^^^^^
+  |
+
+error[unresolved-import]: Module `typing` has no member `Self`
+ --> src/batou_type/vendor/batou/provision.pyi:1:20
+  |
+1 | from typing import Self
+  |                    ^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[unresolved-import]: Module `batou._output` has no member `OutputBackend`
+ --> src/batou_type/vendor/batou/remote_core.pyi:4:27
+  |
+4 | from batou._output import OutputBackend
+  |                           ^^^^^^^^^^^^^
+  |
+
+error[unresolved-import]: Module `typing` has no member `Self`
+ --> src/batou_type/vendor/batou/secrets/encryption.pyi:3:20
+  |
+3 | from typing import Self, TextIO
+  |                    ^^^^
+  |
+info: The member may be available on other Python versions or platforms
+info: Python 3.10 was assumed when resolving imports
+  --> pyproject.toml:11:19
+   |
+11 | requires-python = ">=3.10"
+   |                   ^^^^^^^^ Python version configuration
+   |
+
+error[invalid-method-override]: Invalid override of method `verify`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:29:9
+   |
+29 |     def verify(self, _: Any) -> None: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.verify`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:15:9
+   |
+15 |     def verify(self, previous_result: Any) -> None: ...
+   |         ------------------------------------------ `Step.verify` defined here
+   |
+info: the parameter named `_` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `apply`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:30:9
+   |
+30 |     def apply(self, _: Any) -> Any: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.apply`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:16:9
+   |
+16 |     def apply(self, previous_result: Any) -> Any: ...
+   |         ---------------------------------------- `Step.apply` defined here
+   |
+info: the parameter named `_` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `verify`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:37:9
+   |
+37 |     def verify(self, account_created: Any) -> None: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.verify`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:15:9
+   |
+15 |     def verify(self, previous_result: Any) -> None: ...
+   |         ------------------------------------------ `Step.verify` defined here
+   |
+info: the parameter named `account_created` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `apply`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:38:9
+   |
+38 |     def apply(self, _: Any) -> Keypair: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.apply`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:16:9
+   |
+16 |     def apply(self, previous_result: Any) -> Any: ...
+   |         ---------------------------------------- `Step.apply` defined here
+   |
+info: the parameter named `_` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `verify`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:42:9
+   |
+42 |     def verify(self, key: Keypair | None) -> None: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.verify`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:15:9
+   |
+15 |     def verify(self, previous_result: Any) -> None: ...
+   |         ------------------------------------------ `Step.verify` defined here
+   |
+info: the parameter named `key` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `apply`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:43:9
+   |
+43 |     def apply(self, keys: Any) -> Any: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.apply`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:16:9
+   |
+16 |     def apply(self, previous_result: Any) -> Any: ...
+   |         ---------------------------------------- `Step.apply` defined here
+   |
+info: the parameter named `keys` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+error[invalid-method-override]: Invalid override of method `apply`
+  --> src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:54:9
+   |
+54 |     def apply(self, client: Any) -> None: ...
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Step.apply`
+   |
+  ::: src/batou_type/vendor/batou_ext/s3_bootstrap.pyi:16:9
+   |
+16 |     def apply(self, previous_result: Any) -> Any: ...
+   |         ---------------------------------------- `Step.apply` defined here
+   |
+info: the parameter named `client` does not match `previous_result` (and can be used as a keyword parameter)
+info: This violates the Liskov Substitution Principle
+
+Found 88 diagnostics

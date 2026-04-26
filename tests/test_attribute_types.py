@@ -11,7 +11,7 @@ from types import NoneType
 
 import pytest
 
-from batou.component import Component, ComponentDefinition
+from batou.component import ComponentDefinition
 from batou.environment import Environment
 from batou.host import Host
 
@@ -19,7 +19,7 @@ from batou.host import Host
 _example_project = Path(__file__).resolve().parent.parent / "examples" / "clean-project"
 sys.path.insert(0, str(_example_project))
 
-from components.attribute_types.attribute_types import (
+from components.attribute_types.attribute_types import (  # noqa: E402
     EXPECTED_TYPES,
     AttributeTypes,
 )
