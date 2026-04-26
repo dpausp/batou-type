@@ -39,4 +39,5 @@ dev = [
     "batou>=2.7.0",
     "pytest-cov>=7.1.0",
     "batou-type[pytest,mypy]",
+    "pytest-archon>=0.0.7",
 ]
