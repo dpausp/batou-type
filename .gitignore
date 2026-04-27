@@ -4,3 +4,5 @@ __pycache__/
 .agents/tmp/
 .ty-symbols.db
 .coverage
+docs/_build/
+docs/autoapi/
