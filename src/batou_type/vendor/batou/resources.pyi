@@ -6,10 +6,13 @@ from batou.host import Host
 class Resources:
     subscribers: dict[str, set[Subscription]] | None
     dirty_dependencies: set[RootComponent]
-    resources: dict[
-        str,
-        dict[RootComponent, list[object]],
-    ] | None
+    resources: (
+        dict[
+            str,
+            dict[RootComponent, list[object]],
+        ]
+        | None
+    )
 
     def __init__(self) -> None: ...
     def _subscriptions(self, key: str, host: Host | None) -> list[Subscription]: ...

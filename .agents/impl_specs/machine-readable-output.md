@@ -6,6 +6,9 @@ lifecycle:
   design:
     completed_at: "2026-04-28T14:00:00Z"
     git_rev: "9d6d81d"
+  implement:
+    completed_at: "2026-04-28T16:00:00Z"
+    git_rev: "cf84d79"
 ---
 
 # machine-readable-output
@@ -281,3 +284,41 @@ batou-type check --json . | llm-tool
 - mypy `--output json`: https://mypy.readthedocs.io/en/stable/command_line.html
 - GitLab Code Quality spec: https://docs.gitlab.com/ci/testing/code_quality/#code-quality-report-format
 - Stogger: ../stogger/packages/stogger
+
+## Appendix
+
+### Implementation Plan
+
+```yaml
+id: machine-readable-output
+description: "Add structured JSON output mode to batou-type: Pydantic models in output.py, unified Diagnostic model, checker-specific converters (ty GitLab, mypy JSONL), build_output serializer, export_schema, json_mode parameter on check_file/check_all, --json/--output-format json and --show-schema CLI flags, stogger-based logging to stderr."
+git_rev: "cf84d79"
+created_at: "2026-04-28T16:00:00Z"
+target_tests:
+  - file: tests/impl_spec/test_machine_readable_output.py
+    tests:
+      - TestOutputModuleImports::test_import_models
+      - TestOutputModuleImports::test_import_build_and_schema
+      - TestOutputModuleImports::test_import_converters
+      - TestDiagnosticModel::test_diagnostic_has_required_fields
+      - TestDiagnosticModel::test_diagnostic_optional_fields_default_none
+      - TestCheckOutputModel::test_check_output_has_projects_and_summary
+      - TestCheckOutputModel::test_check_output_schema_generated
+      - TestFromTyGitlabConverter::test_converts_gitlab_json_array
+      - TestFromTyGitlabConverter::test_ty_fields_mapped_correctly
+      - TestFromTyGitlabConverter::test_ty_has_no_column
+      - TestFromMypyJsonlConverter::test_converts_mypy_jsonl_lines
+      - TestFromMypyJsonlConverter::test_mypy_fields_mapped_correctly
+      - TestFromMypyJsonlConverter::test_mypy_multiple_lines
+      - TestBuildOutputFunction::test_build_output_maps_results
+      - TestBuildOutputFunction::test_build_output_with_errors
+      - TestExportSchema::test_export_schema_returns_dict
+      - TestExportSchema::test_export_schema_has_type_definitions
+      - TestCheckFileJsonMode::test_check_file_accepts_json_mode
+      - TestCheckFileJsonMode::test_typecheckresult_has_errors_field
+      - TestCheckAllJsonMode::test_check_all_accepts_json_mode
+      - TestCliJsonFlag::test_json_flag_produces_json_on_stdout
+      - TestCliJsonFlag::test_json_mode_diagnostics_on_stderr
+      - TestCliShowSchemaFlag::test_show_schema_outputs_json_schema
+      - TestJsonOutputRoundtrip::test_roundtrip_with_type_error
+```

@@ -66,9 +66,7 @@ class TestCheck:
     def test_check_component_with_type_error_exits_one(self, temp_project):
         """Check with type errors exits 1."""
         component = temp_project / "components" / "badcomponent.py"
-        component.write_text(
-            "def configure() -> int:\n    return 'not an int'\n"
-        )
+        component.write_text("def configure() -> int:\n    return 'not an int'\n")
 
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 1

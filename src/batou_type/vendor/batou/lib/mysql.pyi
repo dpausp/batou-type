@@ -2,14 +2,11 @@ from typing import Final, Literal, override
 
 from batou.component import Component
 
-
 class _USE_SUDO:
     """Sentinel type for USE_SUDO marker."""
     def __repr__(self) -> str: ...
 
-
 USE_SUDO: Final[_USE_SUDO]
-
 
 class Command(Component):
     namevar: Literal["statement"]

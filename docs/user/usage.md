@@ -28,6 +28,33 @@ Use `--ty-args` to forward additional arguments:
 $ batou-type check --ty-args "--output-format concise"
 ```
 
+## JSON Output
+
+Use `--json` (or `--output-format json`) to produce machine-readable JSON instead of human-readable output:
+
+```{code-block} shell
+$ batou-type check --json .
+$ batou-type check --output-format json .
+```
+
+This is designed for piping into LLM tools, CI pipelines, or any downstream processing:
+
+```{code-block} shell
+$ batou-type check --json . | llm-tool
+```
+
+In JSON mode, the structured result goes to **stdout** while all diagnostic messages (progress, stub loading, venv detection) go to **stderr**. This keeps the JSON payload clean for piping.
+
+To inspect the JSON Schema that defines the output format:
+
+```{code-block} shell
+$ batou-type check --show-schema
+```
+
+The schema is also available as a `$schema` property inside every JSON output.
+
+Exit codes are unchanged in JSON mode — see [](#exit-codes) below.
+
 ## How Projects Are Discovered
 
 `batou-type` identifies a batou project by the presence of a `components/` directory. This matches the standard batou deployment layout:
@@ -86,6 +113,8 @@ Shows the tool version and the status of loaded stub packages (whether vendored 
 | 2 | Invalid command-line usage (wrong flag, unknown checker name) |
 
 Use the exit code in CI pipelines to fail builds on type errors.
+
+In JSON mode, all diagnostics (type errors, hints, code references) appear as structured `Diagnostic` objects inside the JSON output on stdout. Infrastructure messages remain on stderr.
 
 ## pytest Integration
 

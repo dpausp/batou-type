@@ -8,6 +8,8 @@ from pathlib import Path
 import shlex
 import sys
 
+import structlog
+import stogger
 import typer
 from rich.console import Console
 from rich.text import Text
@@ -15,11 +17,16 @@ from rich.text import Text
 from batou_type import __version__
 from batou_type.core import (
     Checker,
+    TypeCheckResult,
     check_all,
     find_components,
     find_project_venv,
     is_batou_project,
 )
+
+# Initialize structured logging to stderr
+stogger.init_early_logging()
+log = structlog.get_logger("batou_type")
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -49,18 +56,27 @@ def _detect_stub(name: str, pkg: str, vendor_subdir: str) -> StubInfo:
     """Detect stub: prefer external package, fall back to vendored."""
     try:
         ver = metadata.version(name)
-        stub_path = str(files(pkg).joinpath("lib").parent)  # type: ignore[unresolved-attribute]
+        stub_path = str(files(pkg).joinpath("lib").parent)  # ty: ignore[unresolved-attribute]
         return StubInfo(name=name, version=ver, path=stub_path, vendored=False)
-    except (metadata.PackageNotFoundError, AttributeError, TypeError, FileNotFoundError):
+    except (
+        metadata.PackageNotFoundError,
+        AttributeError,
+        TypeError,
+        FileNotFoundError,
+    ):
         vendor_path = VENDOR_STUBS_PATH / vendor_subdir
         if vendor_path.is_dir():
-            return StubInfo(name=name, version="vendored", path=str(vendor_path), vendored=True)
+            return StubInfo(
+                name=name, version="vendored", path=str(vendor_path), vendored=True
+            )
         return StubInfo(name=name, version=None, path=None, vendored=False)
 
 
 def _detect_all_stubs() -> list[StubInfo]:
     """Detect all stub packages with vendor fallback."""
-    return [_detect_stub(name, pkg, subdir) for name, (pkg, subdir) in VENDOR_STUBS.items()]
+    return [
+        _detect_stub(name, pkg, subdir) for name, (pkg, subdir) in VENDOR_STUBS.items()
+    ]
 
 
 @app.command()
@@ -70,7 +86,9 @@ def version() -> None:
     for info in _detect_all_stubs():
         if info.version and info.path:
             label = "vendored" if info.vendored else info.version
-            console.print(f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]")
+            console.print(
+                f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]"
+            )
         else:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
@@ -81,22 +99,35 @@ def _run_check(
     *,
     verbose: bool = False,
     ty_args: list[str] | None = None,
+    json_mode: bool = False,
 ) -> None:
     """Execute type checking."""
     # Show stub versions and paths
-    console.print("Loaded stubs:")
+    log.info("loaded-stubs")
     stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
     for info in stub_infos:
         if info.version and info.path:
             label = "vendored" if info.vendored else info.version
-            console.print(f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]")
+            log.info("stub-info", name=info.name, version=label, path=info.path)
             extra_search_paths.append(str(Path(info.path).parent.resolve()))
         else:
-            console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
+            log.info("stub-not-installed", name=info.name)
 
-    console.print(f"Python: [dim]{sys.executable}[/]")
-    console.print()
+    log.info("python-info", executable=sys.executable)
+
+    if not json_mode:
+        console.print("Loaded stubs:")
+        for info in stub_infos:
+            if info.version and info.path:
+                label = "vendored" if info.vendored else info.version
+                console.print(
+                    f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]"
+                )
+            else:
+                console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
+        console.print(f"Python: [dim]{sys.executable}[/]")
+        console.print()
 
     # Discover batou projects: direct paths + scan subdirs of non-project dirs
     projects: list[Path] = []
@@ -105,22 +136,74 @@ def _run_check(
             projects.append(p)
         else:
             projects.extend(
-                child for child in sorted(p.iterdir()) if child.is_dir() and is_batou_project(child)
+                child
+                for child in sorted(p.iterdir())
+                if child.is_dir() and is_batou_project(child)
             )
 
     if not projects:
-        console.print("[yellow]No batou projects found (need components/ directory)[/]")
+        log.info("no-projects-found")
+        if json_mode:
+            from batou_type.output import build_output
+
+            output = build_output(
+                [], metadata={"checker": [c.value for c in (checker or [Checker.ty])]}
+            )
+            print(output.model_dump_json(indent=2, by_alias=True))
+        else:
+            console.print(
+                "[yellow]No batou projects found (need components/ directory)[/]"
+            )
         raise typer.Exit(0)
 
-    console.print(f"[green]Found {len(projects)} project(s):[/]")
+    log.info("projects-found", count=len(projects))
     for project in projects:
-        console.print(f"  [dim]{project}[/]")
-    console.print()
+        log.info("project", path=str(project))
 
     checkers = checker or [Checker.ty]
     total_failed = 0
     multi_project = len(projects) > 1
     failed_summary: dict[str, list[str]] = {}
+
+    if json_mode:
+        all_results: list[TypeCheckResult] = []
+        for project in projects:
+            components = find_components(project)
+            if not components:
+                continue
+
+            venv = find_project_venv(project)
+            if venv:
+                kind = "appenv" if venv.is_appenv else "venv"
+                log.info("project-venv", kind=kind, path=venv.path)
+            else:
+                log.info("no-venv", project=str(project))
+
+            log.info("checking-components", count=len(components), project=str(project))
+            results = check_all(
+                project,
+                checkers,
+                extra_search_paths=extra_search_paths,
+                ty_args=ty_args or [],
+                json_mode=True,
+            )
+            all_results.extend(results)
+            for result in results:
+                if result.has_errors:
+                    total_failed += 1
+
+        from batou_type.output import build_output
+
+        checker_names = [c.value for c in checkers]
+        output = build_output(all_results, metadata={"checker": checker_names})
+        print(output.model_dump_json(indent=2, by_alias=True))
+        raise typer.Exit(1 if total_failed else 0)
+
+    # Human mode
+    console.print(f"[green]Found {len(projects)} project(s):[/]")
+    for project in projects:
+        console.print(f"  [dim]{project}[/]")
+    console.print()
 
     for project in projects:
         components = find_components(project)
@@ -131,6 +214,7 @@ def _run_check(
         venv = find_project_venv(project)
         if venv:
             kind = "appenv" if venv.is_appenv else "venv"
+            log.info("project-venv", kind=kind, path=venv.path)
             console.print(f"[cyan]Project {kind}:[/] [dim]{venv.path}[/]")
             if verbose:
                 for sp in venv.site_packages:
@@ -139,11 +223,22 @@ def _run_check(
                 console.print(f"[dim]PYTHONPATH: {os.pathsep.join(all_paths)}[/]")
             console.print()
         else:
-            console.print(f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]")
+            log.info("no-venv", project=str(project))
+            console.print(
+                f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]"
+            )
             console.print()
 
-        console.print(f"[green]Checking {len(components)} component(s) in {project}...[/]")
-        results = check_all(project, checkers, extra_search_paths=extra_search_paths, ty_args=ty_args or [])
+        log.info("checking-components", count=len(components), project=str(project))
+        console.print(
+            f"[green]Checking {len(components)} component(s) in {project}...[/]"
+        )
+        results = check_all(
+            project,
+            checkers,
+            extra_search_paths=extra_search_paths,
+            ty_args=ty_args or [],
+        )
 
         prefix = f"[red]{project.name}>[/] " if multi_project else ""
         project_failed: list[str] = []
@@ -165,7 +260,9 @@ def _run_check(
         console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
         for project, comp_names in failed_summary.items():
             console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
-        console.print(f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]")
+        console.print(
+            f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]"
+        )
     else:
         console.print("[green]All components passed type checking.[/]")
 
@@ -195,7 +292,39 @@ def check(
         "--ty-args",
         help='Extra flags passed to ty, e.g. --ty-args "--output-format concise"',
     ),
+    output_format: str = typer.Option(
+        "human",
+        "--output-format",
+        help="Output format: human (default) or json",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output results as JSON to stdout (shorthand for --output-format json)",
+    ),
+    show_schema: bool = typer.Option(
+        False,
+        "--show-schema",
+        help="Print the JSON Schema for the output format and exit",
+    ),
 ) -> None:
     """Type-check batou deployment components."""
+    if show_schema:
+        from batou_type.output import export_schema
+
+        import json as _json
+
+        typer.echo(_json.dumps(export_schema(), indent=2))
+        raise typer.Exit(0)
+
+    effective_format = "json" if json_output else output_format
+    json_mode = effective_format == "json"
+
     parsed_ty_args = shlex.split(ty_args) if ty_args else []
-    _run_check(checker, paths or [Path.cwd()], verbose=verbose, ty_args=parsed_ty_args)
+    _run_check(
+        checker,
+        paths or [Path.cwd()],
+        verbose=verbose,
+        ty_args=parsed_ty_args,
+        json_mode=json_mode,
+    )

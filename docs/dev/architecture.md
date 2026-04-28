@@ -1,17 +1,17 @@
 # Architecture
 
-batou-type is structured as three isolated layers, each with a single responsibility and strict dependency rules. The separation ensures that the core type-checking logic has zero framework coupling and can be reused from both the CLI and the pytest plugin without pulling in unnecessary dependencies.
+batou-type is structured as four isolated layers, each with a single responsibility and strict dependency rules. The separation ensures that the core type-checking logic has zero framework coupling and can be reused from both the CLI and the pytest plugin without pulling in unnecessary dependencies.
 
 ## Layer Model
 
 ```
-cli.py / __main__.py    ← presentation (typer, rich)
+cli.py / __main__.py    ← presentation (typer, rich, stogger)
+output.py               ← output modeling (pydantic)
 pytest_plugin.py        ← plugin (pytest)
 core.py                 ← domain (stdlib only)
 vendor/                 ← bundled stubs (leaf, no upward imports)
-```
 
-**Dependency direction is strictly downward.** `cli.py` and `pytest_plugin.py` both import from `core.py`. Neither imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependency direction is strictly downward.** `cli.py` imports from both `output.py` and `core.py`. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
 
 This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
 
@@ -21,16 +21,31 @@ Each layer owns its framework:
 
 | Framework | Where it lives | Why |
 |-----------|---------------|-----|
-| typer, rich | `cli.py` only | CLI presentation concerns only |
+| typer, rich, stogger | `cli.py` only | CLI presentation and diagnostic logging |
+| pydantic | `output.py` only | Output structure modeling and JSON serialization |
 | pytest | `pytest_plugin.py` only | Plugin hook protocol only |
 | stdlib | `core.py` | Domain logic has no framework opinions |
+`__init__.py` re-exports from `core.py` only — it never touches typer, rich, stogger, pydantic, or pytest. This keeps the public API importable without triggering any framework installation.
 
-`__init__.py` re-exports from `core.py` only — it never touches typer, rich, or pytest. This keeps the public API importable without triggering any framework installation.
+## Output Layer
+
+`output.py` sits between the CLI and the domain layer, providing structured machine-readable output via Pydantic models. It is imported by `cli.py` only when JSON mode is active (`--json` / `--output-format json`).
+
+The module contains:
+
+- **Pydantic models** — `CheckOutput` (root), `ProjectResult`, `ComponentResult`, and `Diagnostic` define the JSON output schema. `Diagnostic` is a unified model: converter functions `from_ty_gitlab()` and `from_mypy_jsonl()` map checker-specific formats (GitLab Code Quality, mypy JSONL) to a single structure with `file`, `line`, `column`, `message`, `severity`, `code`, and `checker` fields.
+- **Serializer** — `build_output()` converts internal `TypeCheckResult` dataclasses from `core.py` into the Pydantic output tree, then serializes to JSON.
+- **Schema export** — `export_schema()` exposes the JSON Schema for validation and tooling integration.
+
+The stdout/stderr split is enforced at the CLI layer: JSON payload goes to stdout (pipeable), all diagnostic logging goes to stderr via stogger. `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
+
+`TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the domain layer dependency-free.
 
 ## Public API Boundary
 
 `__init__.py` defines `__all__` as the stable public surface: `Checker`, `TypeCheckResult`, `check_all`, `check_file`, `find_components`, and `__version__`. Everything else is an internal implementation detail.
 
+The `output.py` module exports its Pydantic models and `export_schema()` as a programmatic API, but these are **not** re-exported through `__init__.py`. Consumers who need the output models import directly from `batou_type.output`. The CLI is the sole consumer within the package.
 Consumers fall into two categories:
 
 - **CLI users** invoke `batou_type.cli:app` via the console script entry point. They never import the package.

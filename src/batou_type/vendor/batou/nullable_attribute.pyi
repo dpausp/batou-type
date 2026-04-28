@@ -1,8 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Self, overload
 
-from batou.component import Attribute, ConfigString
-
+from batou.component import Attribute
 
 class NullableAttribute[T](Attribute[T]):
     """Attribute that defaults to None — __get__ returns T | None."""
@@ -26,7 +25,6 @@ class NullableAttribute[T](Attribute[T]):
         expand: bool = ...,
         map: bool = ...,
     ) -> None: ...
-
     @overload
     def __get__(self, obj: None, objtype: type | None = ...) -> Self: ...
     @overload

@@ -1,3 +1,6 @@
+# ruff: noqa: E402
+from __future__ import annotations
+
 """Core type checking logic shared between CLI and pytest plugin."""
 
 import os
@@ -6,6 +9,11 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from batou_type.output import Diagnostic
+
 
 @dataclass(frozen=True)
 class VenvInfo:
@@ -37,7 +45,12 @@ def _detect_appenv(project: Path) -> VenvInfo | None:
     if not appenv.is_file():
         return None
     result = subprocess.run(  # nosec B603
-        [str(appenv), "python", "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+        [
+            str(appenv),
+            "python",
+            "-c",
+            "import sysconfig; print(sysconfig.get_path('purelib'))",
+        ],
         capture_output=True,
         text=True,
         cwd=project,
@@ -96,6 +109,7 @@ class TypeCheckResult:
     has_errors: bool
     output: str
     command: str = ""
+    errors: list[Diagnostic] | None = None
 
 
 def is_batou_project(directory: Path) -> bool:
@@ -117,6 +131,7 @@ def check_file(
     cwd: Path | None = None,
     extra_search_paths: list[str] | None = None,
     ty_args: list[str] | None = None,
+    json_mode: bool = False,
 ) -> TypeCheckResult:
     """Run type checker(s) on a single file."""
     checkers = checkers or [Checker.ty]
@@ -127,26 +142,30 @@ def check_file(
     env = os.environ.copy()
     if extra_search_paths:
         existing = env.get("PYTHONPATH", "")
-        env["PYTHONPATH"] = os.pathsep.join(extra_search_paths + ([existing] if existing else []))
+        env["PYTHONPATH"] = os.pathsep.join(
+            extra_search_paths + ([existing] if existing else [])
+        )
 
     full_output = []
     any_failed = False
     display_command = ""
+    checker_results: list[tuple[Checker, str, str]] = []
 
     for c in checkers:
         if c == Checker.ty:
-            cmd = [sys.executable, "-m", "ty", "check", "--color", "always"]
+            if json_mode:
+                cmd = [sys.executable, "-m", "ty", "check", "--output-format", "gitlab"]
+            else:
+                cmd = [sys.executable, "-m", "ty", "check", "--color", "always"]
             for sp in extra_search_paths:
                 cmd.extend(["--extra-search-path", sp])
             cmd.extend(ty_args)
             cmd.append(file_path)
         else:
-            cmd = [
-                sys.executable,
-                "-m",
-                *CHECKER_COMMANDS[c],
-                file_path,
-            ]
+            base_cmd = list(CHECKER_COMMANDS[c])
+            if json_mode and c == Checker.mypy:
+                base_cmd.extend(["--output", "json"])
+            cmd = [sys.executable, "-m", *base_cmd, file_path]
 
         display_command = " ".join(cmd).replace(sys.executable, "python", 1)
 
@@ -157,6 +176,27 @@ def check_file(
                 full_output.append(result.stdout)
             if result.stderr:
                 full_output.append(result.stderr)
+
+        if json_mode:
+            checker_results.append((c, result.stdout, result.stderr))
+
+    if json_mode and any_failed:
+        from batou_type.output import from_ty_gitlab, from_mypy_jsonl
+
+        parsed_errors: list[Diagnostic] = []
+        for c, stdout, _stderr in checker_results:
+            if c == Checker.ty:
+                parsed_errors.extend(from_ty_gitlab(stdout))
+            elif c == Checker.mypy:
+                parsed_errors.extend(from_mypy_jsonl(stdout))
+
+        return TypeCheckResult(
+            path=file_path,
+            has_errors=any_failed,
+            output="".join(full_output),
+            command=display_command,
+            errors=parsed_errors,
+        )
 
     return TypeCheckResult(
         path=file_path,
@@ -171,6 +211,7 @@ def check_all(
     checkers: list[Checker] | None = None,
     extra_search_paths: list[str] | None = None,
     ty_args: list[str] | None = None,
+    json_mode: bool = False,
 ) -> list[TypeCheckResult]:
     """Type check all component files in a deployment."""
     checkers = checkers or [Checker.ty]
@@ -189,8 +230,14 @@ def check_all(
 
     for component in components:
         rel_path = str(component.relative_to(root))
-        result = check_file(rel_path, checkers, root, extra_search_paths=extra_search_paths, ty_args=ty_args)
+        result = check_file(
+            rel_path,
+            checkers,
+            root,
+            extra_search_paths=extra_search_paths,
+            ty_args=ty_args,
+            json_mode=json_mode,
+        )
         results.append(result)
 
     return results
-
