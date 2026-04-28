@@ -2,15 +2,13 @@ from typing import Final, Literal, override
 
 from batou.component import Component
 
-class _USE_SUDO:
-    """Sentinel type for USE_SUDO marker."""
-    def __repr__(self) -> str: ...
+class UseSudo: ...
 
-USE_SUDO: Final[_USE_SUDO]
+USE_SUDO: Final[UseSudo]
 
 class Command(Component):
     namevar: Literal["statement"]
-    admin_password: str | _USE_SUDO | None
+    admin_password: str | UseSudo | None
     admin_user: str
     hostname: str | None
     port: int | None
@@ -23,7 +21,7 @@ class Command(Component):
         self,
         statement: str | None = ...,
         *,
-        admin_password: str | _USE_SUDO | None = ...,
+        admin_password: str | UseSudo | None = ...,
         admin_user: str = ...,
         hostname: str | None = ...,
         port: int | None = ...,
@@ -46,7 +44,7 @@ class Database(Component):
     database: str
     charset: str
     base_import_file: str | None
-    admin_password: str | _USE_SUDO | None
+    admin_password: str | UseSudo | None
 
     def __init__(
         self,
@@ -54,7 +52,7 @@ class Database(Component):
         *,
         charset: str = ...,
         base_import_file: str | None = ...,
-        admin_password: str | _USE_SUDO | None = ...,
+        admin_password: str | UseSudo | None = ...,
     ) -> None: ...
     @override
     def configure(self) -> None: ...
@@ -63,7 +61,7 @@ class User(Component):
     namevar: Literal["user"]
     password: str | None
     allow_from_hostname: str
-    admin_password: str | _USE_SUDO | None
+    admin_password: str | UseSudo | None
     SET_PASSWORD_QUERY: Final[str]
 
     def __init__(
@@ -72,7 +70,7 @@ class User(Component):
         *,
         password: str | None = ...,
         allow_from_hostname: str = ...,
-        admin_password: str | _USE_SUDO | None = ...,
+        admin_password: str | UseSudo | None = ...,
     ) -> None: ...
     @override
     def configure(self) -> None: ...
@@ -87,7 +85,7 @@ class Grant(Command):
         self,
         grant_db: str | None = ...,
         *,
-        admin_password: str | _USE_SUDO | None = ...,
+        admin_password: str | UseSudo | None = ...,
         admin_user: str = ...,
         hostname: str | None = ...,
         port: int | None = ...,

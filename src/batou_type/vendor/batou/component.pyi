@@ -47,48 +47,14 @@ class Attribute[T]:
         obj: Any,  # Any: descriptor protocol allows any owner
         objtype: type | None = ...,
     ) -> T: ...
-
-    # Type conversion
     @overload
     def __init__(
         self,
-        conversion: type[T],
+        conversion: type[T] | str | Callable[..., T],
         default: T | ConfigString | None = ...,
         expand: bool = ...,
         map: bool = ...,
     ) -> None: ...
-
-    # Callable conversion
-    @overload
-    def __init__(
-        self,
-        conversion: Callable[..., T],
-        default: T | ConfigString | None = ...,
-        expand: bool = ...,
-        map: bool = ...,
-    ) -> None: ...
-
-    # Literal conversion — T from default (only available source)
-    @overload
-    def __init__(
-        self,
-        conversion: Literal["literal"],
-        default: T | ConfigString | None = ...,
-        expand: bool = ...,
-        map: bool = ...,
-    ) -> None: ...
-
-    # List conversion — T from default (only available source)
-    @overload
-    def __init__(
-        self,
-        conversion: Literal["list"],
-        default: T | ConfigString | None = ...,
-        expand: bool = ...,
-        map: bool = ...,
-    ) -> None: ...
-
-    # Keyword-only (no conversion, defaults to str)
     @overload
     def __init__(
         self,
@@ -287,12 +253,8 @@ class RootComponent:
     def log_finish_configure(self) -> None: ...
     def prepare(self) -> None: ...
 
-def platform(
-    name: str, component: type[Component]
-) -> Callable[[type[Component]], type[Component]]: ...
-def handle_event(
-    event: str, scope: str
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
+def platform(name: str, component: type[Component]) -> Callable[[type[Component]], type[Component]]: ...
+def handle_event(event: str, scope: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
 def check_event_scope(
     scope: Literal["*", "precursor"],
     source: Component,
