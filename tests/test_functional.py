@@ -1,5 +1,6 @@
 """Functional E2E tests for batou-type CLI."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -95,8 +96,8 @@ class TestCheck:
 
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 0
-        # Should check multiple files
-        assert "2 component" in result.stdout.lower()
+        # Diagnostic info on stderr per logging-always-stogger spec decision
+        assert "count=2" in result.stderr
 
     def test_check_nested_components(self, temp_project):
         """Check finds components in nested directories."""
@@ -141,3 +142,61 @@ class TestErrorHandling:
         assert result.returncode == 2
         # Typer outputs errors to stderr
         assert "invalid" in result.stderr.lower()
+
+
+class TestJsonOutput:
+    """E2E tests for --json and --show-schema CLI flags."""
+
+    def test_json_clean_component_valid_json(self, temp_project):
+        """Clean component produces valid JSON with expected structure."""
+        component = temp_project / "components" / "mycomponent.py"
+        component.write_text("def configure():\n    pass\n")
+
+        result = run_cli("check", "--json", cwd=temp_project)
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "schema_version" in data
+        assert "projects" in data
+        assert len(data["projects"]) == 1
+        assert data["summary"]["total_errors"] == 0
+        assert "$schema" not in data
+
+    def test_json_component_with_error(self, temp_project):
+        """Component with type error produces JSON with diagnostics."""
+        component = temp_project / "components" / "badcomponent.py"
+        component.write_text("def configure() -> int:\n    return 'not an int'\n")
+
+        result = run_cli("check", "--json", cwd=temp_project)
+        assert result.returncode == 1
+        data = json.loads(result.stdout)
+        assert data["summary"]["total_errors"] == 1
+        diags = data["projects"][0]["components"][0]["diagnostics"]
+        assert len(diags) > 0
+        assert diags[0]["checker"] == "ty"
+        assert isinstance(diags[0]["message"], str) and len(diags[0]["message"]) > 0
+        assert "badcomponent.py" in diags[0]["file"]
+
+    def test_json_no_projects(self, tmp_path):
+        """No batou projects produces valid JSON with empty components."""
+        result = run_cli("check", "--json", cwd=tmp_path)
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["projects"][0]["components"] == []
+
+    def test_show_schema(self, tmp_path):
+        """--show-schema outputs valid JSON Schema."""
+        result = run_cli("check", "--show-schema", cwd=tmp_path)
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "properties" in data
+        assert "projects" in data["properties"]
+
+    def test_json_stderr_has_logs(self, temp_project):
+        """JSON mode: diagnostics go to stderr, not stdout."""
+        component = temp_project / "components" / "mycomponent.py"
+        component.write_text("def configure():\n    pass\n")
+
+        result = run_cli("check", "--json", cwd=temp_project)
+        assert len(result.stderr) > 0
+        assert "Loaded stubs" not in result.stdout
+        assert "Found" not in result.stdout

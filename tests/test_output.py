@@ -138,7 +138,7 @@ class TestFromMypyJsonl:
         mypy_input = (
             '{"file": "components/baz.py", "line": 20, "column": 8, '
             '"message": "Argument 1 has incompatible type", '
-            '"severity": "error", "error_code": "arg-type"}\n'
+            '"severity": "error", "code": "arg-type"}\n'
         )
         diag = from_mypy_jsonl(mypy_input)[0]
         assert diag.file == "components/baz.py"

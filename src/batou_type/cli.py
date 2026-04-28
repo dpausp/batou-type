@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
-import os
 from pathlib import Path
 import shlex
 import sys
@@ -97,7 +96,6 @@ def _run_check(
     checker: list[Checker] | None,
     paths: list[Path],
     *,
-    verbose: bool = False,
     ty_args: list[str] | None = None,
     json_mode: bool = False,
 ) -> None:
@@ -115,19 +113,6 @@ def _run_check(
             log.info("stub-not-installed", name=info.name)
 
     log.info("python-info", executable=sys.executable)
-
-    if not json_mode:
-        console.print("Loaded stubs:")
-        for info in stub_infos:
-            if info.version and info.path:
-                label = "vendored" if info.vendored else info.version
-                console.print(
-                    f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]"
-                )
-            else:
-                console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
-        console.print(f"Python: [dim]{sys.executable}[/]")
-        console.print()
 
     # Discover batou projects: direct paths + scan subdirs of non-project dirs
     projects: list[Path] = []
@@ -149,7 +134,7 @@ def _run_check(
             output = build_output(
                 [], metadata={"checker": [c.value for c in (checker or [Checker.ty])]}
             )
-            print(output.model_dump_json(indent=2, by_alias=True))
+            print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
         else:
             console.print(
                 "[yellow]No batou projects found (need components/ directory)[/]"
@@ -196,14 +181,10 @@ def _run_check(
 
         checker_names = [c.value for c in checkers]
         output = build_output(all_results, metadata={"checker": checker_names})
-        print(output.model_dump_json(indent=2, by_alias=True))
+        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
         raise typer.Exit(1 if total_failed else 0)
 
     # Human mode
-    console.print(f"[green]Found {len(projects)} project(s):[/]")
-    for project in projects:
-        console.print(f"  [dim]{project}[/]")
-    console.print()
 
     for project in projects:
         components = find_components(project)
@@ -215,24 +196,10 @@ def _run_check(
         if venv:
             kind = "appenv" if venv.is_appenv else "venv"
             log.info("project-venv", kind=kind, path=venv.path)
-            console.print(f"[cyan]Project {kind}:[/] [dim]{venv.path}[/]")
-            if verbose:
-                for sp in venv.site_packages:
-                    console.print(f"  [dim]{sp}[/]")
-                all_paths = list(extra_search_paths) + venv.site_packages
-                console.print(f"[dim]PYTHONPATH: {os.pathsep.join(all_paths)}[/]")
-            console.print()
         else:
             log.info("no-venv", project=str(project))
-            console.print(
-                f"[yellow]No project venv found for {project} (checked .venv, appenv)[/]"
-            )
-            console.print()
 
         log.info("checking-components", count=len(components), project=str(project))
-        console.print(
-            f"[green]Checking {len(components)} component(s) in {project}...[/]"
-        )
         results = check_all(
             project,
             checkers,
@@ -324,7 +291,6 @@ def check(
     _run_check(
         checker,
         paths or [Path.cwd()],
-        verbose=verbose,
         ty_args=parsed_ty_args,
         json_mode=json_mode,
     )

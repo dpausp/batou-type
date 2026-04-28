@@ -9,8 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from batou_type.core import TypeCheckResult
 
-_SCHEMA_URL = "https://batou-type.example/schema/v1"
-
 
 class Diagnostic(BaseModel):
     """A single type-check diagnostic."""
@@ -50,7 +48,7 @@ class CheckOutput(BaseModel):
     projects: list[ProjectResult]
     summary: dict[str, int]
     metadata: dict[str, object] = Field(default_factory=dict)
-    schema_url: str = Field(alias="$schema", default=_SCHEMA_URL)
+    schema_url: str | None = Field(alias="$schema", default=None)
 
 
 def from_ty_gitlab(raw_json: str) -> list[Diagnostic]:
@@ -108,8 +106,8 @@ def from_mypy_jsonl(raw_output: str) -> list[Diagnostic]:
                 line=entry["line"],
                 column=entry.get("column"),
                 message=entry["message"],
-                hint=entry.get("note"),
-                code=entry.get("error_code"),
+                hint=entry.get("hint"),
+                code=entry.get("code"),
                 severity=entry.get("severity"),
                 checker="mypy",
             )
