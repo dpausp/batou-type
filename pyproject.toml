@@ -1,0 +1,51 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=1.27"]
+
+[project]
+name = "batou-type"
+version = "2.8.0.dev0"
+description = "Type-check batou deployments"
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+dependencies = [
+    "rich",
+    "ty",
+    "typer",
+]
+
+[project.optional-dependencies]
+mypy = ["mypy"]
+pytest = ["pytest"]
+
+[project.scripts]
+batou-type = "batou_type.cli:app"
+
+[project.entry-points.pytest11]
+batou_type = "batou_type.pytest_plugin"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/batou_type"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/batou_type"]
+
+[tool.ruff]
+extend-exclude = ["testproject"]
+
+[dependency-groups]
+dev = [
+    "batou>=2.7.0",
+    "pytest-cov>=7.1.0",
+    "batou-type[pytest,mypy]",
+    "pytest-archon>=0.0.7",
+]
+docs = [
+    "sphinx>=8.0.0",
+    "sphinx-autoapi>=3.0.0",
+    "myst-parser>=4.0.0",
+    "furo>=2024.0.0",
+    "sphinx-autodoc-typehints>=3.0.0",
+    "sphinx-copybutton>=0.5.0",
+]
