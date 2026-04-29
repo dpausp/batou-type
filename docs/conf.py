@@ -91,6 +91,7 @@ _PYTEST_REF_OVERRIDES = {
     "non-python tests": "https://docs.pytest.org/en/stable/example/nonpython.html",
 }
 
+
 def _resolve_inherited_refs(_app, _env, node, contnode):
     """Resolve :ref: cross-references inherited from parent class docstrings."""
     if node.get("refdomain") == "std" and node.get("reftype") == "ref":
@@ -102,6 +103,7 @@ def _resolve_inherited_refs(_app, _env, node, contnode):
             ref += contnode
             return ref
     return None
+
 
 # -- sphinx-copybutton configuration -----------------------------------------
 

@@ -16,13 +16,13 @@ class TypeDrift(Component):
 
     def configure(self):
         # BUG: treating str attribute as int
-        port_num = int(self.port) + 1
+        int(self.port) + 1
 
         # BUG: treating list attribute as dict
-        value = self.settings.get("key", "fallback")
+        self.settings.get("key", "fallback")
 
         # BUG: using int attribute in string concatenation without str()
-        label = "count-" + self.count
+        "count-" + self.count
 
         # BUG: passing attribute to File content expecting str,
         # but count is declared int — works via implicit str conversion

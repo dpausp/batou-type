@@ -10,7 +10,7 @@ class HttpxBadUsage(Component):
 
     def configure(self):
         # BUG: timeout expects float/Timeout, not str
-        client = httpx.Client(
+        httpx.Client(
             base_url=self.api_url,
             timeout="thirty seconds",
         )

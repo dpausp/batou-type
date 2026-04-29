@@ -1,6 +1,5 @@
 """Tests for batou_type pytest plugin via pytester."""
 
-from __future__ import annotations
 
 
 def _make_component(pytester, name: str, content: str) -> None:

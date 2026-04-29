@@ -1,5 +1,4 @@
 # ruff: noqa: E402
-from __future__ import annotations
 
 """Core type checking logic shared between CLI and pytest plugin."""
 

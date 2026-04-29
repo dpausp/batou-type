@@ -1,6 +1,5 @@
 """Tests for the output layer: Pydantic models, converters, and serializers."""
 
-from __future__ import annotations
 
 import json
 

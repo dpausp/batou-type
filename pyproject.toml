@@ -34,17 +34,21 @@ packages = ["src/batou_type"]
 include = ["src/batou_type"]
 
 [tool.ruff]
-extend-exclude = ["testproject", "src/batou_type/vendor"]
+extend-exclude = ["examples", "testproject", "src/batou_type/vendor"]
 
 [dependency-groups]
-dev = [
+test = [
     "batou>=2.7.0",
-    "pytest-cov>=7.1.0",
     "batou-type[pytest,mypy]",
+    "pytest-cov>=7.1.0",
     "pytest-archon>=0.0.7",
     "pytest-stogger",
     "pytest-ruff>=0.5",
     "pytest-ty>=0.2.1",
+]
+lint = [
+    "pyupgrade",
+    "ruff",
 ]
 docs = [
     "sphinx>=8.0.0",
@@ -54,7 +58,42 @@ docs = [
     "sphinx-autodoc-typehints>=3.0.0",
     "sphinx-copybutton>=0.5.0",
 ]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "docs"},
+]
 
+[tool.tox]
+env_list = ["fix", "cov", "docs"]
+requires = ["tox>=4.20"]
+skip_missing_interpreters = true
+
+[tool.tox.env_run_base]
+runner = "uv-venv-lock-runner"
+package = "wheel"
+
+[tool.tox.env.cov]
+description = "Run tests with coverage"
+dependency_groups = ["test"]
+commands = [["pytest", "--cov=batou_type", "--cov-report=term-missing"]]
+
+[tool.tox.env.fix]
+description = "Lint and format with autofix"
+skip_install = true
+depends = []
+dependency_groups = ["lint"]
+commands = [
+    ["ruff", "check", "--fix", "--unsafe-fixes", "."],
+    ["ruff", "format", "."],
+    ["python", "-c", "import subprocess, glob; subprocess.run(['pyupgrade', '--py314-plus'] + glob.glob('src/batou_type/**/*.py', recursive=True) + glob.glob('tests/**/*.py', recursive=True))"],
+]
+allowlist_externals = ["python"]
+
+[tool.tox.env.docs]
+description = "Build Sphinx documentation"
+dependency_groups = ["docs"]
+commands = [["sphinx-build", "-b", "html", "docs", "docs/_build"]]
 
 [tool.ty.src]
 exclude = ["src/batou_type/vendor/"]

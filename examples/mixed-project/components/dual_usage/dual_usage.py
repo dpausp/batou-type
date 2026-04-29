@@ -41,27 +41,27 @@ class DualUsage(Component):
     def configure(self):
         # USE AS STR: correct per declaration
         # This works because batou converts 42 -> "42"
-        upper_port = self.port.upper()
+        self.port.upper()
 
         # USE AS INT: wrong per declaration but matches default type
         # Will crash at runtime because port is now "42" (a string)
-        next_port = self.port + 1
+        self.port + 1
 
         # USE AS INT: correct per declaration
         # batou converts "5" -> 5
-        doubled = self.count * 2
+        self.count * 2
 
         # USE AS STR: wrong per declaration but matches default type
         # Will crash because count is now 5 (an int), not "5"
-        label = "count=" + self.count
+        "count=" + self.count
 
         # USE AS LIST: correct per declaration
         # batou converts "a,b,c" -> ["a,b,c"] (one element!)
-        first_item = self.items[0]
+        self.items[0]
 
         # USE AS STR: wrong per declaration but matches default type
         # Will crash because items is now a list, not "a,b,c"
-        split = self.items.split(",")
+        self.items.split(",")
 
         # USE AS BOOL: correct per declaration
         # batou converts 1 -> True
@@ -70,7 +70,7 @@ class DualUsage(Component):
 
         # USE AS INT: wrong per declaration but matches default type
         # bool is subclass of int in Python, so this "works" but is wrong
-        flags = self.enabled + 1
+        self.enabled + 1
 
         # PASS TO API expecting str: works after coercion
         self += File("port.txt", content=self.port)
@@ -80,15 +80,14 @@ class DualUsage(Component):
 
         # FLOAT USAGE: code assumes float but got int after coercion
         # int(3.14) = 3 — silently loses precision
-        precise = self.rate / 3.0  # type: ignore[unused]
+        self.rate / 3.0  # type: ignore[unused]
         # But code treating it as float for string formatting
-        formatted = f"{self.rate:.2f}"  # int has no format spec .2f
 
         # BYTES USAGE: code assumes bytes methods
-        decoded = self.encoding.decode("utf-8")
+        self.encoding.decode("utf-8")
 
         # DICT USAGE: code assumes dict methods on list
-        value = self.config["key"]
+        self.config["key"]
 
         # PASS TO CONSTRUCTOR: str attribute passed to Address (expects str)
         # Works when default is used (int gets coerced to str)

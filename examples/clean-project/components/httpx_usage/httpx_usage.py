@@ -9,7 +9,7 @@ class HttpxUsage(Component):
     api_url = Attribute(str, default="https://api.example.com")
 
     def configure(self):
-        client = httpx.Client(
+        httpx.Client(
             base_url=self.api_url,
             timeout=30.0,
         )

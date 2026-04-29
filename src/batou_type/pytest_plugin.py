@@ -26,7 +26,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 def pytest_collect_file(
     file_path: Path, parent: pytest.Collector
-) -> "BatouComponentFile | None":
+) -> BatouComponentFile | None:
     config = parent.config
     if not config.option.batou_ty:
         return None
@@ -66,7 +66,7 @@ def pytest_collection_modifyitems(
 class BatouComponentFile(pytest.File):
     """A batou component Python file."""
 
-    def collect(self) -> "list[BatouComponentItem]":
+    def collect(self) -> list[BatouComponentItem]:
         return [BatouComponentItem.from_parent(self, name=BatouComponentItem.name)]
 
 

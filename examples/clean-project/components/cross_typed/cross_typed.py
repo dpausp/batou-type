@@ -49,11 +49,10 @@ class Consumer(Component):
     def configure(self):
         # BUG: int attribute used in arithmetic — correct per declaration
         # but at runtime may receive a string from override
-        next_port = self.port + 1
+        self.port + 1
 
         # BUG: str attribute used in string ops — correct per declaration
         # but at runtime may receive an int from override
-        greeting = f"host: {self.host}"
 
         # BUG: str attribute used as string — correct per declaration
         # but at runtime may receive a list from override
