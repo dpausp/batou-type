@@ -11,6 +11,44 @@ _BATOU_TY_RESULTS_STASH_KEY = pytest.StashKey[dict[str, bool]]()
 _BATOU_TY_OUTPUT_STASH_KEY = pytest.StashKey[dict[str, str]]()
 
 
+class BatouComponentItem(pytest.Item):
+    """Type checking result for a single component file."""
+
+    name = "batou_ty"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_marker(self.name)
+
+    def runtest(self) -> None:
+        error_results = self.config.stash.get(_BATOU_TY_RESULTS_STASH_KEY, {})
+        output_results = self.config.stash.get(_BATOU_TY_OUTPUT_STASH_KEY, {})
+
+        file_key = str(self.path.relative_to(self.config.rootpath))
+        has_errors = error_results.get(file_key, False)
+        output = output_results.get(file_key, "")
+
+        if has_errors and output.strip():
+            # Get diagnostic count from "Found X diagnostics"
+            import re
+
+            match = re.search(r"Found (\d+) diagnostic", output)
+            if match:
+                count = match.group(1)
+                msg = f"Type check failed with {count} error(s)"
+            else:
+                msg = "Type check failed"
+
+            pytest.fail(msg + "\n" + output.strip())
+
+
+class BatouComponentFile(pytest.File):
+    """A batou component Python file."""
+
+    def collect(self) -> list[BatouComponentItem]:
+        return [BatouComponentItem.from_parent(self, name=BatouComponentItem.name)]
+
+
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("batou")
     group.addoption(
@@ -61,41 +99,3 @@ def pytest_collection_modifyitems(
 
     config.stash[_BATOU_TY_RESULTS_STASH_KEY] = error_results
     config.stash[_BATOU_TY_OUTPUT_STASH_KEY] = output_results
-
-
-class BatouComponentFile(pytest.File):
-    """A batou component Python file."""
-
-    def collect(self) -> list[BatouComponentItem]:
-        return [BatouComponentItem.from_parent(self, name=BatouComponentItem.name)]
-
-
-class BatouComponentItem(pytest.Item):
-    """Type checking result for a single component file."""
-
-    name = "batou_ty"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.add_marker(self.name)
-
-    def runtest(self) -> None:
-        error_results = self.config.stash.get(_BATOU_TY_RESULTS_STASH_KEY, {})
-        output_results = self.config.stash.get(_BATOU_TY_OUTPUT_STASH_KEY, {})
-
-        file_key = str(self.path.relative_to(self.config.rootpath))
-        has_errors = error_results.get(file_key, False)
-        output = output_results.get(file_key, "")
-
-        if has_errors and output.strip():
-            # Get diagnostic count from "Found X diagnostics"
-            import re
-
-            match = re.search(r"Found (\d+) diagnostic", output)
-            if match:
-                count = match.group(1)
-                msg = f"Type check failed with {count} error(s)"
-            else:
-                msg = "Type check failed"
-
-            pytest.fail(msg + "\n" + output.strip())
