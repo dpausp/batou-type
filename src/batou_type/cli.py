@@ -62,6 +62,7 @@ def _detect_stub(name: str, pkg: str, vendor_subdir: str) -> StubInfo:
         TypeError,
         FileNotFoundError,
     ):
+        log.debug("stub-not-external", name=name)
         vendor_path = VENDOR_STUBS_PATH / vendor_subdir
         if vendor_path.is_dir():
             return StubInfo(
@@ -91,7 +92,7 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
-def _run_check(
+def run_check(
     checker: list[Checker] | None,
     paths: list[Path],
     *,
@@ -125,7 +126,11 @@ def _run_check(
             )
 
     if not projects:
-        log.info("no-projects-found")
+        log.warning(
+            "no-projects-found",
+            _replace_msg="No batou projects found in {paths}",
+            paths=[str(p) for p in paths],
+        )
         if json_mode:
             from batou_type.output import build_output
 
@@ -139,52 +144,19 @@ def _run_check(
             )
         raise typer.Exit(0)
 
-    log.info("projects-found", count=len(projects))
+    log.info("projects-found", _replace_msg="Found {count} project(s)", count=len(projects))
     for project in projects:
-        log.info("project", path=str(project))
+        log.info("project", _replace_msg="  {path}", path=str(project))
 
     checkers = checker or [Checker.ty]
     total_failed = 0
     multi_project = len(projects) > 1
     failed_summary: dict[str, list[str]] = {}
 
-    if json_mode:
-        all_results: list[TypeCheckResult] = []
-        for project in projects:
-            components = find_components(project)
-            if not components:
-                continue
-
-            venv = find_project_venv(project)
-            if venv:
-                kind = "appenv" if venv.is_appenv else "venv"
-                log.info("project-venv", kind=kind, path=venv.path)
-            else:
-                log.info("no-venv", project=str(project))
-
-            log.info("checking-components", count=len(components), project=str(project))
-            results = check_all(
-                project,
-                checkers,
-                extra_search_paths=extra_search_paths,
-                ty_args=ty_args or [],
-                json_mode=True,
-            )
-            all_results.extend(results)
-            for result in results:
-                if result.has_errors:
-                    total_failed += 1
-
-        from batou_type.output import build_output
-
-        checker_names = [c.value for c in checkers]
-        output = build_output(all_results, metadata={"checker": checker_names})
-        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
-        raise typer.Exit(1 if total_failed else 0)
-
-    # Human mode
+    all_results: list[TypeCheckResult] = []
 
     for project in projects:
+        plog = log.bind(project=str(project))
         components = find_components(project)
         if not components:
             continue
@@ -193,33 +165,86 @@ def _run_check(
         venv = find_project_venv(project)
         if venv:
             kind = "appenv" if venv.is_appenv else "venv"
-            log.info("project-venv", kind=kind, path=venv.path)
+            plog.debug("project-venv", kind=kind, path=venv.path)
         else:
-            log.info("no-venv", project=str(project))
+            plog.debug("no-venv")
 
-        log.info("checking-components", count=len(components), project=str(project))
+        plog.info(
+            "checking-components",
+            _replace_msg="Checking {count} component(s) in {project}",
+            count=len(components),
+        )
         results = check_all(
             project,
             checkers,
             extra_search_paths=extra_search_paths,
             ty_args=ty_args or [],
+            json_mode=json_mode,
         )
 
-        prefix = f"[red]{project.name}>[/] " if multi_project else ""
+        # Per-component result events
+        for result in results:
+            component_name = Path(result.path).stem
+            status = "passed" if not result.has_errors else "failed"
+            plog.info(
+                "component-result",
+                _replace_msg="{component}: {status}",
+                component=component_name,
+                status=status,
+                passed=not result.has_errors,
+            )
+
+        # Collect failures for summary
         project_failed: list[str] = []
         for result in results:
             if result.has_errors:
                 project_failed.append(Path(result.path).parent.name)
-                if result.output.strip():
-                    for line in result.output.strip().splitlines():
-                        if prefix:
-                            console.print(prefix, end="")
-                        console.print(Text.from_ansi(line))
+
         total_failed += len(project_failed)
         if project_failed:
             failed_summary[str(project)] = project_failed
 
-    # Final summary
+        all_results.extend(results)
+
+        if not json_mode:
+            # Human mode: print error output
+            prefix = f"[red]{project.name}>[/] " if multi_project else ""
+            for result in results:
+                if result.has_errors and result.output.strip():
+                    for line in result.output.strip().splitlines():
+                        if prefix:
+                            console.print(prefix, end="")
+                        console.print(Text.from_ansi(line))
+
+    # Summary events
+    if total_failed:
+        all_failed_names = [
+            name for names in failed_summary.values() for name in names
+        ]
+        log.info(
+            "components-failed",
+            _replace_msg="{count} component(s) failed: {names}",
+            count=total_failed,
+            names=", ".join(all_failed_names),
+        )
+    else:
+        total_count = len(all_results) or 1
+        log.info(
+            "components-passed",
+            _replace_msg="All {count} component(s) passed",
+            count=total_count,
+        )
+
+    # JSON mode: output results
+    if json_mode:
+        from batou_type.output import build_output
+
+        checker_names = [c.value for c in checkers]
+        output = build_output(all_results, metadata={"checker": checker_names})
+        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+        raise typer.Exit(1 if total_failed else 0)
+
+    # Human mode: final summary
     if total_failed:
         checker_names = "/".join(c.value for c in checkers)
         console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
@@ -287,7 +312,7 @@ def check(
     json_mode = effective_format == "json"
 
     parsed_ty_args = shlex.split(ty_args) if ty_args else []
-    _run_check(
+    run_check(
         checker,
         paths or [Path.cwd()],
         ty_args=parsed_ty_args,

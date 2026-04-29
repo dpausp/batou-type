@@ -22,11 +22,16 @@ def temp_project(tmp_path):
 
 def run_cli(*args, cwd=None):
     """Run batou-type CLI and return result."""
+    import os
+
+    env = os.environ.copy()
+    env.pop("JOURNAL_STREAM", None)
     result = subprocess.run(
         [*BATOU_TYPE_CLI, *args],
         cwd=cwd,
         capture_output=True,
         text=True,
+        env=env,
     )
     return result
 
@@ -96,8 +101,8 @@ class TestCheck:
 
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 0
-        # Diagnostic info on stderr per logging-always-stogger spec decision
-        assert "count=2" in result.stderr
+        # Diagnostic info on stderr (stogger formatted with _replace_msg)
+        assert "Checking 2 component(s)" in result.stderr
 
     def test_check_nested_components(self, temp_project):
         """Check finds components in nested directories."""
