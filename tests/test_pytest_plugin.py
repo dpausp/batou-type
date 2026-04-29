@@ -1,7 +1,6 @@
 """Tests for batou_type pytest plugin via pytester."""
 
 
-
 def _make_component(pytester, name: str, content: str) -> None:
     """Create a component file in components/ directory."""
     components = pytester.path / "components"

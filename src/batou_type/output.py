@@ -1,6 +1,5 @@
 """Machine-readable output layer: Pydantic models, converters, and serializers."""
 
-
 import json
 from collections import defaultdict
 
