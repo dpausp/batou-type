@@ -23,9 +23,8 @@ from batou_type.core import (
     is_batou_project,
 )
 
-# Initialize structured logging to stderr
 stogger.init_early_logging()
-log = structlog.get_logger("batou_type")
+log = structlog.get_logger()
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -101,18 +100,17 @@ def _run_check(
 ) -> None:
     """Execute type checking."""
     # Show stub versions and paths
-    log.info("loaded-stubs")
     stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
     for info in stub_infos:
         if info.version and info.path:
             label = "vendored" if info.vendored else info.version
-            log.info("stub-info", name=info.name, version=label, path=info.path)
+            log.debug("stub-info", name=info.name, version=label, path=info.path)
             extra_search_paths.append(str(Path(info.path).parent.resolve()))
         else:
-            log.info("stub-not-installed", name=info.name)
+            log.debug("stub-not-installed", name=info.name)
 
-    log.info("python-info", executable=sys.executable)
+    log.debug("python-info", executable=sys.executable)
 
     # Discover batou projects: direct paths + scan subdirs of non-project dirs
     projects: list[Path] = []
@@ -284,6 +282,7 @@ def check(
         typer.echo(_json.dumps(export_schema(), indent=2))
         raise typer.Exit(0)
 
+    stogger.init_logging(verbose=verbose)
     effective_format = "json" if json_output else output_format
     json_mode = effective_format == "json"
 
