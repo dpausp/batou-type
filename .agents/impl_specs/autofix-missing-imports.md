@@ -1,7 +1,11 @@
 ---
-lifecycle: design
-completed_at: 2026-04-29T16:08:44Z
-git_rev: 6c03d16
+lifecycle:
+  design:
+    completed_at: "2026-04-29T16:08:44Z"
+    git_rev: "6c03d16"
+  implement:
+    completed_at: "2026-05-03T14:00:00Z"
+    git_rev: "1bda669"
 ---
 
 # autofix-missing-imports
@@ -301,3 +305,58 @@ Discovery: `batou-type check --help` shows `--fix`, `--diff`, `--fix-only`, `--v
 
 - docs/dev/architecture.md — four-layer model, framework isolation
 - docs/dev/testing.md — test pyramid, 0% mock ratio convention
+
+## Appendix
+
+```yaml
+implementation_plan:
+  id: autofix-missing-imports
+  description: "Add libcst-based autofix capabilities: two fixers (add-missing-import for possibly-missing-submodule, self-deref for walrus-operator insertion) with four CLI flags (--fix, --diff, --fix-only, --virtual) following ruff UX model. New fixer.py module between cli.py and output.py."
+  git_rev: "1bda669"
+  created_at: "2026-05-03T14:00:00Z"
+  specs:
+    - .agents/impl_specs/autofix-missing-imports.md
+  target_tests:
+    - file: tests/impl_spec/test_autofix-missing-imports.py
+      tests:
+        - test_fixer_file_exists
+        - test_fixer_module_importable
+        - test_fixer_is_dataclass
+        - test_fixer_has_slug_field
+        - test_fixer_slug_is_str
+        - test_fixer_has_diagnostic_codes_field
+        - test_fixer_diagnostic_codes_is_frozenset_of_str
+        - test_fixer_has_apply_method
+        - test_fixer_apply_signature
+        - test_fixer_apply_returns_none_on_no_change
+        - test_add_missing_import_fixer_exists
+        - test_add_missing_import_claims_possibly_missing_submodule
+        - test_self_deref_fixer_exists
+        - test_self_deref_fixer_claims_code
+        - test_no_overlapping_diagnostic_codes
+        - test_fixer_imports_diagnostic_from_output
+        - test_fixer_imports_libcst
+        - test_fixer_does_not_import_cli
+        - test_fixer_does_not_import_pytest_plugin
+        - test_fixer_does_not_import_core_directly
+        - test_check_command_has_fix_option
+        - test_check_command_has_diff_option
+        - test_check_command_has_fix_only_option
+        - test_check_command_has_virtual_option
+        - test_fix_option_is_bool
+        - test_diff_implies_fix_only
+        - test_fix_only_implies_fix
+        - test_run_fix_exists_in_cli
+        - test_run_fix_is_separate_from_run_check
+        - test_run_fix_accepts_paths_parameter
+        - test_run_fix_accepts_fix_flags
+        - test_fixer_no_typer
+        - test_fixer_no_rich
+        - test_fixer_no_pytest
+        - test_fixer_no_structlog
+        - test_fixer_no_stogger
+        - test_fixer_no_cli_import
+        - test_fixer_no_pytest_plugin_import
+        - test_cli_may_import_fixer
+        - test_fixer_only_imports_output_from_batou_type
+```
