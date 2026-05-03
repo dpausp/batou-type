@@ -6,6 +6,9 @@ lifecycle:
   design:
     completed_at: "2026-04-29T15:00:00Z"
     git_rev: "401577d"
+  implement:
+    completed_at: "2026-05-03T12:00:00Z"
+    git_rev: "7e246be"
 ---
 
 # stogger-convention-fixes
@@ -240,3 +243,54 @@ Green stogger checks. E2E coverage preserved. New test file with focused logging
 | `cli.py:94` | log-use-bind-for-repeating-keys | `log.bind(project=...)` per iteration |
 | `cli.py:128` | log-context-required | `log.warning` with kwargs |
 | Tests | logging-coverage | `log.has()` in `tests/test_logging.py` |
+
+## Appendix
+
+```yaml
+implementation_plan:
+  id: stogger-convention-fixes
+  description: "Fix 14 stogger convention violations in __init__.py and cli.py: rename _run_check to run_check, deduplicate JSON/human branches, adjust logging levels, add new events (component-result, components-passed, components-failed), use log.bind for project context, add except-block logging, create tests/test_logging.py."
+  git_rev: "7e246be"
+  created_at: "2026-05-03T12:00:00Z"
+  specs:
+    - .agents/impl_specs/stogger-convention-fixes.md
+  target_tests:
+    - file: tests/impl_spec/test_stogger-convention-fixes.py
+      tests:
+        - test_run_check_is_public
+        - test_run_check_is_callable
+        - test_no_private_run_check_exists
+        - test_single_project_loop
+        - test_venv_detection_in_single_location
+        - test_check_all_called_once_in_loop
+        - test_venv_events_at_debug_level
+        - test_project_venv_has_kind_and_path
+        - test_no_venv_no_replace_msg
+        - test_emits_no_projects_found
+        - test_no_projects_found_is_warning
+        - test_no_projects_found_has_replace_msg
+        - test_no_projects_found_has_paths_context
+        - test_emits_component_result
+        - test_component_result_is_info_level
+        - test_component_result_has_replace_msg
+        - test_component_result_has_component_and_passed
+        - test_component_result_has_status
+        - test_emits_components_passed
+        - test_components_passed_is_info_level
+        - test_components_passed_has_replace_msg
+        - test_components_passed_has_count
+        - test_components_failed_has_replace_msg
+        - test_components_failed_has_count_and_names
+        - test_bind_in_source
+        - test_project_context_in_checking_components
+        - test_project_context_in_component_result
+        - test_no_explicit_project_kwarg_on_checking_components
+        - test_init_has_version_fallback_log
+        - test_init_has_structlog_import
+        - test_cli_has_stub_not_external_log
+        - test_stub_not_external_has_name_context
+        - test_logging_test_file_exists
+        - test_logging_file_has_event_assertions
+        - test_logging_file_uses_capture_logs
+        - test_logging_file_tests_event_levels
+```

@@ -24,8 +24,9 @@ Each layer owns its framework:
 | typer, rich, stogger | `cli.py` only | CLI presentation and diagnostic logging |
 | pydantic | `output.py` only | Output structure modeling and JSON serialization |
 | pytest | `pytest_plugin.py` only | Plugin hook protocol only |
+| structlog | `cli.py`, `__init__.py` | Structured logging for diagnostics and version fallback |
 | stdlib | `core.py` | Domain logic has no framework opinions |
-`__init__.py` re-exports from `core.py` only — it never touches typer, rich, stogger, pydantic, or pytest. This keeps the public API importable without triggering any framework installation.
+`__init__.py` re-exports from `core.py` only — it never touches typer, rich, stogger, pydantic, or pytest. It does import `structlog` for version-fallback logging when the package is not installed. This keeps the public API importable without triggering any framework installation beyond the logging dependency.
 
 ## Output Layer
 
@@ -37,7 +38,7 @@ The module contains:
 - **Serializer** — `build_output()` converts internal `TypeCheckResult` dataclasses from `core.py` into the Pydantic output tree, then serializes to JSON.
 - **Schema export** — `export_schema()` exposes the JSON Schema for validation and tooling integration.
 
-The stdout/stderr split is enforced at the CLI layer: JSON payload goes to stdout (pipeable), all diagnostic logging goes to stderr via stogger. `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
+The stdout/stderr split is enforced at the CLI layer (see [](#logging-design)). `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
 
 `TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the domain layer dependency-free.
 
@@ -74,3 +75,15 @@ Two setuptools entry points connect the package to the outside world:
 ## Project Detection
 
 The core module detects batou projects by the presence of a `components/` directory. It also resolves project-level virtual environments (`.venv` for uv, `appenv` for batou) to add their site-packages to the type checker's search path. Detection prefers `.venv` over `appenv` when both exist.
+
+## Logging Design
+
+All diagnostic output uses structlog via the stogger convention layer. Events follow a strict separation:
+
+- **`log.info`** — user-visible messages. Every call requires `_replace_msg` for human-readable output. These appear on stderr in default mode.
+- **`log.warning`** — noteworthy conditions the user should see (e.g., no projects found). Also requires `_replace_msg`.
+- **`log.debug`** — internal diagnostics (stub resolution, venv detection, version fallback). Only visible with `-v`.
+
+Context binding (`log.bind(project=...)`) is used for keys that repeat 3+ times within a function scope, avoiding redundant kwargs on individual calls.
+
+The stdout/stderr split is enforced at the CLI layer: JSON payload goes to stdout (pipeable), all diagnostic logging goes to stderr. `output.py` is transport-agnostic.

@@ -178,8 +178,6 @@ class TestDebugEvents:
         """project-venv and no-venv are debug level."""
         project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
         captured = _run_and_capture(paths=[project])
-        venv_events = [
-            e for e in captured if e["event"] in ("project-venv", "no-venv")
-        ]
+        venv_events = [e for e in captured if e["event"] in ("project-venv", "no-venv")]
         for evt in venv_events:
             assert evt["log_level"] == "debug"

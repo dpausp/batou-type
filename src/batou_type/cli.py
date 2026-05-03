@@ -144,9 +144,9 @@ def run_check(
             )
         raise typer.Exit(0)
 
-    log.info("projects-found", _replace_msg="Found {count} project(s)", count=len(projects))
-    for project in projects:
-        log.info("project", _replace_msg="  {path}", path=str(project))
+    log.info(
+        "projects-found", _replace_msg="Found {count} project(s)", count=len(projects)
+    )
 
     checkers = checker or [Checker.ty]
     total_failed = 0
@@ -157,6 +157,7 @@ def run_check(
 
     for project in projects:
         plog = log.bind(project=str(project))
+        plog.info("project", _replace_msg="  {path}", path=str(project))
         components = find_components(project)
         if not components:
             continue
@@ -218,9 +219,7 @@ def run_check(
 
     # Summary events
     if total_failed:
-        all_failed_names = [
-            name for names in failed_summary.values() for name in names
-        ]
+        all_failed_names = [name for names in failed_summary.values() for name in names]
         log.info(
             "components-failed",
             _replace_msg="{count} component(s) failed: {names}",

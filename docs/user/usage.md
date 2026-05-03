@@ -84,7 +84,7 @@ If no component files are found, the tool prints a message and exits cleanly (co
 - `.venv/` — standard venvs (e.g., created by uv)
 - `appenv` — batou's bundled environment manager
 
-No configuration needed. If neither is found, the tool prints a warning but continues checking.
+No configuration needed. If neither is found, type checking proceeds without the project's site-packages. Use `-v` to see venv detection details.
 
 ## Verbose Output
 
