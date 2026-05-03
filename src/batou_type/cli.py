@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
 from pathlib import Path
+from typing import Annotated
 import shlex
 import sys
+import difflib
 
 import structlog
 import stogger
@@ -22,6 +24,8 @@ from batou_type.core import (
     find_project_venv,
     is_batou_project,
 )
+from batou_type.fixer import ADD_MISSING_IMPORT, SELF_DEREF
+from batou_type.output import Diagnostic
 
 stogger.init_early_logging()
 log = structlog.get_logger()
@@ -258,6 +262,155 @@ def run_check(
     raise typer.Exit(1 if total_failed else 0)
 
 
+def run_fix(
+    paths: list[Path],
+    *,
+    fix: bool = False,
+    diff: bool = False,
+    fix_only: bool = False,
+    virtual: bool = False,
+    checker: list[Checker] | None = None,
+    ty_args: list[str] | None = None,
+) -> None:
+    """Apply automated fixes for type-check diagnostics.
+
+    Spec decision: fix-pipeline \u2014 separate function from run_check().
+    Flow: (1) check_all(json_mode=True) \u2192 diagnostics, (2) group by file,
+    (3) apply matching fixers, (4) write/diff/verify per flags.
+    """
+    stub_infos = _detect_all_stubs()
+    extra_search_paths: list[str] = []
+    for info in stub_infos:
+        if info.version and info.path:
+            extra_search_paths.append(str(Path(info.path).parent.resolve()))
+
+    projects: list[Path] = []
+    for p in paths:
+        if is_batou_project(p):
+            projects.append(p)
+        else:
+            projects.extend(
+                child
+                for child in sorted(p.iterdir())
+                if child.is_dir() and is_batou_project(child)
+            )
+
+    if not projects:
+        console.print("[yellow]No batou projects found[/]")
+        raise typer.Exit(0)
+
+    checkers = checker or [Checker.ty]
+    fixers = [ADD_MISSING_IMPORT, SELF_DEREF]
+
+    for project in projects:
+        components = find_components(project)
+        if not components:
+            continue
+
+        results = check_all(
+            project,
+            checkers,
+            extra_search_paths=extra_search_paths,
+            ty_args=ty_args or [],
+            json_mode=True,
+        )
+
+        # Group diagnostics by file
+        file_diagnostics: dict[str, list[Diagnostic]] = {}
+        for result in results:
+            if result.errors:
+                file_diagnostics.setdefault(result.path, []).extend(result.errors)
+
+        # Apply matching fixers per file
+        fixed_files: list[tuple[str, str, str]] = []
+        for file_path_str, diagnostics in file_diagnostics.items():
+            source_path = project / file_path_str
+            if not source_path.is_file():
+                continue
+            source = source_path.read_text()
+            current = source
+            for fixer in fixers:
+                matched = [d for d in diagnostics if d.code in fixer.diagnostic_codes]
+                if matched:
+                    transformed = fixer.apply(current, matched)
+                    if transformed is not None:
+                        current = transformed
+            if current != source:
+                fixed_files.append((file_path_str, source, current))
+
+        # Handle output flags \u2014 diff-generation, virtual-mode-impl, fix-only-semantics
+        if not fixed_files:
+            if not fix_only:
+                console.print("[green]No fixable diagnostics found.[/]")
+            raise typer.Exit(0)
+
+        if virtual:
+            # Spec decision: virtual-mode-impl — tempdir verification
+            import shutil
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp_path = Path(tmpdir)
+                for comp in components:
+                    rel = comp.relative_to(project)
+                    dest = tmp_path / rel
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(comp, dest)
+                for name in ("pyproject.toml", ".appenv", ".venv"):
+                    src = project / name
+                    if src.exists():
+                        if src.is_dir():
+                            shutil.copytree(src, tmp_path / name)
+                        else:
+                            shutil.copy2(src, tmp_path / name)
+
+                for file_path_str, _, fixed in fixed_files:
+                    dest = tmp_path / file_path_str
+                    dest.write_text(fixed)
+
+                verify_results = check_all(
+                    tmp_path,
+                    checkers,
+                    extra_search_paths=extra_search_paths,
+                    ty_args=ty_args or [],
+                    json_mode=True,
+                )
+                new_errors = sum(1 for r in verify_results if r.has_errors)
+                old_errors = sum(1 for r in results if r.has_errors)
+                if new_errors >= old_errors:
+                    console.print("[yellow]Fix did not reduce errors, skipping.[/]")
+                    raise typer.Exit(1)
+
+        if diff:
+            # Spec decision: diff-generation — difflib.unified_diff
+            has_diffs = False
+            for file_path_str, original, fixed in fixed_files:
+                diff_lines = list(
+                    difflib.unified_diff(
+                        original.splitlines(keepends=True),
+                        fixed.splitlines(keepends=True),
+                        fromfile=f"a/{file_path_str}",
+                        tofile=f"b/{file_path_str}",
+                    )
+                )
+                if diff_lines:
+                    has_diffs = True
+                    sys.stdout.write("".join(diff_lines))
+            console.print(
+                f"[green]{len(fixed_files)} fixable in {len(projects)}"
+                " file(s) (run without --diff to apply)[/]"
+            )
+            raise typer.Exit(1 if has_diffs else 0)
+
+        # Write in-place
+        if fix:
+            for file_path_str, _, fixed in fixed_files:
+                source_path = project / file_path_str
+                source_path.write_text(fixed)
+            console.print(f"[green]Fixed {len(fixed_files)} file(s)[/]")
+            raise typer.Exit(0)
+
+
 @app.command()
 def check(
     paths: list[Path] = typer.Argument(
@@ -296,6 +449,30 @@ def check(
         "--show-schema",
         help="Print the JSON Schema for the output format and exit",
     ),
+    fix: Annotated[
+        bool,
+        typer.Option(
+            "--fix", help="Apply automated fixes for common type-check diagnostics"
+        ),
+    ] = False,
+    diff: Annotated[
+        bool,
+        typer.Option(
+            "--diff", help="Show unified diff of fixes instead of applying them"
+        ),
+    ] = False,
+    fix_only: Annotated[
+        bool,
+        typer.Option(
+            "--fix-only", help="Fix and suppress remaining error report (implies --fix)"
+        ),
+    ] = False,
+    virtual: Annotated[
+        bool,
+        typer.Option(
+            "--virtual", help="Verify fixes in a temporary directory before applying"
+        ),
+    ] = False,
 ) -> None:
     """Type-check batou deployment components."""
     if show_schema:
@@ -311,6 +488,25 @@ def check(
     json_mode = effective_format == "json"
 
     parsed_ty_args = shlex.split(ty_args) if ty_args else []
+
+    # Spec decision: flag-dispatch \u2014 implication chain
+    if diff:
+        fix_only = True
+    if fix_only:
+        fix = True
+
+    if fix:
+        run_fix(
+            paths or [Path.cwd()],
+            fix=fix,
+            diff=diff,
+            fix_only=fix_only,
+            virtual=virtual,
+            checker=checker,
+            ty_args=parsed_ty_args,
+        )
+        return
+
     run_check(
         checker,
         paths or [Path.cwd()],

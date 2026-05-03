@@ -6,12 +6,14 @@ batou-type is structured as four isolated layers, each with a single responsibil
 
 ```
 cli.py / __main__.py    ← presentation (typer, rich, stogger)
+fixer.py                ← autofix transforms (libcst)
 output.py               ← output modeling (pydantic)
 pytest_plugin.py        ← plugin (pytest)
 core.py                 ← domain (stdlib only)
 vendor/                 ← bundled stubs (leaf, no upward imports)
+```
 
-**Dependency direction is strictly downward.** `cli.py` imports from both `output.py` and `core.py`. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst — it does not import from `core.py` directly. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
 
 This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
 
@@ -22,6 +24,7 @@ Each layer owns its framework:
 | Framework | Where it lives | Why |
 |-----------|---------------|-----|
 | typer, rich, stogger | `cli.py` only | CLI presentation and diagnostic logging |
+| libcst | `fixer.py` only | AST transformation for autofix |
 | pydantic | `output.py` only | Output structure modeling and JSON serialization |
 | pytest | `pytest_plugin.py` only | Plugin hook protocol only |
 | structlog | `cli.py`, `__init__.py` | Structured logging for diagnostics and version fallback |
@@ -41,6 +44,21 @@ The module contains:
 The stdout/stderr split is enforced at the CLI layer (see [](#logging-design)). `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
 
 `TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the domain layer dependency-free.
+
+## Fixer Layer
+
+`fixer.py` sits between the CLI and the output layer, providing automated source-code fixes for mechanically repairable diagnostics. It uses libcst for AST-preserving transformations (formatting and comments are retained).
+
+The module defines a `Fixer` dataclass protocol: each fixer declares `slug` and `diagnostic_codes` (the error codes it handles), and exposes an `apply(source, diagnostics) -> str | None` function. The pipeline routes diagnostics to fixers by code — one code maps to exactly one fixer.
+
+Two fixers exist:
+
+- **add-missing-import** — handles `possibly-missing-submodule` diagnostics. Extracts the module path from the diagnostic, checks for existing imports via libcst, and either merges into an existing `from X import ...` or inserts a new import at the top of the file.
+- **self-deref** — handles `self._` dereferencing on `Component | None`. Transforms `self += X` to `self += (_ := X)` (walrus) only when `self._` is actually referenced in the same scope, and replaces `self._` access with `_`.
+
+`fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. It must not import from `cli.py`, `core.py`, or any framework module (typer, rich, pytest, structlog). This keeps the fixer testable in isolation with just libcst and the output models.
+
+The CLI dispatches to `run_fix()` when any fix flag is set (`--fix`, `--diff`, `--fix-only`). `run_fix()` reuses `check_all(json_mode=True)` to get diagnostics, groups them by file, and applies the matching fixers. The fix pipeline is separate from `run_check()` — the read-only lint path remains unchanged.
 
 ## Public API Boundary
 

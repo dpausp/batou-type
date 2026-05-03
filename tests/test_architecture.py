@@ -79,6 +79,59 @@ class TestOutputLayer:
         ).check(PACKAGE)
 
 
+# --- Fixer layer: may import output only, no frameworks ---
+
+
+class TestFixerLayer:
+    """fixer.py layer rules: may import output.py, must not import frameworks or upper layers.
+
+    Spec decision: architecture-test-impact
+    """
+
+    def test_fixer_no_typer(self):
+        archrule("fixer has no typer").match("batou_type.fixer").should_not_import(
+            "typer*"
+        ).check(PACKAGE)
+
+    def test_fixer_no_rich(self):
+        archrule("fixer has no rich").match("batou_type.fixer").should_not_import(
+            "rich*"
+        ).check(PACKAGE)
+
+    def test_fixer_no_pytest(self):
+        archrule("fixer has no pytest").match("batou_type.fixer").should_not_import(
+            "pytest*"
+        ).check(PACKAGE)
+
+    def test_fixer_no_structlog(self):
+        archrule("fixer has no structlog").match("batou_type.fixer").should_not_import(
+            "structlog*"
+        ).check(PACKAGE)
+
+    def test_fixer_no_stogger(self):
+        archrule("fixer has no stogger").match("batou_type.fixer").should_not_import(
+            "stogger*"
+        ).check(PACKAGE)
+
+    def test_fixer_no_cli_import(self):
+        archrule("fixer does not import cli").match(
+            "batou_type.fixer"
+        ).should_not_import("batou_type.cli*").check(PACKAGE)
+
+    def test_fixer_no_pytest_plugin_import(self):
+        archrule("fixer does not import plugin").match(
+            "batou_type.fixer"
+        ).should_not_import("batou_type.pytest_plugin*").check(PACKAGE)
+
+    def test_fixer_only_imports_output_from_batou_type(self):
+        """fixer.py may only import output.py from batou_type modules (not core directly)."""
+        archrule("fixer only imports output").match(
+            "batou_type.fixer"
+        ).should_not_import("batou_type*").may_import(
+            "batou_type.output",
+        ).check(PACKAGE, only_direct_imports=True)
+
+
 # --- Framework isolation (negative checks per module) ---
 
 
@@ -158,6 +211,20 @@ class TestCrossLayerIsolation:
             "batou_type.cli",
         ).check(PACKAGE, only_direct_imports=True)
 
+    def test_cli_may_import_fixer(self):
+        """cli.py may import from fixer.py, core.py, and output.py (forward dependency).
+
+        Spec decision: module-placement — 'cli.py → fixer.py'
+        """
+        archrule("cli may import fixer").match("batou_type.cli").should_not_import(
+            "batou_type*"
+        ).may_import(
+            "batou_type",
+            "batou_type.fixer",
+            "batou_type.core",
+            "batou_type.output",
+        ).check(PACKAGE, only_direct_imports=True)
+
 
 # --- Init purity ---
 
@@ -181,4 +248,9 @@ class TestInitPurity:
             "batou_type*"
         ).may_import(
             "batou_type.core",
+        ).check(PACKAGE, only_direct_imports=True)
+
+    def test_init_no_fixer_import(self):
+        archrule("init has no fixer").match("batou_type").should_not_import(
+            "batou_type.fixer*"
         ).check(PACKAGE, only_direct_imports=True)

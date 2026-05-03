@@ -10,6 +10,7 @@ readme = "README.md"
 license = "BSD-2-Clause"
 requires-python = ">=3.13"
 dependencies = [
+    "libcst",
     "pydantic",
     "rich",
     "stogger",

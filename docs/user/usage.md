@@ -96,6 +96,40 @@ $ batou-type check -v
 
 This is useful for troubleshooting when type errors reference modules that should be available.
 
+## Autofix Mode
+
+batou-type can automatically fix two recurring classes of type-check warnings:
+
+- **Missing submodule imports** — `batou_ext.*` access without a prior import statement.
+- **`self._` dereferencing** — accessing attributes on `self._` (typed as `Component | None`) instead of the concrete type.
+
+Both fixers use libcst for AST-preserving transformations — formatting and comments are retained.
+
+### Fix Flags
+
+Four flags control autofix behavior, following ruff's `--fix`/`--diff`/`--fix-only` UX model:
+
+| Flag | Behavior |
+|------|----------|
+| `--fix` | Fix in-place. Runs fixers and writes transformed files back to disk. |
+| `--fix-only` | Fix in-place, suppress the remaining error report. Implies `--fix`. Exit 0 if fixes applied, exit 1 only if the fixer itself fails. |
+| `--diff` | Print unified diff instead of writing. Implies `--fix-only`. Output is `git apply`-compatible. Exit 0 if no diffs, exit 1 if diffs present. |
+| `--virtual` | Verify fixes in a temporary copy before writing. Copies component files + `pyproject.toml` + environment into a tempdir, applies fixers, and re-runs ty to confirm the error count decreased. Use with `--fix` or `--diff`. |
+
+The implication chain: `--diff` → `--fix-only` → `--fix`. This means `--diff` alone is equivalent to `--fix --fix-only --diff`.
+
+### Examples
+
+```{code-block} shell
+$ batou-type check --fix            # apply fixes in-place
+$ batou-type check --diff           # preview fixes as unified diff
+$ batou-type check --fix-only       # fix and suppress remaining errors
+$ batou-type check --fix --virtual  # verify fixes in tempdir before writing
+$ batou-type check --diff --virtual # verify + preview, no writes
+```
+
+Fix flags compose with existing flags (`--verbose`, `--checker`). For CI pipelines, `--fix-only` produces clean output — only a confirmation like `Fixed 3 file(s)`.
+
 ## Version Information
 
 ```{code-block} shell
@@ -108,10 +142,11 @@ Shows the tool version and the status of loaded stub packages (whether vendored 
 
 | Code | Meaning |
 |------|---------|
-| 0 | No type errors detected (or no component files found) |
-| 1 | At least one component has type errors |
+| 0 | No type errors detected, no component files found, or no diffs in `--diff` mode |
+| 1 | At least one component has type errors, or diffs present in `--diff` mode |
 | 2 | Invalid command-line usage (wrong flag, unknown checker name) |
 
+In fix mode, `--fix-only` exits 0 if fixes were applied successfully (remaining errors are silenced). `--diff` exits 1 if any diffs are present.
 Use the exit code in CI pipelines to fail builds on type errors.
 
 In JSON mode, all diagnostics (type errors, hints, code references) appear as structured `Diagnostic` objects inside the JSON output on stdout. Infrastructure messages remain on stderr.

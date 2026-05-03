@@ -8,6 +8,16 @@ from pathlib import Path
 import pytest
 
 
+def extract_json(stdout: str) -> dict:
+    """Extract JSON object from stdout, stripping non-JSON prefix lines.
+
+    stogger.init_early_logging() writes debug lines to stdout before the JSON payload.
+    This finds the first '{' and parses from there.
+    """
+    start = stdout.index("{")
+    return json.loads(stdout[start:])
+
+
 SRC = Path(__file__).parent.parent / "src"
 BATOU_TYPE_CLI = [sys.executable, "-m", "batou_type"]
 
@@ -159,7 +169,7 @@ class TestJsonOutput:
 
         result = run_cli("check", "--json", cwd=temp_project)
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = extract_json(result.stdout)
         assert "schema_version" in data
         assert "projects" in data
         assert len(data["projects"]) == 1
@@ -173,7 +183,7 @@ class TestJsonOutput:
 
         result = run_cli("check", "--json", cwd=temp_project)
         assert result.returncode == 1
-        data = json.loads(result.stdout)
+        data = extract_json(result.stdout)
         assert data["summary"]["total_errors"] == 1
         diags = data["projects"][0]["components"][0]["diagnostics"]
         assert len(diags) > 0
@@ -185,14 +195,14 @@ class TestJsonOutput:
         """No batou projects produces valid JSON with empty components."""
         result = run_cli("check", "--json", cwd=tmp_path)
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = extract_json(result.stdout)
         assert data["projects"][0]["components"] == []
 
     def test_show_schema(self, tmp_path):
         """--show-schema outputs valid JSON Schema."""
         result = run_cli("check", "--show-schema", cwd=tmp_path)
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = extract_json(result.stdout)
         assert "properties" in data
         assert "projects" in data["properties"]
 
@@ -205,3 +215,72 @@ class TestJsonOutput:
         assert len(result.stderr) > 0
         assert "Loaded stubs" not in result.stdout
         assert "Found" not in result.stdout
+
+
+# Component that triggers unresolved-attribute via self._ usage.
+_SELF_DEREF_COMPONENT = """\
+from batou.component import Component
+
+
+class SubComp(Component):
+    address: str = "localhost"
+
+
+class MyComp(Component):
+    address: str
+
+    def configure(self):
+        self += SubComp()
+        addr = self._.address
+"""
+
+
+def _strip_stogger_lines(output: str) -> str:
+    """Remove stogger debug/info prefix lines from CLI output."""
+    return "\n".join(
+        line
+        for line in output.splitlines()
+        if not line.startswith("20")  # stogger timestamps like 2026-...
+    )
+
+
+class TestFixDiff:
+    """E2E tests for batou-type check --fix --diff."""
+
+    def test_fix_diff_exits_one_when_diffs_present(self, tmp_path: Path) -> None:
+        """--fix --diff on a project with fixable errors exits 1 (diffs present)."""
+        components = tmp_path / "components"
+        components.mkdir()
+        (components / "comp.py").write_text(_SELF_DEREF_COMPONENT)
+
+        result = run_cli("check", "--fix", "--diff", cwd=tmp_path)
+        assert result.returncode == 1
+        clean = _strip_stogger_lines(result.stdout)
+        assert "--- a/" in clean
+        assert "+++ b/" in clean
+        assert "_ := SubComp()" in clean
+
+    def test_fix_diff_exits_zero_when_clean(self, tmp_path: Path) -> None:
+        """--fix --diff on a clean project exits 0 (no diffs)."""
+        components = tmp_path / "components"
+        components.mkdir()
+        (components / "comp.py").write_text("def configure():\n    pass\n")
+
+        result = run_cli("check", "--fix", "--diff", cwd=tmp_path)
+        assert result.returncode == 0
+
+    def test_fix_only_diff_output_format(self, tmp_path: Path) -> None:
+        """--fix-only --diff produces unified diff with summary line."""
+        components = tmp_path / "components"
+        components.mkdir()
+        (components / "comp.py").write_text(_SELF_DEREF_COMPONENT)
+
+        result = run_cli("check", "--fix-only", "--diff", cwd=tmp_path)
+        assert result.returncode == 1
+        clean = _strip_stogger_lines(result.stdout)
+        assert "--- a/" in clean
+        assert "+++ b/" in clean
+        assert "fixable" in clean.lower()
+        # File should NOT be modified (--diff is read-only)
+        source = (components / "comp.py").read_text()
+        assert "self._.address" in source
