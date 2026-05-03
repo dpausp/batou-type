@@ -301,4 +301,3 @@ Discovery: `batou-type check --help` shows `--fix`, `--diff`, `--fix-only`, `--v
 
 - docs/dev/architecture.md — four-layer model, framework isolation
 - docs/dev/testing.md — test pyramid, 0% mock ratio convention
-- Draft: `.agents/drafts/autofix-missing-imports.md` (source of binding decisions)
