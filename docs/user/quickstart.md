@@ -18,9 +18,8 @@ This discovers all `components/**/*.py` files in the current directory and type-
 You will see output like this:
 
 ```{code-block} text
-Found 1 project(s):
+Found 1 project(s)
   /path/to/my-deployment
-
 Checking 3 component(s) in my-deployment
 app: passed
 database: passed
@@ -35,10 +34,9 @@ All components passed type checking.
 When a component has type errors, `batou-type` prints the diagnostics and exits with code 1:
 
 ```{code-block} text
+app: failed
 components/app/component.py:15: error: Cannot access member "misspelled_attribute" on type "Component"
 Found 1 diagnostic
-
-app: failed
 1 component(s) failed: app
 
 ================================ FAILED COMPONENTS ================================

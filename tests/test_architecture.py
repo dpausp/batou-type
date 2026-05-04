@@ -2,11 +2,11 @@
 
 Layer model (top imports bottom, never reverse):
 
-    cli.py / __main__.py    -- presentation (typer, rich)
+    cli.py / __main__.py    -- presentation (typer, rich, stogger)
+    fixer.py                -- autofix transforms (libcst)
     pytest_plugin.py        -- plugin (pytest)
     output.py               -- output (pydantic)
     core.py                 -- domain (stdlib + lazy output import)
-    vendor/                 -- isolated stubs (leaf, no upward deps)
 
     __init__.py re-exports from core only.
 

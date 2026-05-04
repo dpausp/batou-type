@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 import shlex
 import sys
 import difflib
@@ -434,7 +434,7 @@ def check(
         "--ty-args",
         help='Extra flags passed to ty, e.g. --ty-args "--output-format concise"',
     ),
-    output_format: str = typer.Option(
+    output_format: Literal["human", "json"] = typer.Option(
         "human",
         "--output-format",
         help="Output format: human (default) or json",

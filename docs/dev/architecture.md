@@ -9,11 +9,11 @@ cli.py / __main__.py    ← presentation (typer, rich, stogger)
 fixer.py                ← autofix transforms (libcst)
 output.py               ← output modeling (pydantic)
 pytest_plugin.py        ← plugin (pytest)
-core.py                 ← domain (stdlib only)
+core.py                 ← domain (stdlib + lazy output import)
 vendor/                 ← bundled stubs (leaf, no upward imports)
 ```
 
-**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst — it does not import from `core.py` directly. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst — it does not import from `core.py` directly. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no top-level runtime imports from any `batou_type` module — it lazily imports from `output.py` only inside `check_file()` when JSON diagnostics need parsing. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
 
 This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
 
@@ -33,7 +33,7 @@ Each layer owns its framework:
 
 ## Output Layer
 
-`output.py` sits between the CLI and the domain layer, providing structured machine-readable output via Pydantic models. It is imported by `cli.py` only when JSON mode is active (`--json` / `--output-format json`).
+`output.py` sits between the CLI and the domain layer, providing structured machine-readable output via Pydantic models. The `Diagnostic` model is imported unconditionally by `cli.py` and `fixer.py` at module level. `build_output()` and `export_schema()` are conditionally imported by `cli.py` only when JSON mode is active (`--json` / `--output-format json`) or schema export is requested (`--show-schema`).
 
 The module contains:
 
@@ -43,7 +43,7 @@ The module contains:
 
 The stdout/stderr split is enforced at the CLI layer (see [](#logging-design)). `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
 
-`TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the domain layer dependency-free.
+`TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the dataclass free of Pydantic dependencies — the domain layer's only runtime import from `output.py` is the lazy one inside `check_file()`.
 
 ## Fixer Layer
 

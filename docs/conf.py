@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 # -- Project information -----------------------------------------------------
 
 project = "batou-type"
-copyright = "2024, batou-type contributors"  # noqa: A001
+copyright = "2024-2026, batou-type contributors"  # noqa: A001
 author = "batou-type contributors"
 
 # -- General configuration ---------------------------------------------------

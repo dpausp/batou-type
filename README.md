@@ -1,52 +1,103 @@
-# batou-typecheck
+# batou-type
 
 Type-check batou deployment components against batou stubs.
 
-Finds all `components/**/*.py` files in the current directory and runs type checkers on them.
+Finds all `components/**/*.py` files and runs type checkers on them.
 
-## Usage
-
-```
-batou-typecheck                          # ty (default)
-batou-typecheck -c mypy                  # mypy only
-batou-typecheck -c ty -c mypy            # both checkers
-```
-
-### Output
-
-Status messages go to stderr, checker output goes to stdout:
+## Quick Start
 
 ```
-$ batou-typecheck
-Type-checking 42 component file(s) ...
---- ty ---
-components/app/component.py:15: error: ...
+$ pip install batou-type
+$ batou-type check                  # type-check with ty (default)
+```
+
+Output example:
+
+```
+$ batou-type check
+Found 1 project(s):
+  /path/to/my-deployment
+
+Checking 3 component(s) in my-deployment
+app: passed
+database: passed
+webserver: passed
+All 3 component(s) passed
 ```
 
 Exit code **0** — no errors (or no component files found). Exit code **1** — at least one type error detected.
 
-## Checkers
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `batou-type check [PATH…]` | Type-check component files (default command) |
+| `batou-type version` | Show version and stub package status |
+
+`batou-type` can also be invoked as `python -m batou_type`.
+
+## Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `-v`, `--verbose` | Show diagnostic details (PYTHONPATH, site-packages) |
+| `--json` | Machine-readable JSON output (aliases: `--output-format json`) |
+| `--show-schema` | Print the JSON Schema for the JSON output format |
+
+## Choosing a Checker
+
+```
+batou-type check                      # ty (default)
+batou-type check -c mypy              # mypy only
+batou-type check -c ty -c mypy        # both, in sequence
+```
 
 | Checker | Notes |
-|---|---|
+|---------|-------|
 | `ty` | Default. Fast, modern Python type checker. |
 | `mypy` | Runs with `--explicit-package-bases --check-untyped-defs --no-incremental`. |
 
-Pass `-c` multiple times to run several checkers in sequence. Each checker sees each component file individually.
+Pass `-c` multiple times to run several checkers. Each processes every component file independently.
 
-## Migration Testing
+Pass extra flags to ty with `--ty-args`:
 
-Use `batou-typecheck` to preview breaking changes *before* upgrading batou in production:
+```
+batou-type check --ty-args "--output-format concise"
+```
 
-1. Install a **newer** version of `batou-typecheck` (which ships updated stubs) in your **existing** deployment directory.
-2. Run `batou-typecheck`.
-3. Type errors reveal API changes, removed attributes, or signature shifts that would break on upgrade.
+## Autofix Mode
 
-Fix the reported issues in your components, then upgrade batou itself with confidence.
+Automatically fix two recurring warning classes: missing `batou_ext.*` imports and `self._` dereferencing issues. Both use libcst for AST-preserving transformations.
 
-## What It Checks
+| Flag | Behavior |
+|------|----------|
+| `--fix` | Fix in-place, write transformed files to disk |
+| `--fix-only` | Fix in-place, suppress remaining error report (implies `--fix`) |
+| `--diff` | Print unified diff instead of writing (implies `--fix-only`) |
+| `--virtual` | Verify fixes in a tempdir before writing (use with `--fix` or `--diff`) |
 
-The tool discovers every `components/**/*.py` file relative to where you run it. This matches the standard batou deployment layout:
+Implication chain: `--diff` → `--fix-only` → `--fix`.
+
+```
+batou-type check --fix            # apply fixes in-place
+batou-type check --diff           # preview fixes as unified diff
+batou-type check --fix-only       # fix and suppress remaining errors
+batou-type check --fix --virtual  # verify fixes in tempdir before writing
+```
+
+## pytest Integration
+
+```shell
+$ pytest --batou-ty                # type-check all components as test items
+$ pytest --batou-ty -m batou_ty    # run only type-check tests
+$ pytest --batou-ty -k "app"       # type-check only matching components
+```
+
+Requires the `pytest` optional dependency (`pip install batou-type[pytest]`).
+
+## Project Discovery
+
+`batou-type` identifies batou projects by a `components/` directory:
 
 ```
 my-deployment/
@@ -58,4 +109,25 @@ my-deployment/
 └── ...
 ```
 
-If no component files are found, the tool prints a message to stderr and exits cleanly.
+When a directory is not itself a batou project, subdirectories are scanned. Pass a parent directory to check multiple deployments at once.
+
+Virtual environments (`.venv/`, `appenv`) are detected automatically — their site-packages are added to the type checker's search path.
+
+## Migration Testing
+
+1. Install a **newer** version of `batou-type` (with updated stubs) in your existing deployment.
+2. Run `batou-type check`.
+3. Type errors reveal API changes that would break on upgrade.
+
+Fix the reported issues, then upgrade batou with confidence.
+
+## What batou-type Does Not Do
+
+- Does **not** run your deployment or execute any component code.
+- Does **not** install or manage batou itself.
+- Checks only `components/**/*.py` files — other Python files are ignored.
+- Stub coverage may not include every batou API.
+
+---
+
+Full documentation: [docs/user/usage.md](docs/user/usage.md)
