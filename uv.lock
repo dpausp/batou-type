@@ -162,7 +162,7 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pytest", marker = "extra == 'pytest'" },
     { name = "rich" },
-    { name = "stogger", git = "https://github.com/dpausp/stogger?rev=2026.5.5" },
+    { name = "stogger", git = "https://github.com/dpausp/stogger?rev=2026.5.6" },
     { name = "ty", specifier = ">=0.0.34" },
     { name = "typer" },
 ]
@@ -177,7 +177,7 @@ dev = [
     { name = "pytest-archon", specifier = ">=0.0.7" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-ruff", specifier = ">=0.5" },
-    { name = "pytest-stogger", git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.5" },
+    { name = "pytest-stogger", git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.6" },
     { name = "pytest-ty", specifier = ">=0.2.1" },
     { name = "pyupgrade" },
     { name = "ruff" },
@@ -204,7 +204,7 @@ test = [
     { name = "pytest-archon", specifier = ">=0.0.7" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-ruff", specifier = ">=0.5" },
-    { name = "pytest-stogger", git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.5" },
+    { name = "pytest-stogger", git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.6" },
     { name = "pytest-ty", specifier = ">=0.2.1" },
 ]
 
@@ -923,8 +923,8 @@ wheels = [
 
 [[package]]
 name = "pytest-stogger"
-version = "2026.5.5.dev10+g7e0383bbe"
-source = { git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.5#7e0383bbeac804b0831d506fc3fbf3baec3d28c2" }
+version = "2026.5.6"
+source = { git = "https://github.com/dpausp/pytest-stogger?rev=2026.5.6#189b1d48185fec3fe6c5e93b2e156cfc0c474e82" }
 dependencies = [
     { name = "complexipy" },
 ]
@@ -1256,8 +1256,8 @@ wheels = [
 
 [[package]]
 name = "stogger"
-version = "2026.5.5"
-source = { git = "https://github.com/dpausp/stogger?rev=2026.5.5#6a4ddb413496d1449625cb2d72043e79e00db353" }
+version = "2026.5.6"
+source = { git = "https://github.com/dpausp/stogger?rev=2026.5.6#56ba5c7538aff366351d03aefb83d0caffca4cd8" }
 dependencies = [
     { name = "attrs" },
     { name = "colorama" },
