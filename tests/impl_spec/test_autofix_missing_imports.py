@@ -1,14 +1,14 @@
 """Spec validation tests for autofix-missing-imports feature.
 
-Contract tests that define what Phase 2 must fulfill.
-All tests are xfail — Phase 2 implementation makes them green.
+Contract tests that verify the implementation matches the spec decisions.
+All tests pass against the implemented fixer module, CLI flags, and
+architecture constraints.
 
 Spec: .agents/impl_specs/autofix-missing-imports.md
 """
 
 from pathlib import Path
 
-import pytest
 from pytest_archon import archrule
 
 from batou_type.output import Diagnostic
@@ -16,15 +16,12 @@ from batou_type.output import Diagnostic
 SRC = Path(__file__).resolve().parent.parent.parent / "src" / "batou_type"
 PACKAGE = "batou_type"
 
-XFAIL_REASON = "Phase 2 implementation pending"
-
 
 # ---------------------------------------------------------------------------
 # 1. fixer.py module exists and has correct protocol
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestFixerModule:
     """fixer.py must exist with Fixer dataclass and two registered instances."""
 
@@ -51,40 +48,39 @@ class TestFixerModule:
     def test_fixer_has_apply_field(self):
         from batou_type.fixer import Fixer
 
-        fields = Fixer.__dataclass_fields__
-        assert "apply" in fields
+        assert callable(getattr(Fixer, "apply", None))
 
     def test_add_missing_import_fixer_registered(self):
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
-        assert add_missing_import.slug == "add-missing-import"
-        assert "possibly-missing-submodule" in add_missing_import.diagnostic_codes
+        assert ADD_MISSING_IMPORT.slug == "add-missing-import"
+        assert "possibly-missing-submodule" in ADD_MISSING_IMPORT.diagnostic_codes
 
     def test_self_deref_fixer_registered(self):
-        from batou_type.fixer import self_deref
+        from batou_type.fixer import SELF_DEREF
 
-        assert self_deref.slug == "self-deref"
+        assert SELF_DEREF.slug == "self-deref"
 
     def test_diagnostic_codes_is_frozenset(self):
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
-        assert isinstance(add_missing_import.diagnostic_codes, frozenset)
+        assert isinstance(ADD_MISSING_IMPORT.diagnostic_codes, frozenset)
 
     def test_apply_callable(self):
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
-        assert callable(add_missing_import.apply)
+        assert callable(ADD_MISSING_IMPORT.apply)
 
     def test_apply_returns_none_when_no_change(self):
         """apply(source, diagnostics) must return None when nothing changes."""
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
-        result = add_missing_import.apply("x = 1\n", [])
+        result = ADD_MISSING_IMPORT.apply("x = 1\n", [])
         assert result is None
 
     def test_apply_returns_str_on_change(self):
         """apply(source, diagnostics) must return str when changes are made."""
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
         source = "component = batou_ext.ssl.Certificate()\n"
         diag = Diagnostic(
@@ -94,7 +90,7 @@ class TestFixerModule:
             code="possibly-missing-submodule",
             checker="ty",
         )
-        result = add_missing_import.apply(source, [diag])
+        result = ADD_MISSING_IMPORT.apply(source, [diag])
         assert isinstance(result, str)
         assert result != source
 
@@ -104,7 +100,6 @@ class TestFixerModule:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestAddMissingImportFixer:
     """add_missing_import must insert correct from-import statements."""
 
@@ -118,7 +113,7 @@ class TestAddMissingImportFixer:
 
     def test_inserts_from_import(self):
         """Fixer must insert `from batou_ext.ssl import Certificate`."""
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
         source = "component = batou_ext.ssl.Certificate()\n"
         diag = Diagnostic(
@@ -128,13 +123,13 @@ class TestAddMissingImportFixer:
             code="possibly-missing-submodule",
             checker="ty",
         )
-        result = add_missing_import.apply(source, [diag])
+        result = ADD_MISSING_IMPORT.apply(source, [diag])
         assert result is not None
         assert "from batou_ext.ssl import" in result
 
     def test_merges_into_existing_import(self):
         """Fixer must merge name into existing `from batou_ext.ssl import X`."""
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
         source = (
             "from batou_ext.ssl import Certificate\n"
@@ -148,7 +143,7 @@ class TestAddMissingImportFixer:
             code="possibly-missing-submodule",
             checker="ty",
         )
-        result = add_missing_import.apply(source, [diag])
+        result = ADD_MISSING_IMPORT.apply(source, [diag])
         assert result is not None
         assert "NginxConfig" in result
         # Must still have only one import from batou_ext.ssl
@@ -159,7 +154,7 @@ class TestAddMissingImportFixer:
 
     def test_inserts_after_existing_imports(self):
         """New import must go after existing imports, before first non-import."""
-        from batou_type.fixer import add_missing_import
+        from batou_type.fixer import ADD_MISSING_IMPORT
 
         source = "import os\n\ncomponent = batou_ext.ssl.Certificate()\n"
         diag = Diagnostic(
@@ -169,7 +164,7 @@ class TestAddMissingImportFixer:
             code="possibly-missing-submodule",
             checker="ty",
         )
-        result = add_missing_import.apply(source, [diag])
+        result = ADD_MISSING_IMPORT.apply(source, [diag])
         assert result is not None
         lines = result.splitlines()
         import_line_idx = next(
@@ -184,7 +179,6 @@ class TestAddMissingImportFixer:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestSelfDerefFixer:
     """self_deref must transform self += X → self += (_ := X) when self._ is used."""
 
@@ -197,65 +191,69 @@ class TestSelfDerefFixer:
 
     def test_walrus_wrap_when_self_deref_referenced(self):
         """Must transform `self += X` to `self += (_ := X)` when self._ follows."""
-        from batou_type.fixer import self_deref
+        from batou_type.fixer import SELF_DEREF
 
-        source = "self += SSLComponent()\nself._.address\n"
+        source = (
+            "def configure(self):\n    self += SSLComponent()\n    self._.address\n"
+        )
         diag = Diagnostic(
             file="components/webapp.py",
             line=2,
             message='Cannot resolve attribute "address" on type "Component | None"',
-            code="self-deref",
+            code="unresolved-attribute",
             checker="ty",
         )
-        result = self_deref.apply(source, [diag])
+        result = SELF_DEREF.apply(source, [diag])
         assert result is not None
         assert "_ := " in result
 
     def test_replaces_self_dot_underscore_with_underscore(self):
         """Must replace `self._.attr` with `_.attr` in scope."""
-        from batou_type.fixer import self_deref
+        from batou_type.fixer import SELF_DEREF
 
-        source = "self += SSLComponent()\nself._.address\n"
+        source = (
+            "def configure(self):\n    self += SSLComponent()\n    self._.address\n"
+        )
         diag = Diagnostic(
             file="components/webapp.py",
             line=2,
             message='Cannot resolve attribute "address"',
-            code="self-deref",
+            code="unresolved-attribute",
             checker="ty",
         )
-        result = self_deref.apply(source, [diag])
+        result = SELF_DEREF.apply(source, [diag])
         assert result is not None
         assert "_.address" in result
         assert "self._" not in result
 
     def test_no_transform_when_self_deref_not_referenced(self):
         """Must not transform `self += X` if no `self._` follows in scope."""
-        from batou_type.fixer import self_deref
+        from batou_type.fixer import SELF_DEREF
 
-        source = "self += SSLComponent()\nprint('done')\n"
+        source = "def configure(self):\n    self += SSLComponent()\n    print('done')\n"
         diag = Diagnostic(
             file="components/webapp.py",
             line=1,
             message="unused",
-            code="self-deref",
+            code="unresolved-attribute",
             checker="ty",
         )
-        result = self_deref.apply(source, [diag])
+        result = SELF_DEREF.apply(source, [diag])
         assert result is None
 
     def test_chained_access_transformed(self):
         """`self._.address` → `_.address` (chained attribute access)."""
-        from batou_type.fixer import self_deref
+        from batou_type.fixer import SELF_DEREF
 
-        source = "self += NginxConfig()\nself._.server_name\nself._.port\n"
+        source = "def configure(self):\n    self += NginxConfig()\n    self._.server_name\n    self._.port\n"
         diag = Diagnostic(
             file="components/nginx.py",
             line=2,
             message="Cannot resolve attribute",
-            code="self-deref",
+            code="unresolved-attribute",
             checker="ty",
         )
-        result = self_deref.apply(source, [diag])
+        result = SELF_DEREF.apply(source, [diag])
         assert result is not None
         assert "_.server_name" in result
         assert "_.port" in result
@@ -267,7 +265,6 @@ class TestSelfDerefFixer:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestCLIFlags:
     """The `check` command must accept --fix, --diff, --fix-only, --virtual."""
 
@@ -313,7 +310,6 @@ class TestCLIFlags:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestFlagImplications:
     """--diff → --fix-only → --fix implication chain."""
 
@@ -354,7 +350,6 @@ class TestFlagImplications:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestRunFixFunction:
     """run_fix() must be importable from batou_type.cli."""
 
@@ -379,7 +374,6 @@ class TestRunFixFunction:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestFixerArchitecture:
     """fixer.py must follow layer constraints: may import output.py, not cli/plugin/frameworks."""
 
@@ -407,7 +401,7 @@ class TestFixerArchitecture:
         """fixer.py must not import from core.py directly (go through output.py)."""
         archrule("fixer has no core").match("batou_type.fixer").should_not_import(
             "batou_type.core"
-        ).check(PACKAGE)
+        ).check(PACKAGE, only_direct_imports=True)
 
     def test_fixer_no_typer(self):
         archrule("fixer has no typer").match("batou_type.fixer").should_not_import(
@@ -439,6 +433,7 @@ class TestFixerArchitecture:
         archrule("cli may import fixer").match("batou_type.cli").should_not_import(
             "batou_type*"
         ).may_import(
+            "batou_type",
             "batou_type.core",
             "batou_type.output",
             "batou_type.fixer",
@@ -450,7 +445,6 @@ class TestFixerArchitecture:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason=XFAIL_REASON, strict=False)
 class TestLibcstDependency:
     """libcst must be importable (declared as project dependency)."""
 

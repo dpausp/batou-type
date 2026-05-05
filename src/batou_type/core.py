@@ -137,9 +137,7 @@ def ensure_checker_available(checker: Checker) -> None:
     result = subprocess.run(cmd, capture_output=True, text=True)  # nosec B603
     if result.returncode != 0:
         stderr = result.stderr.strip()
-        raise CheckerError(
-            f"Type checker '{checker.value}' is not available: {stderr}"
-        )
+        raise CheckerError(f"Type checker '{checker.value}' is not available: {stderr}")
 
 
 def check_file(
@@ -192,7 +190,11 @@ def check_file(
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, env=env)  # nosec B603
 
         # Checker crash: stderr present, no stdout → checker itself failed
-        if result.returncode != 0 and result.stderr.strip() and not result.stdout.strip():
+        if (
+            result.returncode != 0
+            and result.stderr.strip()
+            and not result.stdout.strip()
+        ):
             raise CheckerError(
                 f"Type checker '{c.value}' crashed: {result.stderr.strip()}"
             )
