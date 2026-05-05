@@ -14,8 +14,8 @@ dependencies = [
     "pydantic",
     "rich",
     "libcst",
-    "stogger",
     "typer",
+    "stogger",
 ]
 
 [project.optional-dependencies]
@@ -43,9 +43,9 @@ test = [
     "batou-type[pytest,mypy]",
     "pytest-cov>=7.1.0",
     "pytest-archon>=0.0.7",
-    "pytest-stogger",
     "pytest-ruff>=0.5",
     "pytest-ty>=0.2.1",
+    "pytest-stogger",
 ]
 lint = [
     "pyupgrade",
@@ -99,10 +99,6 @@ commands = [["sphinx-build", "-b", "html", "docs", "docs/_build"]]
 [tool.ty.src]
 exclude = ["src/batou_type/vendor/"]
 
-[tool.uv.sources]
-pytest-stogger = { path = "../pytest-stogger" }
-stogger = { path = "../stogger" }
-
 [tool.pytest-stogger]
 source = "src/batou_type"
 exempt_event_ids = [
@@ -117,3 +113,7 @@ exempt_event_ids = [
 "core.py" = ["complexity-needs-log"]
 "output.py" = ["complexity-needs-log"]
 "pytest_plugin.py" = ["complexity-needs-log"]
+
+[tool.uv.sources]
+stogger = { git = "https://github.com/dpausp/stogger", rev = "2026.5.5" }
+pytest-stogger = { git = "https://github.com/dpausp/pytest-stogger", rev = "2026.5.5" }
