@@ -5,16 +5,16 @@ The test suite validates correctness, architecture, and the public API contract 
 ## Test Pyramid
 
 ```
-     ┌─────────┐
-     │  E2E 16 │  ~17% — subprocess CLI invocation (includes autofix E2E)
-     ├─────────┤
-     │ Integ 50│  ~53% — pytester plugin tests, fixer integration, AST contracts
-     ├─────────┤
-     │ Unit 25 │  ~26% — pure functions with tmp_path fixtures, fixer transformations
-     └─────────┘
+     ┌───────────┐
+     │    E2E    │  Subprocess CLI invocation (includes autofix E2E)
+     ├───────────┤
+     │   Integ   │  pytester plugin tests, fixer integration, AST contracts
+     ├───────────┤
+     │   Unit    │  Pure functions with tmp_path fixtures, fixer transformations
+     └───────────┘
 ```
 
-The ~91 tests have a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubles. Every test exercises real code paths: unit tests hit real filesystem via `tmp_path`, integration tests run the real pytest plugin via `pytester` or the real fix pipeline on `tmp_path` projects, and E2E tests spawn real subprocesses.
+All tests have a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubles. Every test exercises real code paths: unit tests hit real filesystem via `tmp_path`, integration tests run the real pytest plugin via `pytester` or the real fix pipeline on `tmp_path` projects, and E2E tests spawn real subprocesses.
 
 ## Test Files and Their Role
 

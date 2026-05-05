@@ -183,7 +183,6 @@ When diffs exist, exit code is 1. When no diffs exist, exit code is 0.
 Use `--virtual` in CI pipelines for safety — it catches cases where an autofix transformation is syntactically valid but introduces new type errors.
 
 ## pytest Integration
-## pytest Integration
 
 If you write tests for your batou deployment, you can integrate type checking into your pytest suite using the `--batou-ty` flag:
 
