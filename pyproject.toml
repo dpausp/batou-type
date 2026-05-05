@@ -16,6 +16,7 @@ dependencies = [
     "libcst",
     "typer",
     "stogger",
+    "ty>=0.0.34",
 ]
 
 [project.optional-dependencies]

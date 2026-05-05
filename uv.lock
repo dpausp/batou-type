@@ -103,6 +103,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
     { name = "stogger" },
+    { name = "ty" },
     { name = "typer" },
 ]
 
@@ -162,6 +163,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'pytest'" },
     { name = "rich" },
     { name = "stogger", git = "https://github.com/dpausp/stogger?rev=2026.5.5" },
+    { name = "ty", specifier = ">=0.0.34" },
     { name = "typer" },
 ]
 provides-extras = ["mypy", "pytest"]
