@@ -13,7 +13,6 @@ dependencies = [
     "libcst",
     "pydantic",
     "rich",
-    "libcst",
     "typer",
     "stogger",
     "ty>=0.0.34",
@@ -102,7 +101,7 @@ exclude = ["src/batou_type/vendor/"]
 
 [tool.pytest-stogger]
 source = "src/batou_type"
-exempt_event_ids = []
+exempt_event_ids = ["checker-unavailable"]
 
 [tool.pytest-stogger.per-file-ignores]
 "fixer.py" = ["complexity-needs-log", "except-must-log"]

@@ -5,9 +5,11 @@ from importlib.metadata import PackageNotFoundError, version
 
 from batou_type.core import (
     Checker,
+    CheckerError,
     TypeCheckResult,
     check_all,
     check_file,
+    ensure_checker_available,
     find_components,
 )
 
@@ -15,9 +17,11 @@ log = structlog.get_logger()
 
 __all__ = [
     "Checker",
+    "CheckerError",
     "TypeCheckResult",
     "check_all",
     "check_file",
+    "ensure_checker_available",
     "find_components",
     "__version__",
 ]

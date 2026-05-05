@@ -100,6 +100,10 @@ CHECKER_COMMANDS: dict[Checker, list[str]] = {
 }
 
 
+class CheckerError(Exception):
+    """Raised when a type checker itself fails (not installed, crash, etc.)."""
+
+
 @dataclass
 class TypeCheckResult:
     """Result of type checking a single file."""
@@ -124,6 +128,20 @@ def find_components(root: Path) -> list[Path]:
     return sorted(components_dir.glob("**/*.py"))
 
 
+def ensure_checker_available(checker: Checker) -> None:
+    """Verify a type checker is installed and runnable.
+
+    Raises CheckerError if the checker cannot be invoked.
+    """
+    cmd = [sys.executable, "-m", checker.value, "--version"]
+    result = subprocess.run(cmd, capture_output=True, text=True)  # nosec B603
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise CheckerError(
+            f"Type checker '{checker.value}' is not available: {stderr}"
+        )
+
+
 def check_file(
     file_path: str,
     checkers: list[Checker] | None = None,
@@ -132,7 +150,10 @@ def check_file(
     ty_args: list[str] | None = None,
     json_mode: bool = False,
 ) -> TypeCheckResult:
-    """Run type checker(s) on a single file."""
+    """Run type checker(s) on a single file.
+
+    Raises CheckerError if the checker itself fails (crash, not installed).
+    """
     checkers = checkers or [Checker.ty]
     cwd = cwd or Path.cwd()
     extra_search_paths = extra_search_paths or []
@@ -169,12 +190,21 @@ def check_file(
         display_command = " ".join(cmd).replace(sys.executable, "python", 1)
 
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, env=env)  # nosec B603
+
+        # Checker crash: stderr present, no stdout → checker itself failed
+        if result.returncode != 0 and result.stderr.strip() and not result.stdout.strip():
+            raise CheckerError(
+                f"Type checker '{c.value}' crashed: {result.stderr.strip()}"
+            )
+
         if result.returncode != 0:
             any_failed = True
-            if result.stdout:
-                full_output.append(result.stdout)
-            if result.stderr:
-                full_output.append(result.stderr)
+
+        # Always collect output so warnings are preserved even on exit 0
+        if result.stdout:
+            full_output.append(result.stdout)
+        if result.stderr:
+            full_output.append(result.stderr)
 
         if json_mode:
             checker_results.append((c, result.stdout, result.stderr))

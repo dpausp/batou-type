@@ -5,9 +5,10 @@ from importlib import metadata
 from importlib.resources import files
 from pathlib import Path
 from typing import Annotated, Literal
+import difflib
+import re
 import shlex
 import sys
-import difflib
 
 import structlog
 import stogger
@@ -18,8 +19,10 @@ from rich.text import Text
 from batou_type import __version__
 from batou_type.core import (
     Checker,
+    CheckerError,
     TypeCheckResult,
     check_all,
+    ensure_checker_available,
     find_components,
     find_project_venv,
     is_batou_project,
@@ -96,6 +99,14 @@ def version() -> None:
             console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
 
 
+_ERROR_PATTERN = re.compile(r"\berror\b", re.IGNORECASE)
+
+
+def _has_error_pattern(output: str) -> bool:
+    """Check if type checker output contains error-level diagnostics."""
+    return bool(_ERROR_PATTERN.search(output))
+
+
 def run_check(
     checker: list[Checker] | None,
     paths: list[Path],
@@ -160,6 +171,19 @@ def run_check(
 
     checkers = checker or [Checker.ty]
     log.debug("checkers-selected", checkers=[c.value for c in checkers])
+
+    # Pre-check: verify all checkers are available before doing any work
+    for c in checkers:
+        try:
+            ensure_checker_available(c)
+        except CheckerError:
+            log.exception(
+                "checker-unavailable",
+                _replace_msg="Type checker '{checker}' is not available",
+                checker=c.value,
+            )
+            console.print(f"[red]Error: Type checker '{c.value}' is not available[/]")
+            raise typer.Exit(2) from None
     total_failed = 0
     multi_project = len(projects) > 1
     failed_summary: dict[str, list[str]] = {}
@@ -168,7 +192,7 @@ def run_check(
 
     for project in projects:
         plog = log.bind(project=str(project))
-        plog.info("project", _replace_msg="  {path}", path=str(project))
+        plog.debug("project", _replace_msg="  {path}", path=str(project))
         components = find_components(project)
         if not components:
             plog.debug("project-skip-no-components")
@@ -196,17 +220,30 @@ def run_check(
             json_mode=json_mode,
         )
 
-        # Per-component result events
+        # Per-component result events — log level maps to checker output severity
         for result in results:
             component_name = Path(result.path).stem
-            status = "passed" if not result.has_errors else "failed"
-            plog.info(
-                "component-result",
-                _replace_msg="{component}: {status}",
-                component=component_name,
-                status=status,
-                passed=not result.has_errors,
-            )
+            output = result.output.strip()
+            if result.has_errors or (output and _has_error_pattern(output)):
+                plog.error(
+                    "component-type-errors",
+                    _replace_msg="{component}: failed",
+                    component=component_name,
+                    stdout=output if output else None,
+                )
+            elif output:
+                plog.warning(
+                    "component-type-warnings",
+                    _replace_msg="{component}: warnings",
+                    component=component_name,
+                    stdout=output,
+                )
+            else:
+                plog.info(
+                    "component-passed",
+                    _replace_msg="{component}: passed",
+                    component=component_name,
+                )
 
         # Collect failures for summary
         project_failed: list[str] = []
@@ -221,7 +258,7 @@ def run_check(
         all_results.extend(results)
 
         if not json_mode:
-            # Human mode: print error output
+            # Human mode: print error output via rich (preserves ANSI colors from ty)
             prefix = f"[red]{project.name}>[/] " if multi_project else ""
             for result in results:
                 if result.has_errors and result.output.strip():
@@ -233,7 +270,7 @@ def run_check(
     # Summary events
     if total_failed:
         all_failed_names = [name for names in failed_summary.values() for name in names]
-        log.info(
+        log.warning(
             "components-failed",
             _replace_msg="{count} component(s) failed: {names}",
             count=total_failed,
