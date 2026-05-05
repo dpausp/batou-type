@@ -1,6 +1,6 @@
 # vendor
 
-**Generated:** 2026-04-29
+**Generated:** 2026-05-05
 
 Bundled `.pyi` type stubs for `batou` and `batou_ext`. See ../../../docs/dev/architecture.md (Vendor Stubs System) for resolution logic.
 

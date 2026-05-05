@@ -1,6 +1,6 @@
 # batou-type
 
-**Generated:** 2026-04-29
+**Generated:** 2026-05-05
 
 Type-check batou deployment components against batou stubs.
 

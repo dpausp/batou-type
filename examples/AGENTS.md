@@ -1,6 +1,6 @@
 # examples
 
-**Generated:** 2026-04-29
+**Generated:** 2026-05-05
 
 Sample batou deployments used by the test suite and for manual verification.
 
