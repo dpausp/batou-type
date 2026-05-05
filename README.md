@@ -36,13 +36,18 @@ Exit code **0** — no errors (or no component files found). Exit code **1** —
 
 `batou-type` can also be invoked as `python -m batou_type`.
 
-## Global Flags
+## Check Flags
 
 | Flag | Description |
 |------|-------------|
+| `-c`, `--checker` | Select type checker: `ty` (default) or `mypy`. Pass multiple times. |
 | `-v`, `--verbose` | Show diagnostic details (PYTHONPATH, site-packages) |
 | `--json` | Machine-readable JSON output (aliases: `--output-format json`) |
 | `--show-schema` | Print the JSON Schema for the JSON output format |
+| `--fix` | Apply automated fixes in-place |
+| `--diff` | Preview fixes as unified diff (implies `--fix-only`) |
+| `--fix-only` | Fix and suppress remaining error report (implies `--fix`) |
+| `--virtual` | Verify fixes in a tempdir before writing |
 
 ## Choosing a Checker
 
@@ -52,31 +57,11 @@ batou-type check -c mypy              # mypy only
 batou-type check -c ty -c mypy        # both, in sequence
 ```
 
-| Checker | Notes |
-|---------|-------|
-| `ty` | Default. Fast, modern Python type checker. |
-| `mypy` | Runs with `--explicit-package-bases --check-untyped-defs --no-incremental`. |
-
-Pass `-c` multiple times to run several checkers. Each processes every component file independently.
-
-Pass extra flags to ty with `--ty-args`:
-
-```
-batou-type check --ty-args "--output-format concise"
-```
+Pass extra flags to ty with `--ty-args`. See [Usage](docs/user/usage.md) for details.
 
 ## Autofix Mode
 
-Automatically fix two recurring warning classes: missing `batou_ext.*` imports and `self._` dereferencing issues. Both use libcst for AST-preserving transformations.
-
-| Flag | Behavior |
-|------|----------|
-| `--fix` | Fix in-place, write transformed files to disk |
-| `--fix-only` | Fix in-place, suppress remaining error report (implies `--fix`) |
-| `--diff` | Print unified diff instead of writing (implies `--fix-only`) |
-| `--virtual` | Verify fixes in a tempdir before writing (use with `--fix` or `--diff`) |
-
-Implication chain: `--diff` → `--fix-only` → `--fix`.
+Automatically fix missing `batou_ext.*` imports and `self._` dereferencing issues using libcst AST-preserving transformations.
 
 ```
 batou-type check --fix            # apply fixes in-place
@@ -85,12 +70,13 @@ batou-type check --fix-only       # fix and suppress remaining errors
 batou-type check --fix --virtual  # verify fixes in tempdir before writing
 ```
 
+Implication chain: `--diff` → `--fix-only` → `--fix`.
+
 ## pytest Integration
 
 ```shell
 $ pytest --batou-ty                # type-check all components as test items
 $ pytest --batou-ty -m batou_ty    # run only type-check tests
-$ pytest --batou-ty -k "app"       # type-check only matching components
 ```
 
 Requires the `pytest` optional dependency (`pip install batou-type[pytest]`).

@@ -112,7 +112,7 @@ Four flags control autofix behavior, following ruff's `--fix`/`--diff`/`--fix-on
 | Flag | Behavior |
 |------|----------|
 | `--fix` | Fix in-place. Runs fixers and writes transformed files back to disk. |
-| `--fix-only` | Fix in-place, suppress the remaining error report. Implies `--fix`. Exit 0 if fixes applied, exit 1 only if the fixer itself fails. |
+| `--fix-only` | Fix in-place, suppress the remaining error report. Implies `--fix`. Exits 0 when fixes are applied or when no fixable diagnostics are found. |
 | `--diff` | Print unified diff instead of writing. Implies `--fix-only`. Output is `git apply`-compatible. Exit 0 if no diffs, exit 1 if diffs present. |
 | `--virtual` | Verify fixes in a temporary copy before writing. Copies component files + `pyproject.toml` + environment into a tempdir, applies fixers, and re-runs ty to confirm the error count decreased. Use with `--fix` or `--diff`. |
 

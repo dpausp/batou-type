@@ -3,39 +3,25 @@
 The test suite validates correctness, architecture, and the public API contract —
 without any mocks.
 
-## Test Pyramid
-
-```
-       ┌──────────┐
-       │  E2E  21 │  11% — subprocess CLI invocation
-       ├──────────┤
-       │ Integ  25 │  14% — pytester plugin tests, AST contract tests
-       ├──────────┤
-       │ Unit 139 │  75% — pure functions, logging events, output models, architecture rules
-       └──────────┘
-```
-
-As of 2026-05. Total: 185 tests.
-
-The 185 tests have a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubles.
+The suite has a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubles.
 Every test exercises real code paths: unit tests hit real filesystem via `tmp_path`,
 integration tests run the real pytest plugin via `pytester`, and E2E tests spawn real
 subprocesses.
 
 ## Test Files and Their Role
 
-| File | Tests | Role |
-| --- | --- | --- |
-| `test_core.py` | 21 | Unit tests for path detection and component discovery with `tmp_path` |
-| `test_fixer.py` | 13 | Unit tests for fixer transformations — source string + diagnostics in, transformed source string asserted |
-| `test_fixer_integration.py` | 4 | Integration tests for `run_fix()` on `tmp_path` projects with real component files |
-| `test_pytest_plugin.py` | 7 | Integration tests via `pytester` — creates real component files, runs `--batou-ty` |
-| `test_functional.py` | 21 | E2E tests — spawns `python -m batou_type` as subprocess, asserts on exit codes and output (includes fix-mode E2E) |
-| `test_logging.py` | 16 | In-process logging event tests — calls `run_check()` directly, asserts on structured events via `capture_logs` |
-| `test_output.py` | 16 | Unit tests for Pydantic output models, JSON serialization, and schema export |
-| `test_architecture.py` | 33 | Architecture enforcement via `pytest-archon` import rules |
-| `test_refactor_contract.py` | 14 | AST-based structural contracts (module existence, import boundaries, public API) |
-| `test_attribute_types.py` | ~40 | Attribute type correctness in vendor stubs ⚠️ requires `batou` installed (collection error without it) |
+| File | Role |
+| --- | --- |
+| `test_core.py` | Unit tests for path detection and component discovery with `tmp_path` |
+| `test_fixer.py` | Unit tests for fixer transformations — source string + diagnostics in, transformed source string asserted |
+| `test_fixer_integration.py` | Integration tests for `run_fix()` on `tmp_path` projects with real component files |
+| `test_pytest_plugin.py` | Integration tests via `pytester` — creates real component files, runs `--batou-ty` |
+| `test_functional.py` | E2E tests — spawns `python -m batou_type` as subprocess, asserts on exit codes and output (includes fix-mode E2E) |
+| `test_logging.py` | In-process logging event tests — calls `run_check()` directly, asserts on structured events via `capture_logs` |
+| `test_output.py` | Unit tests for Pydantic output models, JSON serialization, and schema export |
+| `test_architecture.py` | Architecture enforcement via `pytest-archon` import rules |
+| `test_refactor_contract.py` | AST-based structural contracts (module existence, import boundaries, public API) |
+| `test_attribute_types.py` | Attribute type correctness in vendor stubs — requires `batou` installed (collection error without it) |
 
 ## Architecture Enforcement
 
