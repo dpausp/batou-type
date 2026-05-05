@@ -278,6 +278,14 @@ def run_fix(
     Flow: (1) check_all(json_mode=True) \u2192 diagnostics, (2) group by file,
     (3) apply matching fixers, (4) write/diff/verify per flags.
     """
+    log.debug(
+        "fix-pipeline-start",
+        paths=[str(p) for p in paths],
+        fix=fix,
+        diff=diff,
+        fix_only=fix_only,
+        virtual=virtual,
+    )
     stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
     for info in stub_infos:
