@@ -1,7 +1,7 @@
 ---
-lifecycle: implement
-completed_at: 2026-04-29T17:30:00Z
-git_rev: 8c597bf
+lifecycle: completed
+completed_at: 2026-05-05T21:00:00Z
+git_rev: c05de17
 ---
 
 # autofix-missing-imports
