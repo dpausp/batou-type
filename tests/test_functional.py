@@ -284,3 +284,76 @@ class TestFixDiff:
         # File should NOT be modified (--diff is read-only)
         source = (components / "comp.py").read_text()
         assert "self._.address" in source
+
+
+# --- In-process log event tests ---
+# pytest-stogger AST-scans for log.has("event-id") in test files.
+# LogCapture wraps capture_logs() and provides .has() for coverage.
+
+
+class _LogCapture(list):
+    """List of captured events with log.has() for pytest-stogger coverage."""
+
+    def has(self, event_id: str, **kwargs):  # noqa: ARG002
+        """Assert event_id was emitted. kwargs ignored — for AST coverage only."""
+        assert event_id in {e["event"] for e in self}, (
+            f"Event {event_id!r} not found in {[e['event'] for e in self]}"
+        )
+
+
+def _make_project(tmp_path, *component_files):
+    """Create a batou project with component files."""
+    components = tmp_path / "components"
+    components.mkdir(exist_ok=True)
+    for name, content in component_files:
+        (components / name).write_text(content)
+    return tmp_path
+
+
+def _run_check_capture(paths, **kwargs):
+    """Run run_check in-process, return captured events."""
+    import click
+    from structlog.testing import capture_logs
+
+    from batou_type.cli import run_check
+
+    with capture_logs() as cap:
+        try:
+            run_check(checker=None, paths=paths, ty_args=[], json_mode=False, **kwargs)
+        except (SystemExit, click.exceptions.Exit):
+            pass
+    log = _LogCapture(cap)
+    return log
+
+
+def test_no_projects_found_logs_warning(tmp_path):
+    """Empty directory emits no-projects-found at warning level."""
+    log = _run_check_capture(paths=[tmp_path])
+    log.has("no-projects-found")
+    events = {e["event"]: e for e in log}
+    assert events["no-projects-found"]["log_level"] == "warning"
+
+
+def test_projects_found_logs_info(tmp_path):
+    """Valid project emits projects-found with count."""
+    project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
+    log = _run_check_capture(paths=[project])
+    log.has("projects-found")
+    events = {e["event"]: e for e in log}
+    assert events["projects-found"]["count"] == 1
+
+
+def test_components_passed_logs_info(tmp_path):
+    """Clean component emits components-passed summary."""
+    project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
+    log = _run_check_capture(paths=[project])
+    log.has("components-passed")
+
+
+def test_components_failed_logs_info(tmp_path):
+    """Component with type error emits components-failed summary."""
+    project = _make_project(
+        tmp_path, ("bad.py", "def configure() -> int:\n    return 'not an int'\n")
+    )
+    log = _run_check_capture(paths=[project])
+    log.has("components-failed")

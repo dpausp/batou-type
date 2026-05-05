@@ -129,6 +129,12 @@ def run_check(
                 if child.is_dir() and is_batou_project(child)
             )
 
+    log.debug(
+        "project-discovery",
+        input_paths=[str(p) for p in paths],
+        found=len(projects),
+    )
+
     if not projects:
         log.warning(
             "no-projects-found",
@@ -153,6 +159,7 @@ def run_check(
     )
 
     checkers = checker or [Checker.ty]
+    log.debug("checkers-selected", checkers=[c.value for c in checkers])
     total_failed = 0
     multi_project = len(projects) > 1
     failed_summary: dict[str, list[str]] = {}
@@ -164,7 +171,9 @@ def run_check(
         plog.info("project", _replace_msg="  {path}", path=str(project))
         components = find_components(project)
         if not components:
+            plog.debug("project-skip-no-components")
             continue
+        plog.debug("components-found", count=len(components))
 
         # Detect project venv (check_all adds its site-packages to search paths)
         venv = find_project_venv(project)
@@ -172,7 +181,7 @@ def run_check(
             kind = "appenv" if venv.is_appenv else "venv"
             plog.debug("project-venv", kind=kind, path=venv.path)
         else:
-            plog.debug("no-venv")
+            plog.debug("no-venv", path=str(project))
 
         plog.info(
             "checking-components",
@@ -311,6 +320,7 @@ def run_fix(
     fixers = [ADD_MISSING_IMPORT, SELF_DEREF]
 
     for project in projects:
+        flog = log.bind(project=str(project))
         components = find_components(project)
         if not components:
             continue
@@ -328,6 +338,11 @@ def run_fix(
         for result in results:
             if result.errors:
                 file_diagnostics.setdefault(result.path, []).extend(result.errors)
+        flog.debug(
+            "fix-diagnostics-grouped",
+            files=len(file_diagnostics),
+            total=sum(len(d) for d in file_diagnostics.values()),
+        )
 
         # Apply matching fixers per file
         fixed_files: list[tuple[str, str, str]] = []
@@ -343,11 +358,13 @@ def run_fix(
                     transformed = fixer.apply(current, matched)
                     if transformed is not None:
                         current = transformed
+                        log.debug("fix-applied", file=file_path_str, fixer=fixer.slug)
             if current != source:
                 fixed_files.append((file_path_str, source, current))
 
         # Handle output flags \u2014 diff-generation, virtual-mode-impl, fix-only-semantics
         if not fixed_files:
+            flog.debug("fix-no-fixable", files=0)
             if not fix_only:
                 console.print("[green]No fixable diagnostics found.[/]")
             raise typer.Exit(0)
@@ -415,6 +432,7 @@ def run_fix(
             for file_path_str, _, fixed in fixed_files:
                 source_path = project / file_path_str
                 source_path.write_text(fixed)
+            flog.debug("fix-write-complete", files=len(fixed_files))
             console.print(f"[green]Fixed {len(fixed_files)} file(s)[/]")
             raise typer.Exit(0)
 
@@ -492,6 +510,13 @@ def check(
         raise typer.Exit(0)
 
     stogger.init_logging(verbose=verbose)
+    log.debug(
+        "cli-invoked",
+        command="check",
+        paths=[str(p) for p in (paths or [Path.cwd()])],
+        json_mode=json_output or output_format == "json",
+        verbose=verbose,
+    )
     effective_format = "json" if json_output else output_format
     json_mode = effective_format == "json"
 

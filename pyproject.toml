@@ -101,12 +101,7 @@ exclude = ["src/batou_type/vendor/"]
 
 [tool.pytest-stogger]
 source = "src/batou_type"
-exempt_event_ids = [
-    "no-projects-found",
-    "projects-found",
-    "components-failed",
-    "components-passed",
-]
+exempt_event_ids = []
 
 [tool.pytest-stogger.per-file-ignores]
 "fixer.py" = ["complexity-needs-log", "except-must-log"]

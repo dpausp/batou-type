@@ -2,8 +2,6 @@
 
 """Core type checking logic shared between CLI and pytest plugin."""
 
-from __future__ import annotations
-
 import os
 import subprocess  # nosec B404
 import sys

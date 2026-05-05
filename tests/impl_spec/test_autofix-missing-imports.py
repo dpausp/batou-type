@@ -7,8 +7,6 @@ structure, and behavior that does not yet exist.
 Reference: .agents/impl_specs/autofix-missing-imports.md
 """
 
-from __future__ import annotations
-
 import importlib
 import inspect
 from dataclasses import fields

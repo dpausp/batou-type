@@ -7,7 +7,6 @@ Spec: .agents/impl_specs/autofix-missing-imports.md
 """
 
 from pathlib import Path
-from pathlib import Path
 
 import pytest
 from pytest_archon import archrule
@@ -112,8 +111,8 @@ class TestAddMissingImportFixer:
     IMPORT_FIXER_SOURCE = (
         "class SSL(Component):\n"
         "    def configure(self):\n"
-        '        self += Certificate(\n'
-        '            private_key=self.private_key,\n'
+        "        self += Certificate(\n"
+        "            private_key=self.private_key,\n"
         "        )\n"
     )
 
@@ -153,18 +152,16 @@ class TestAddMissingImportFixer:
         assert result is not None
         assert "NginxConfig" in result
         # Must still have only one import from batou_ext.ssl
-        lines = [l for l in result.splitlines() if l.startswith("from batou_ext.ssl")]
+        lines = [
+            ln for ln in result.splitlines() if ln.startswith("from batou_ext.ssl")
+        ]
         assert len(lines) == 1
 
     def test_inserts_after_existing_imports(self):
         """New import must go after existing imports, before first non-import."""
         from batou_type.fixer import add_missing_import
 
-        source = (
-            "import os\n"
-            "\n"
-            "component = batou_ext.ssl.Certificate()\n"
-        )
+        source = "import os\n\ncomponent = batou_ext.ssl.Certificate()\n"
         diag = Diagnostic(
             file="components/ssl.py",
             line=3,
@@ -176,11 +173,9 @@ class TestAddMissingImportFixer:
         assert result is not None
         lines = result.splitlines()
         import_line_idx = next(
-            i for i, l in enumerate(lines) if "from batou_ext.ssl" in l
+            i for i, ln in enumerate(lines) if "from batou_ext.ssl" in ln
         )
-        code_line_idx = next(
-            i for i, l in enumerate(lines) if "component" in l
-        )
+        code_line_idx = next(i for i, ln in enumerate(lines) if "component" in ln)
         assert import_line_idx < code_line_idx
 
 
@@ -204,10 +199,7 @@ class TestSelfDerefFixer:
         """Must transform `self += X` to `self += (_ := X)` when self._ follows."""
         from batou_type.fixer import self_deref
 
-        source = (
-            "self += SSLComponent()\n"
-            "self._.address\n"
-        )
+        source = "self += SSLComponent()\nself._.address\n"
         diag = Diagnostic(
             file="components/webapp.py",
             line=2,
@@ -223,10 +215,7 @@ class TestSelfDerefFixer:
         """Must replace `self._.attr` with `_.attr` in scope."""
         from batou_type.fixer import self_deref
 
-        source = (
-            "self += SSLComponent()\n"
-            "self._.address\n"
-        )
+        source = "self += SSLComponent()\nself._.address\n"
         diag = Diagnostic(
             file="components/webapp.py",
             line=2,
@@ -243,10 +232,7 @@ class TestSelfDerefFixer:
         """Must not transform `self += X` if no `self._` follows in scope."""
         from batou_type.fixer import self_deref
 
-        source = (
-            "self += SSLComponent()\n"
-            "print('done')\n"
-        )
+        source = "self += SSLComponent()\nprint('done')\n"
         diag = Diagnostic(
             file="components/webapp.py",
             line=1,
@@ -261,15 +247,11 @@ class TestSelfDerefFixer:
         """`self._.address` → `_.address` (chained attribute access)."""
         from batou_type.fixer import self_deref
 
-        source = (
-            "self += NginxConfig()\n"
-            "self._.server_name\n"
-            "self._.port\n"
-        )
+        source = "self += NginxConfig()\nself._.server_name\nself._.port\n"
         diag = Diagnostic(
             file="components/nginx.py",
             line=2,
-            message='Cannot resolve attribute',
+            message="Cannot resolve attribute",
             code="self-deref",
             checker="ty",
         )
@@ -403,9 +385,9 @@ class TestFixerArchitecture:
 
     def test_fixer_may_import_output(self):
         """fixer.py may import from output.py (Diagnostic model)."""
-        archrule("fixer may import output").match(
-            "batou_type.fixer"
-        ).should_not_import("batou_type*").may_import(
+        archrule("fixer may import output").match("batou_type.fixer").should_not_import(
+            "batou_type*"
+        ).may_import(
             "batou_type.output",
         ).check(PACKAGE, only_direct_imports=True)
 
@@ -454,9 +436,9 @@ class TestFixerArchitecture:
 
     def test_cli_may_import_fixer(self):
         """cli.py may import from fixer.py (top of dependency calls bottom)."""
-        archrule("cli may import fixer").match(
-            "batou_type.cli"
-        ).should_not_import("batou_type*").may_import(
+        archrule("cli may import fixer").match("batou_type.cli").should_not_import(
+            "batou_type*"
+        ).may_import(
             "batou_type.core",
             "batou_type.output",
             "batou_type.fixer",
