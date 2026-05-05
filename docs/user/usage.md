@@ -84,7 +84,7 @@ If no component files are found, the tool prints a message and exits cleanly (co
 - `.venv/` — standard venvs (e.g., created by uv)
 - `appenv` — batou's bundled environment manager
 
-No configuration needed. If neither is found, type checking proceeds without the project's site-packages. Use `-v` to see venv detection details.
+No configuration needed. If neither is found, the tool prints a warning but continues checking.
 
 ## Verbose Output
 
@@ -95,40 +95,6 @@ $ batou-type check -v
 ```
 
 This is useful for troubleshooting when type errors reference modules that should be available.
-
-## Autofix Mode
-
-batou-type can automatically fix two recurring classes of type-check warnings:
-
-- **Missing submodule imports** — `batou_ext.*` access without a prior import statement.
-- **`self._` dereferencing** — accessing attributes on `self._` (typed as `Component | None`) instead of the concrete type.
-
-Both fixers use libcst for AST-preserving transformations — formatting and comments are retained.
-
-### Fix Flags
-
-Four flags control autofix behavior, following ruff's `--fix`/`--diff`/`--fix-only` UX model:
-
-| Flag | Behavior |
-|------|----------|
-| `--fix` | Fix in-place. Runs fixers and writes transformed files back to disk. |
-| `--fix-only` | Fix in-place, suppress the remaining error report. Implies `--fix`. Exits 0 when fixes are applied or when no fixable diagnostics are found. |
-| `--diff` | Print unified diff instead of writing. Implies `--fix-only`. Output is `git apply`-compatible. Exit 0 if no diffs, exit 1 if diffs present. |
-| `--virtual` | Verify fixes in a temporary copy before writing. Copies component files + `pyproject.toml` + environment into a tempdir, applies fixers, and re-runs ty to confirm the error count decreased. Use with `--fix` or `--diff`. |
-
-The implication chain: `--diff` → `--fix-only` → `--fix`. This means `--diff` alone is equivalent to `--fix --fix-only --diff`.
-
-### Examples
-
-```{code-block} shell
-$ batou-type check --fix            # apply fixes in-place
-$ batou-type check --diff           # preview fixes as unified diff
-$ batou-type check --fix-only       # fix and suppress remaining errors
-$ batou-type check --fix --virtual  # verify fixes in tempdir before writing
-$ batou-type check --diff --virtual # verify + preview, no writes
-```
-
-Fix flags compose with existing flags (`--verbose`, `--checker`). For CI pipelines, `--fix-only` produces clean output — only a confirmation like `Fixed 3 file(s)`.
 
 ## Version Information
 
@@ -142,15 +108,81 @@ Shows the tool version and the status of loaded stub packages (whether vendored 
 
 | Code | Meaning |
 |------|---------|
-| 0 | No type errors detected, no component files found, or no diffs in `--diff` mode |
+| 0 | No type errors detected (or no component files found). In `--diff` mode: no diffs present |
 | 1 | At least one component has type errors, or diffs present in `--diff` mode |
 | 2 | Invalid command-line usage (wrong flag, unknown checker name) |
 
-In fix mode, `--fix-only` exits 0 if fixes were applied successfully (remaining errors are silenced). `--diff` exits 1 if any diffs are present.
 Use the exit code in CI pipelines to fail builds on type errors.
 
 In JSON mode, all diagnostics (type errors, hints, code references) appear as structured `Diagnostic` objects inside the JSON output on stdout. Infrastructure messages remain on stderr.
 
+
+## Autofix
+
+`batou-type` can automatically fix two recurring classes of type-check warnings:
+
+- **Missing submodule imports** (`possibly-missing-submodule`) — inserts `from batou_ext.X import Y` for accessed but unimported modules
+- **`self._` dereferencing** — transforms `self += X` to `self += (_ := X)` (walrus) where `self._` is referenced, then replaces `self._` with `_` in the same scope
+
+### Fix Flags
+
+Four flags control fix behavior, following [ruff's](https://docs.astral.sh/ruff/linter/#fixing) convention:
+
+| Flag | Effect |
+|------|--------|
+| `--fix` | Apply fixes in-place, write modified files |
+| `--diff` | Print unified diff, do not write files. Implies `--fix-only` |
+| `--fix-only` | Apply fixes, suppress remaining error report. Implies `--fix` |
+| `--virtual` | Verify fixes in a tempdir before writing. Composes with `--fix`, `--diff`, `--fix-only` |
+
+### Flag Implication Chain
+
+```
+--diff       →  --fix-only  →  --fix
+```
+
+`--diff` implies `--fix-only` (no error report, diff only). `--fix-only` implies `--fix` (fixes are applied). You never need to pass `--fix --fix-only` — the implication chain handles it.
+
+### Examples
+
+```{code-block} shell
+$ batou-type check --fix            # Fix in-place
+$ batou-type check --diff            # Preview fixes as unified diff
+$ batou-type check --fix --virtual   # Fix with tempdir safety check
+$ batou-type check --diff --virtual  # Diff with tempdir safety check
+```
+
+Fix flags compose with existing flags:
+
+```{code-block} shell
+$ batou-type check --fix -v          # Fix with verbose output
+$ batou-type check --diff -c ty      # Diff for ty checker only
+$ batou-type check --fix-only        # Fix, hide remaining errors
+```
+
+### Diff Output Format
+
+`--diff` produces unified diff output compatible with `git apply`:
+
+```{code-block} diff
+--- a/components/app/component.py
++++ b/components/app/component.py
+@@ -1,3 +1,4 @@
++from batou_ext.ssl import SSL
+ class App(Component):
+     def configure(self):
+         self += SSL(hostname=self.hostname)
+```
+
+When diffs exist, exit code is 1. When no diffs exist, exit code is 0.
+
+### Virtual Mode
+
+`--virtual` copies component files into a temporary directory (using reflinks on CoW filesystems for efficiency), applies fixes there, and runs a full type-check on the copies. If the fix does not reduce the error count, the fix is skipped and a message is printed.
+
+Use `--virtual` in CI pipelines for safety — it catches cases where an autofix transformation is syntactically valid but introduces new type errors.
+
+## pytest Integration
 ## pytest Integration
 
 If you write tests for your batou deployment, you can integrate type checking into your pytest suite using the `--batou-ty` flag:

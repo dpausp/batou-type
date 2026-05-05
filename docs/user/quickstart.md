@@ -56,4 +56,4 @@ You can pass multiple directories. If a directory is not itself a batou project,
 
 ## Next Steps
 
-- [Usage](usage.md) — checker selection, pytest integration, migration testing
+- [Usage](usage.md) — checker selection, autofix flags, pytest integration, migration testing

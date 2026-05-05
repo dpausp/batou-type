@@ -13,8 +13,8 @@ dependencies = [
     "libcst",
     "pydantic",
     "rich",
+    "libcst",
     "stogger",
-    "ty",
     "typer",
 ]
 

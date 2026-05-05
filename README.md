@@ -1,89 +1,71 @@
-# batou-type
+# batou-typecheck
 
 Type-check batou deployment components against batou stubs.
 
-Finds all `components/**/*.py` files and runs type checkers on them.
+Finds all `components/**/*.py` files in the current directory and runs type checkers on them.
 
-## Quick Start
-
-```
-$ pip install batou-type
-$ batou-type check                  # type-check with ty (default)
-```
-
-Output example:
+## Usage
 
 ```
-$ batou-type check
-Found 1 project(s):
-  /path/to/my-deployment
+batou-typecheck                          # ty (default)
+batou-typecheck -c mypy                  # mypy only
+batou-typecheck -c ty -c mypy            # both checkers
+batou-typecheck --fix                    # fix in-place
+batou-typecheck --diff                   # preview fixes as unified diff
+batou-typecheck --fix --virtual          # fix with tempdir safety check
+```
+### Output
 
-Checking 3 component(s) in my-deployment
-app: passed
-database: passed
-webserver: passed
-All 3 component(s) passed
+Status messages go to stderr, checker output goes to stdout:
+
+```
+$ batou-typecheck
+Type-checking 42 component file(s) ...
+--- ty ---
+components/app/component.py:15: error: ...
 ```
 
 Exit code **0** — no errors (or no component files found). Exit code **1** — at least one type error detected.
 
-## Commands
+## Checkers
 
-| Command | Description |
-|---------|-------------|
-| `batou-type check [PATH…]` | Type-check component files (default command) |
-| `batou-type version` | Show version and stub package status |
+| Checker | Notes |
+|---|---|
+| `ty` | Default. Fast, modern Python type checker. |
+| `mypy` | Runs with `--explicit-package-bases --check-untyped-defs --no-incremental`. |
 
-`batou-type` can also be invoked as `python -m batou_type`.
+Pass `-c` multiple times to run several checkers in sequence. Each checker sees each component file individually.
 
-## Check Flags
+## Autofix
 
-| Flag | Description |
-|------|-------------|
-| `-c`, `--checker` | Select type checker: `ty` (default) or `mypy`. Pass multiple times. |
-| `-v`, `--verbose` | Show diagnostic details (PYTHONPATH, site-packages) |
-| `--json` | Machine-readable JSON output (aliases: `--output-format json`) |
-| `--show-schema` | Print the JSON Schema for the JSON output format |
-| `--fix` | Apply automated fixes in-place |
-| `--diff` | Preview fixes as unified diff (implies `--fix-only`) |
-| `--fix-only` | Fix and suppress remaining error report (implies `--fix`) |
-| `--virtual` | Verify fixes in a tempdir before writing |
+Automatically fix two recurring type-check warning classes:
 
-## Choosing a Checker
+- **Missing submodule imports** — inserts `from batou_ext.X import Y` for unimported modules
+- **`self._` dereferencing** — transforms `self += X` to `self += (_ := X)` (walrus) where needed
 
 ```
-batou-type check                      # ty (default)
-batou-type check -c mypy              # mypy only
-batou-type check -c ty -c mypy        # both, in sequence
+batou-typecheck --fix            # fix in-place
+batou-typecheck --diff           # preview fixes (unified diff, no write)
+batou-typecheck --fix-only       # fix, suppress remaining error report
+batou-typecheck --fix --virtual  # fix with tempdir verification
 ```
 
-Pass extra flags to ty with `--ty-args`. See [Usage](docs/user/usage.md) for details.
+`--diff` implies `--fix-only`, `--fix-only` implies `--fix`. Diff output is compatible with `git apply`.
 
-## Autofix Mode
+## Migration Testing
+## Migration Testing
 
-Automatically fix missing `batou_ext.*` imports and `self._` dereferencing issues using libcst AST-preserving transformations.
+Use `batou-typecheck` to preview breaking changes *before* upgrading batou in production:
 
-```
-batou-type check --fix            # apply fixes in-place
-batou-type check --diff           # preview fixes as unified diff
-batou-type check --fix-only       # fix and suppress remaining errors
-batou-type check --fix --virtual  # verify fixes in tempdir before writing
-```
+1. Install a **newer** version of `batou-typecheck` (which ships updated stubs) in your **existing** deployment directory.
+2. Run `batou-typecheck`.
+3. Type errors reveal API changes, removed attributes, or signature shifts that would break on upgrade.
 
-Implication chain: `--diff` → `--fix-only` → `--fix`.
+Fix the reported issues in your components, then upgrade batou itself with confidence.
 
-## pytest Integration
+## What It Checks
 
-```shell
-$ pytest --batou-ty                # type-check all components as test items
-$ pytest --batou-ty -m batou_ty    # run only type-check tests
-```
-
-Requires the `pytest` optional dependency (`pip install batou-type[pytest]`).
-
-## Project Discovery
-
-`batou-type` identifies batou projects by a `components/` directory:
+The tool discovers every `components/**/*.py` file relative to where you run it. This matches the standard batou deployment layout:
 
 ```
 my-deployment/
@@ -95,25 +77,4 @@ my-deployment/
 └── ...
 ```
 
-When a directory is not itself a batou project, subdirectories are scanned. Pass a parent directory to check multiple deployments at once.
-
-Virtual environments (`.venv/`, `appenv`) are detected automatically — their site-packages are added to the type checker's search path.
-
-## Migration Testing
-
-1. Install a **newer** version of `batou-type` (with updated stubs) in your existing deployment.
-2. Run `batou-type check`.
-3. Type errors reveal API changes that would break on upgrade.
-
-Fix the reported issues, then upgrade batou with confidence.
-
-## What batou-type Does Not Do
-
-- Does **not** run your deployment or execute any component code.
-- Does **not** install or manage batou itself.
-- Checks only `components/**/*.py` files — other Python files are ignored.
-- Stub coverage may not include every batou API.
-
----
-
-Full documentation: [docs/user/usage.md](docs/user/usage.md)
+If no component files are found, the tool prints a message to stderr and exits cleanly.
