@@ -14,7 +14,6 @@ import structlog
 import stogger
 import typer
 from rich.console import Console
-from rich.text import Text
 
 from batou_type import __version__
 from batou_type.core import (
@@ -244,16 +243,6 @@ def run_check(
             failed_summary[str(project)] = project_failed
 
         all_results.extend(results)
-
-        if not json_mode:
-            # Human mode: print error output via rich (preserves ANSI colors from ty)
-            prefix = f"[red]{project.name}>[/] " if multi_project else ""
-            for result in results:
-                if result.has_errors and result.output.strip():
-                    for line in result.output.strip().splitlines():
-                        if prefix:
-                            console.print(prefix, end="")
-                        console.print(Text.from_ansi(line))
 
     # Summary events
     if total_failed:
