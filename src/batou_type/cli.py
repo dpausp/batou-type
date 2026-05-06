@@ -215,21 +215,28 @@ def run_check(
         )
 
         # Per-component result events — log level maps to checker output severity
+        checker_names = ", ".join(c.value for c in checkers)
         for result in results:
-            component_name = Path(result.path).stem
+            component_name = Path(result.path).parent.name
+            file_path = project / result.path
+            if not file_path.exists() or file_path.stat().st_size == 0:
+                plog.debug("component-empty", component=component_name)
+                continue
             output = result.output.strip()
             if result.has_errors or (output and _has_error_pattern(output)):
                 plog.error(
                     "component-type-errors",
-                    _replace_msg="{component}: failed",
+                    _replace_msg="{component}: failed ({checkers})",
                     component=component_name,
+                    checkers=checker_names,
                     stdout=output if output else None,
                 )
             else:
                 plog.info(
                     "component-type-passed",
-                    _replace_msg="{component}: passed",
+                    _replace_msg="{component}: passed ({checkers})",
                     component=component_name,
+                    checkers=checker_names,
                 )
 
         # Collect failures for summary
