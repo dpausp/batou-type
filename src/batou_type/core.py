@@ -121,11 +121,11 @@ def is_batou_project(directory: Path) -> bool:
 
 
 def find_components(root: Path) -> list[Path]:
-    """Find all component.py files in the components directory."""
+    """Find all Python files in the components directory."""
     components_dir = root / "components"
     if not components_dir.exists():
         return []
-    return sorted(components_dir.glob("**/component.py"))
+    return sorted(components_dir.glob("**/*.py"))
 
 
 def ensure_checker_available(checker: Checker) -> None:

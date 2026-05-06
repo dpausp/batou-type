@@ -217,6 +217,9 @@ def run_check(
         # Per-component result events — log level maps to checker output severity
         checker_names = ", ".join(c.value for c in checkers)
         for result in results:
+            # Skip __init__.py and empty files
+            if Path(result.path).name == "__init__.py":
+                continue
             component_name = Path(result.path).parent.name
             file_path = project / result.path
             if not file_path.exists() or file_path.stat().st_size == 0:
