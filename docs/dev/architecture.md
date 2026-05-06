@@ -48,7 +48,7 @@ The pipeline groups diagnostics by file, matches them to fixers by error code, a
 
 The module contains:
 
-- **Pydantic models** — `CheckOutput` (root), `ProjectResult`, `ComponentResult`, and `Diagnostic` define the JSON output schema. `Diagnostic` is a unified model: converter functions `from_ty_gitlab()` and `from_mypy_jsonl()` map checker-specific formats (GitLab Code Quality, mypy JSONL) to a single structure with `file`, `line`, `column`, `message`, `severity`, `code`, and `checker` fields.
+- **Pydantic models** — `CheckOutput` (root), `ProjectResult`, `ComponentResult`, and `Diagnostic` define the JSON output schema. `Diagnostic` is a unified model: converter functions `from_ty_gitlab()` and `from_mypy_jsonl()` map checker-specific formats (GitLab Code Quality, mypy JSONL) to a single structure with `file`, `line`, `column`, `end_line`, `end_column`, `message`, `hint`, `severity`, `code`, and `checker` fields.
 - **Serializer** — `build_output()` converts internal `TypeCheckResult` dataclasses from `core.py` into the Pydantic output tree, then serializes to JSON.
 - **Schema export** — `export_schema()` exposes the JSON Schema for validation and tooling integration.
 
