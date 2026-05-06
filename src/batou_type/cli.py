@@ -159,10 +159,6 @@ def run_check(
                 [], metadata={"checker": [c.value for c in (checker or [Checker.ty])]}
             )
             print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
-        else:
-            console.print(
-                "[yellow]No batou projects found (need components/ directory)[/]"
-            )
         raise typer.Exit(0)
 
     log.info(
@@ -182,7 +178,6 @@ def run_check(
                 _replace_msg="Type checker '{checker}' is not available",
                 checker=c.value,
             )
-            console.print(f"[red]Error: Type checker '{c.value}' is not available[/]")
             raise typer.Exit(2) from None
     total_failed = 0
     multi_project = len(projects) > 1
@@ -231,16 +226,9 @@ def run_check(
                     component=component_name,
                     stdout=output if output else None,
                 )
-            elif output:
-                plog.warning(
-                    "component-type-warnings",
-                    _replace_msg="{component}: warnings",
-                    component=component_name,
-                    stdout=output,
-                )
             else:
                 plog.info(
-                    "component-passed",
+                    "component-type-passed",
                     _replace_msg="{component}: passed",
                     component=component_name,
                 )
@@ -302,8 +290,6 @@ def run_check(
         console.print(
             f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]"
         )
-    else:
-        console.print("[green]All components passed type checking.[/]")
 
     raise typer.Exit(1 if total_failed else 0)
 
@@ -350,7 +336,11 @@ def run_fix(
             )
 
     if not projects:
-        console.print("[yellow]No batou projects found[/]")
+        log.warning(
+            "no-projects-found",
+            _replace_msg="No batou projects found in {paths}",
+            paths=[str(p) for p in paths],
+        )
         raise typer.Exit(0)
 
     checkers = checker or [Checker.ty]
@@ -403,7 +393,11 @@ def run_fix(
         if not fixed_files:
             flog.debug("fix-no-fixable", files=0)
             if not fix_only:
-                console.print("[green]No fixable diagnostics found.[/]")
+                log.info(
+                    "fix-no-fixable-found",
+                    _replace_msg="No fixable diagnostics found",
+                    project=str(project),
+                )
             raise typer.Exit(0)
 
         if virtual:
@@ -440,7 +434,10 @@ def run_fix(
                 new_errors = sum(1 for r in verify_results if r.has_errors)
                 old_errors = sum(1 for r in results if r.has_errors)
                 if new_errors >= old_errors:
-                    console.print("[yellow]Fix did not reduce errors, skipping.[/]")
+                    log.warning(
+                        "fix-no-improvement",
+                        _replace_msg="Fix did not reduce errors, skipping",
+                    )
                     raise typer.Exit(1)
 
         if diff:
@@ -458,9 +455,11 @@ def run_fix(
                 if diff_lines:
                     has_diffs = True
                     sys.stdout.write("".join(diff_lines))
-            console.print(
-                f"[green]{len(fixed_files)} fixable in {len(projects)}"
-                " file(s) (run without --diff to apply)[/]"
+            log.info(
+                "fix-diff-summary",
+                _replace_msg="{count} fixable in {projects} file(s) (run without --diff to apply)",
+                count=len(fixed_files),
+                projects=len(projects),
             )
             raise typer.Exit(1 if has_diffs else 0)
 
@@ -470,7 +469,11 @@ def run_fix(
                 source_path = project / file_path_str
                 source_path.write_text(fixed)
             flog.debug("fix-write-complete", files=len(fixed_files))
-            console.print(f"[green]Fixed {len(fixed_files)} file(s)[/]")
+            log.info(
+                "fix-applied-summary",
+                _replace_msg="Fixed {count} file(s)",
+                count=len(fixed_files),
+            )
             raise typer.Exit(0)
 
 

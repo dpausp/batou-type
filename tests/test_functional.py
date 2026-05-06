@@ -68,7 +68,7 @@ class TestCheck:
         """Check with no component files exits 0."""
         result = run_cli("check", cwd=tmp_path)
         assert result.returncode == 0
-        assert "no batou projects found" in result.stdout.lower()
+        assert "no batou projects found" in (result.stdout + result.stderr).lower()
 
     def test_check_clean_component_exits_zero(self, temp_project):
         """Check with valid component files exits 0."""
@@ -77,7 +77,7 @@ class TestCheck:
 
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 0
-        assert "passed type checking" in result.stdout.lower()
+        assert "component(s) passed" in (result.stdout + result.stderr).lower()
 
     def test_check_component_with_type_error_exits_one(self, temp_project):
         """Check with type errors exits 1."""
@@ -280,7 +280,7 @@ class TestFixDiff:
         clean = _strip_stogger_lines(result.stdout)
         assert "--- a/" in clean
         assert "+++ b/" in clean
-        assert "fixable" in clean.lower()
+        assert "fixable" in (result.stdout + result.stderr).lower()
         # File should NOT be modified (--diff is read-only)
         source = (components / "comp.py").read_text()
         assert "self._.address" in source
