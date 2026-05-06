@@ -232,7 +232,8 @@ def run_check(
                     _replace_msg="component **{component}** failed type check ({checkers})",
                     component=component_name,
                     checkers=checker_names,
-                    stdout=output if output else None,
+                    _raw_output_prefix=f"{project.name}/{component_name}",
+                    _raw_output=output if output else None,
                 )
             else:
                 plog.info(
