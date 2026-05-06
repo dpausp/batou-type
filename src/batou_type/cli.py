@@ -229,7 +229,7 @@ def run_check(
             if result.has_errors or (output and _has_error_pattern(output)):
                 plog.error(
                     "component-type-errors",
-                    _replace_msg="{component}: failed ({checkers})",
+                    _replace_msg="component **{component}** failed type check ({checkers})",
                     component=component_name,
                     checkers=checker_names,
                     stdout=output if output else None,
@@ -237,7 +237,7 @@ def run_check(
             else:
                 plog.info(
                     "component-type-passed",
-                    _replace_msg="{component}: passed ({checkers})",
+                    _replace_msg="component **{component}** passed type check ({checkers})",
                     component=component_name,
                     checkers=checker_names,
                 )
