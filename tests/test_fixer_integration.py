@@ -60,7 +60,9 @@ class TestRunFixSelfDeref:
     """run_fix() on projects with self._ deref patterns."""
 
     # SPEC: diff-generation — verify unified diff format and content
-    def test_diff_mode_produces_unified_diff(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_diff_mode_produces_unified_diff(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """--diff mode produces unified diff output with walrus transformation."""
         project = _make_project(tmp_path, "deref", _SELF_DEREF_COMPONENT)
         with pytest.raises(click.exceptions.Exit) as exc_info:
@@ -85,8 +87,16 @@ class TestRunFixSelfDeref:
         assert "--- a/" in diff_output, f"Missing --- header in diff: {diff_output!r}"
         assert "+++ b/" in diff_output, f"Missing +++ header in diff: {diff_output!r}"
         # At least one removed line and one added line
-        removed = [line for line in diff_output.splitlines() if line.startswith("-") and not line.startswith("---")]
-        added = [line for line in diff_output.splitlines() if line.startswith("+") and not line.startswith("+++")]
+        removed = [
+            line
+            for line in diff_output.splitlines()
+            if line.startswith("-") and not line.startswith("---")
+        ]
+        added = [
+            line
+            for line in diff_output.splitlines()
+            if line.startswith("+") and not line.startswith("+++")
+        ]
         assert len(removed) >= 1, f"No removed lines in diff: {diff_output!r}"
         assert len(added) >= 1, f"No added lines in diff: {diff_output!r}"
         # File path appears in diff headers
@@ -205,7 +215,9 @@ class MyComp(Component):
     # SPEC: virtual-mode-impl — clean project with no fixable diagnostics
     def test_virtual_mode_clean_project_exits_zero(self, tmp_path: Path) -> None:
         """Virtual mode on a clean project exits 0 (no fixable diagnostics)."""
-        project = _make_project(tmp_path, "virtual_clean", "def configure():\n    pass\n")
+        project = _make_project(
+            tmp_path, "virtual_clean", "def configure():\n    pass\n"
+        )
         with pytest.raises(click.exceptions.Exit) as exc_info:
             run_fix(
                 [project],
@@ -283,7 +295,9 @@ def test_run_fix_calls_check_all_with_json_mode(tmp_path: Path) -> None:
         errors=[diag],
     )
 
-    with patch("batou_type.cli.check_all", return_value=[mock_result]) as mock_check_all:
+    with patch(
+        "batou_type.cli.check_all", return_value=[mock_result]
+    ) as mock_check_all:
         with pytest.raises(click.exceptions.Exit):
             run_fix([project], fix=True, checker=[Checker.ty])
 
