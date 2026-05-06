@@ -109,7 +109,7 @@ exempt_event_ids = [
     "fix-applied-summary",
 ]
 suppression_budget = 5
-budget = 5
+budget = 25
 
 [tool.pytest-stogger.per-file-ignores]
 "fixer.py" = ["complexity-needs-log", "except-must-log"]

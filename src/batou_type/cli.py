@@ -179,7 +179,6 @@ def run_check(
             )
             raise typer.Exit(2) from None
     total_failed = 0
-    multi_project = len(projects) > 1
     failed_summary: dict[str, list[str]] = {}
 
     all_results: list[TypeCheckResult] = []
