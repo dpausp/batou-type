@@ -48,12 +48,13 @@ class MyComp(Component):
 class TestRunFixNoFixable:
     """run_fix() with clean or non-fixable projects."""
 
-    def test_clean_project_no_fixable_diagnostics(self, tmp_path: Path) -> None:
+    def test_clean_project_no_fixable_diagnostics(self, tmp_path: Path, log) -> None:
         """Clean component → no fixable diagnostics, exit 0."""
         project = _make_project(tmp_path, "clean", "def configure():\n    pass\n")
         with pytest.raises(click.exceptions.Exit) as exc_info:
             run_fix([project], fix=True, checker=[Checker.ty])
         assert exc_info.value.exit_code == 0
+        assert log.has("fix-no-fixable-found")
 
 
 class TestRunFixSelfDeref:
@@ -61,7 +62,7 @@ class TestRunFixSelfDeref:
 
     # SPEC: diff-generation — verify unified diff format and content
     def test_diff_mode_produces_unified_diff(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], log
     ) -> None:
         """--diff mode produces unified diff output with walrus transformation."""
         project = _make_project(tmp_path, "deref", _SELF_DEREF_COMPONENT)
@@ -101,8 +102,9 @@ class TestRunFixSelfDeref:
         assert len(added) >= 1, f"No added lines in diff: {diff_output!r}"
         # File path appears in diff headers
         assert "comp.py" in diff_output, f"File path missing from diff: {diff_output!r}"
+        assert log.has("fix-diff-summary")
 
-    def test_fix_mode_writes_in_place(self, tmp_path: Path) -> None:
+    def test_fix_mode_writes_in_place(self, tmp_path: Path, log) -> None:
         """--fix mode writes transformed file in-place."""
         project = _make_project(tmp_path, "fixwrite", _SELF_DEREF_COMPONENT)
         with pytest.raises(click.exceptions.Exit) as exc_info:
@@ -113,6 +115,7 @@ class TestRunFixSelfDeref:
         assert "_ := SubComp()" in source
         assert "self._.address" not in source
         assert "_.address" in source
+        assert log.has("fix-applied-summary")
 
 
 class TestRunFixFlags:
@@ -175,7 +178,9 @@ class TestRunFixVirtualMode:
         assert "self._.address" not in source
 
     # SPEC: virtual-mode-impl — rejection when errors not reduced
-    def test_virtual_mode_rejects_when_errors_not_reduced(self, tmp_path: Path) -> None:
+    def test_virtual_mode_rejects_when_errors_not_reduced(
+        self, tmp_path: Path, log
+    ) -> None:
         """Virtual mode exits 1 when fixes don't reduce error count."""
         # Component with fixable self._ AND unfixable type error — after fix,
         # file still has errors so virtual verification rejects the change.
@@ -211,6 +216,7 @@ class MyComp(Component):
         current = (project / "components" / "comp.py").read_text()
         assert current == original
         assert "self._.address" in current
+        assert log.has("fix-no-improvement")
 
     # SPEC: virtual-mode-impl — clean project with no fixable diagnostics
     def test_virtual_mode_clean_project_exits_zero(self, tmp_path: Path) -> None:
