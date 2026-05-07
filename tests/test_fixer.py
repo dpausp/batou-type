@@ -127,6 +127,45 @@ def test_self_deref_selective_walrus_for_multiple_augassigns() -> None:
     assert "self._" not in result
 
 
+def test_self_deref_in_augassign_rhs_gets_previous_walrus() -> None:
+    """self._ on the RHS of self += → previous self += gets walrus, self._ replaced."""
+    source = "def foo(self):\n    self += A\n    self += Extract(self._.target)\n"
+    diag = _diag(
+        message="Object of type `Component | None` has no attribute `target`",
+        code="unresolved-attribute",
+        line=3,
+    )
+    result = SELF_DEREF.apply(source, [diag])
+    assert result is not None
+    # First self += gets walrus because self._ on RHS reads its value
+    assert "_ := A" in result
+    # self._ inside the Extract call is replaced with _
+    assert "self._" not in result
+    assert "_.target" in result
+    # Second self += does NOT need walrus (no self._ after it)
+    assert "Extract(_.target)" in result
+
+
+def test_self_deref_in_augassign_rhs_with_subsequent_deref() -> None:
+    """self._ in RHS AND after the aug → both augs get walrus."""
+    source = (
+        "def foo(self):\n"
+        "    self += A\n"
+        "    self += Extract(self._.target)\n"
+        "    x = self._.bar\n"
+    )
+    diag = _diag(
+        message="Object of type `Component | None` has no attribute `target`",
+        code="unresolved-attribute",
+        line=3,
+    )
+    result = SELF_DEREF.apply(source, [diag])
+    assert result is not None
+    # Both augs need walrus: first for RHS deref, second for subsequent deref
+    assert "_ := A" in result
+    assert "self._" not in result
+
+
 def test_self_deref_returns_none_on_empty_diagnostics() -> None:
     """Empty diagnostics → returns None."""
     source = "def foo(self):\n    self += X\n    y = self._.bar\n"

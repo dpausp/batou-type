@@ -14,6 +14,7 @@ import structlog
 import stogger
 import typer
 from rich.console import Console
+from rich.syntax import Syntax
 
 from batou_type import __version__
 from batou_type.core import (
@@ -300,13 +301,14 @@ def run_fix(
     diff: bool = False,
     fix_only: bool = False,
     virtual: bool = False,
+    json_mode: bool = False,
     checker: list[Checker] | None = None,
     ty_args: list[str] | None = None,
 ) -> None:
     """Apply automated fixes for type-check diagnostics.
 
-    Spec decision: fix-pipeline \u2014 separate function from run_check().
-    Flow: (1) check_all(json_mode=True) \u2192 diagnostics, (2) group by file,
+    Spec decision: fix-pipeline — separate function from run_check().
+    Flow: (1) check_all(json_mode=True) → diagnostics, (2) group by file,
     (3) apply matching fixers, (4) write/diff/verify per flags.
     """
     log.debug(
@@ -315,7 +317,6 @@ def run_fix(
         fix=fix,
         diff=diff,
         fix_only=fix_only,
-        virtual=virtual,
     )
     stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
@@ -345,6 +346,9 @@ def run_fix(
     checkers = checker or [Checker.ty]
     fixers = [ADD_MISSING_IMPORT, SELF_DEREF]
 
+    all_results: list[TypeCheckResult] = []
+    all_fixed_files: list[tuple[str, str, str]] = []
+
     for project in projects:
         flog = log.bind(project=str(project))
         components = find_components(project)
@@ -359,6 +363,34 @@ def run_fix(
             json_mode=True,
         )
 
+        # Show type-check results before fixing (unless fix_only or json_mode)
+        if not fix_only and not json_mode:
+            checker_names = ", ".join(c.value for c in checkers)
+            for result in results:
+                if Path(result.path).name == "__init__.py":
+                    continue
+                component_name = Path(result.path).parent.name
+                file_path = project / result.path
+                if not file_path.exists() or file_path.stat().st_size == 0:
+                    continue
+                output = result.output.strip()
+                if result.has_errors or (output and _has_error_pattern(output)):
+                    flog.error(
+                        "component-errors",
+                        _replace_msg="{component} failed type check ({checkers})",
+                        component=component_name,
+                        checkers=checker_names,
+                        _raw_output_prefix=f"{project.name}/{component_name}",
+                        _raw_output=output if output else None,
+                    )
+                else:
+                    flog.info(
+                        "component-passed",
+                        _replace_msg="{component} passed type check ({checkers})",
+                        component=component_name,
+                        checkers=checker_names,
+                    )
+
         # Group diagnostics by file
         file_diagnostics: dict[str, list[Diagnostic]] = {}
         for result in results:
@@ -371,7 +403,6 @@ def run_fix(
         )
 
         # Apply matching fixers per file
-        fixed_files: list[tuple[str, str, str]] = []
         for file_path_str, diagnostics in file_diagnostics.items():
             source_path = project / file_path_str
             if not source_path.is_file():
@@ -386,24 +417,37 @@ def run_fix(
                         current = transformed
                         log.debug("fix-applied", file=file_path_str, fixer=fixer.slug)
             if current != source:
-                fixed_files.append((file_path_str, source, current))
+                all_fixed_files.append((file_path_str, source, current))
 
-        # Handle output flags \u2014 diff-generation, virtual-mode-impl, fix-only-semantics
-        if not fixed_files:
-            flog.debug("fix-no-fixable", files=0)
-            if not fix_only:
-                log.info(
-                    "fix-no-fixable-found",
-                    _replace_msg="No fixable diagnostics found",
-                    project=str(project),
-                )
-            raise typer.Exit(0)
+        all_results.extend(results)
 
-        if virtual:
-            # Spec decision: virtual-mode-impl — tempdir verification
-            import shutil
-            import tempfile
+    # Handle output flags — diff-generation, virtual-mode-impl, fix-only-semantics
+    if not all_fixed_files:
+        flog.debug("fix-no-fixable", files=0)
+        if not fix_only:
+            log.info(
+                "fix-no-fixable-found",
+                _replace_msg="No fixable diagnostics found",
+            )
+        if json_mode:
+            from batou_type.output import build_output
 
+            output = build_output(
+                all_results,
+                metadata={"checker": [c.value for c in checkers]},
+            )
+            print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+        raise typer.Exit(0)
+
+    if virtual:
+        # Spec decision: virtual-mode-impl — tempdir verification
+        import shutil
+        import tempfile
+
+        for project in projects:
+            components = find_components(project)
+            if not components:
+                continue
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmp_path = Path(tmpdir)
                 for comp in components:
@@ -419,7 +463,11 @@ def run_fix(
                         else:
                             shutil.copy2(src, tmp_path / name)
 
-                for file_path_str, _, fixed in fixed_files:
+                project_fixed = [
+                    (fp, orig, fixed)
+                    for fp, orig, fixed in all_fixed_files
+                ]
+                for file_path_str, _, fixed in project_fixed:
                     dest = tmp_path / file_path_str
                     dest.write_text(fixed)
 
@@ -431,7 +479,7 @@ def run_fix(
                     json_mode=True,
                 )
                 new_errors = sum(1 for r in verify_results if r.has_errors)
-                old_errors = sum(1 for r in results if r.has_errors)
+                old_errors = sum(1 for r in all_results if r.has_errors)
                 if new_errors >= old_errors:
                     log.warning(
                         "fix-no-improvement",
@@ -439,41 +487,58 @@ def run_fix(
                     )
                     raise typer.Exit(1)
 
-        if diff:
-            # Spec decision: diff-generation — difflib.unified_diff
-            has_diffs = False
-            for file_path_str, original, fixed in fixed_files:
-                diff_lines = list(
-                    difflib.unified_diff(
-                        original.splitlines(keepends=True),
-                        fixed.splitlines(keepends=True),
-                        fromfile=f"a/{file_path_str}",
-                        tofile=f"b/{file_path_str}",
-                    )
+    if diff:
+        # Spec decision: diff-generation — Rich-colored unified diff
+        has_diffs = False
+        diff_parts: list[str] = []
+        for file_path_str, original, fixed in all_fixed_files:
+            diff_text = "".join(
+                difflib.unified_diff(
+                    original.splitlines(keepends=True),
+                    fixed.splitlines(keepends=True),
+                    fromfile=f"a/{file_path_str}",
+                    tofile=f"b/{file_path_str}",
                 )
-                if diff_lines:
-                    has_diffs = True
-                    sys.stdout.write("".join(diff_lines))
-            log.info(
-                "fix-diff-summary",
-                _replace_msg="{count} fixable in {projects} file(s) (run without --diff to apply)",
-                count=len(fixed_files),
-                projects=len(projects),
             )
-            raise typer.Exit(1 if has_diffs else 0)
+            if diff_text:
+                has_diffs = True
+                diff_parts.append(diff_text)
+        if diff_parts:
+            full_diff = "".join(diff_parts)
+            syntax = Syntax(full_diff, "diff", theme="monokai")
+            console.print(syntax)
+        log.info(
+            "fix-diff-summary",
+            _replace_msg="{count} fixable file(s) (run without --diff to apply)",
+            count=len(all_fixed_files),
+        )
+        raise typer.Exit(1 if has_diffs else 0)
 
-        # Write in-place
-        if fix:
-            for file_path_str, _, fixed in fixed_files:
+    # Write in-place
+    if fix:
+        for project in projects:
+            for file_path_str, _, fixed in all_fixed_files:
                 source_path = project / file_path_str
                 source_path.write_text(fixed)
-            flog.debug("fix-write-complete", files=len(fixed_files))
-            log.info(
-                "fix-applied-summary",
-                _replace_msg="Fixed {count} file(s)",
-                count=len(fixed_files),
-            )
-            raise typer.Exit(0)
+        flog.debug("fix-write-complete", files=len(all_fixed_files))
+        log.info(
+            "fix-applied-summary",
+            _replace_msg="Fixed {count} file(s)",
+            count=len(all_fixed_files),
+        )
+
+    # JSON mode: output results
+    if json_mode:
+        from batou_type.output import build_output
+
+        checker_names = [c.value for c in checkers]
+        output = build_output(
+            all_results,
+            metadata={"checker": checker_names},
+        )
+        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+
+    raise typer.Exit(0)
 
 
 @app.command()
@@ -574,6 +639,7 @@ def check(
             diff=diff,
             fix_only=fix_only,
             virtual=virtual,
+            json_mode=json_mode,
             checker=checker,
             ty_args=parsed_ty_args,
         )

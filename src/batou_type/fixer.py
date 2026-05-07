@@ -277,7 +277,7 @@ class _SelfDerefAnalyzer(cst.CSTVisitor):
         self.derefs_to_replace: set[int] = set()
         self.has_self_deref = False
         self._scope_stack: list[list[tuple[str, int]]] = []
-        self._in_self_aug = False
+        self._current_self_aug: int | None = None
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         self._scope_stack.append([])
@@ -293,9 +293,7 @@ class _SelfDerefAnalyzer(cst.CSTVisitor):
             and node.target.value == "self"
             and isinstance(node.operator, cst.AddAssign)
         ):
-            if self._scope_stack:
-                self._scope_stack[-1].append(("aug", id(node)))
-            self._in_self_aug = True
+            self._current_self_aug = id(node)
         return True
 
     def leave_AugAssign(self, original_node: cst.AugAssign) -> None:
@@ -304,7 +302,12 @@ class _SelfDerefAnalyzer(cst.CSTVisitor):
             and original_node.target.value == "self"
             and isinstance(original_node.operator, cst.AddAssign)
         ):
-            self._in_self_aug = False
+            # Append aug event AFTER children so that self._ derefs on the RHS
+            # appear before this aug in the event list, correlating them with
+            # the *previous* self += instead.
+            if self._scope_stack:
+                self._scope_stack[-1].append(("aug", id(original_node)))
+            self._current_self_aug = None
 
     def visit_Attribute(self, node: cst.Attribute) -> bool:
         if (
@@ -312,7 +315,6 @@ class _SelfDerefAnalyzer(cst.CSTVisitor):
             and node.value.value == "self"
             and node.attr.value == "_"
             and self._scope_stack
-            and not self._in_self_aug
         ):
             self._scope_stack[-1].append(("deref", id(node)))
             self.has_self_deref = True
