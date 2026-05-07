@@ -464,8 +464,7 @@ def run_fix(
                             shutil.copy2(src, tmp_path / name)
 
                 project_fixed = [
-                    (fp, orig, fixed)
-                    for fp, orig, fixed in all_fixed_files
+                    (fp, orig, fixed) for fp, orig, fixed in all_fixed_files
                 ]
                 for file_path_str, _, fixed in project_fixed:
                     dest = tmp_path / file_path_str
