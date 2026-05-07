@@ -90,7 +90,6 @@ dependency_groups = ["lint"]
 commands = [
     ["ruff", "check", "--fix", "--unsafe-fixes", "."],
     ["ruff", "format", "."],
-    ["python", "-c", "import subprocess, glob; subprocess.run(['pyupgrade', '--py314-plus'] + glob.glob('src/batou_type/**/*.py', recursive=True) + glob.glob('tests/**/*.py', recursive=True))"],
 ]
 allowlist_externals = ["python"]
 
