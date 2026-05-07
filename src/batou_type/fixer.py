@@ -11,7 +11,6 @@ import libcst as cst
 
 from batou_type.output import Diagnostic
 
-
 # ---------------------------------------------------------------------------
 # Fixer protocol — fixer-protocol
 # ---------------------------------------------------------------------------

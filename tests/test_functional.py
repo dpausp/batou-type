@@ -357,3 +357,27 @@ def test_components_failed_logs_info(tmp_path):
     )
     log = _run_check_capture(paths=[project])
     log.has("components-failed")
+
+
+class TestMainModule:
+    """Tests for python -m batou_type trampoline (__main__.py)."""
+
+    def test_python_m_version(self, tmp_path):
+        """python -m batou_type version exercises __main__.py trampoline."""
+        result = run_cli("version", cwd=tmp_path)
+        assert result.returncode == 0
+        assert "batou-type" in result.stdout.lower()
+
+    def test_python_m_help(self, tmp_path):
+        """python -m batou_type --help exercises __main__.py trampoline."""
+        result = run_cli("--help", cwd=tmp_path)
+        assert result.returncode == 0
+        assert "check" in result.stdout.lower()
+        assert "version" in result.stdout.lower()
+
+    def test_python_m_no_args(self, tmp_path):
+        """python -m batou_type with no args shows help/usage."""
+        result = run_cli(cwd=tmp_path)
+        # Typer exits 2 when no command given, but shows help
+        assert result.returncode == 2
+        assert "check" in result.stdout.lower()

@@ -1,7 +1,8 @@
 """Batou type — type-check batou deployments."""
 
-import structlog
 from importlib.metadata import PackageNotFoundError, version
+
+import structlog
 
 from batou_type.core import (
     Checker,

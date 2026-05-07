@@ -214,7 +214,7 @@ def check_file(
             checker_results.append((c, result.stdout, result.stderr))
 
     if json_mode and any_failed:
-        from batou_type.output import from_ty_gitlab, from_mypy_jsonl
+        from batou_type.output import from_mypy_jsonl, from_ty_gitlab
 
         parsed_errors: list[Diagnostic] = []
         for c, stdout, _stderr in checker_results:

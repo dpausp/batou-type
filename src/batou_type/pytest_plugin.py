@@ -6,7 +6,6 @@ import pytest
 
 from batou_type.core import Checker, check_all
 
-
 _BATOU_TY_RESULTS_STASH_KEY = pytest.StashKey[dict[str, bool]]()
 _BATOU_TY_OUTPUT_STASH_KEY = pytest.StashKey[dict[str, str]]()
 

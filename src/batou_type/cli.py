@@ -1,17 +1,17 @@
 """Batou type CLI."""
 
+import difflib
+import re
+import shlex
+import sys
 from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
 from pathlib import Path
 from typing import Annotated, Literal
-import difflib
-import re
-import shlex
-import sys
 
-import structlog
 import stogger
+import structlog
 import typer
 from rich.console import Console
 from rich.syntax import Syntax
@@ -606,9 +606,9 @@ def check(
 ) -> None:
     """Type-check batou deployment components."""
     if show_schema:
-        from batou_type.output import export_schema
-
         import json as _json
+
+        from batou_type.output import export_schema
 
         typer.echo(_json.dumps(export_schema(), indent=2))
         raise typer.Exit(0)
