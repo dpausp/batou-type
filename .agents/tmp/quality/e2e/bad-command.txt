@@ -1,5 +1,0 @@
-Usage: python -m batou_type [OPTIONS] COMMAND [ARGS]...
-Try 'python -m batou_type --help' for help.
-╭─ Error ──────────────────────────────────────────────────────────────────────╮
-│ No such command 'nonexistent'.                                               │
-╰──────────────────────────────────────────────────────────────────────────────╯

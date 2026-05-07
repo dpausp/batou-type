@@ -1,5 +1,0 @@
-          Loaded stubs           
- batou-stubs <not installed>     
- batou_ext-stubs <not installed> 
-
-No component files found in components/

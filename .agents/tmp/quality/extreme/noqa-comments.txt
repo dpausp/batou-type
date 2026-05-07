@@ -1,9 +1,0 @@
-src/batou_type/vendor/batou/lib/nagios.pyi:6:def ServiceCheck(  # noqa: N802
-src/batou_type/vendor/batou/lib/python.pyi:79:class VirtualEnvPy2_7(VirtualEnvPy):  # noqa: N801
-src/batou_type/vendor/batou/__init__.pyi:20:    def __str__(self) -> str: ...  # noqa: PYI029, Y029
-src/batou_type/vendor/batou/_output.pyi:70:from batou.remote_core import Output  # noqa: E402
-src/batou_type/vendor/batou/component.pyi:130:    def __repr__(self) -> str: ...  # noqa: PYI029, Y029
-src/batou_type/vendor/batou/component.pyi:267:    def __repr__(self) -> str: ...  # noqa: PYI029, Y029
-src/batou_type/vendor/batou/environment.pyi:114:    def filter(cls, filter: str | None) -> list[Environment]: ...  # noqa: A002
-src/batou_type/vendor/batou/utils.pyi:54:def hash(path: str | bytes, function: str = ...) -> str: ...  # noqa: A001
-src/batou_type/vendor/batou_ext/mail.pyi:75:        max: int = ...,  # noqa: A002

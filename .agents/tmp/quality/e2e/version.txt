@@ -1,3 +1,0 @@
-batou-type 2.8.0.dev0
-  batou-stubs <not installed>
-  batou_ext-stubs <not installed>
