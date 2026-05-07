@@ -66,16 +66,19 @@ dev = [
 ]
 
 [tool.tox]
-env_list = ["fix", "cov", "docs"]
+env_list = ["fix", "3.13", "3.14", "docs"]
 requires = ["tox>=4.20"]
 skip_missing_interpreters = true
 
 [tool.tox.env_run_base]
 runner = "uv-venv-lock-runner"
 package = "wheel"
+dependency_groups = ["test"]
+commands = [["pytest"]]
 
 [tool.tox.env.cov]
 description = "Run tests with coverage"
+base_python = ["3.14"]
 dependency_groups = ["test"]
 commands = [["pytest", "--cov=batou_type", "--cov-report=term-missing"]]
 
