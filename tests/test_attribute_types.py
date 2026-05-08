@@ -19,7 +19,7 @@ from batou.host import Host
 _example_project = Path(__file__).resolve().parent.parent / "examples" / "clean-project"
 sys.path.insert(0, str(_example_project))
 
-from components.attribute_types.attribute_types import (  # noqa: E402
+from components.attribute_types.attribute_types import (  # noqa: E402  # ty: ignore[unresolved-import]
     EXPECTED_TYPES,
     AttributeTypes,
 )

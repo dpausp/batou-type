@@ -67,7 +67,7 @@ dev = [
 ]
 
 [tool.tox]
-env_list = ["fix", "3.13", "3.14", "docs"]
+env_list = ["fix", "ty", "3.13", "3.14", "docs"]
 requires = ["tox>=4.20"]
 skip_missing_interpreters = true
 
@@ -93,6 +93,11 @@ commands = [
     ["ruff", "format", "."],
 ]
 allowlist_externals = ["python"]
+
+[tool.tox.env.ty]
+description = "Type check with ty"
+dependency_groups = ["test"]
+commands = [["ty", "check", "src/", "tests/"]]
 
 [tool.tox.env.docs]
 description = "Build Sphinx documentation"
