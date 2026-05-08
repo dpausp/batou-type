@@ -28,60 +28,60 @@ PACKAGE = "batou_type"
 class TestFixerModule:
     """fixer.py must exist with Fixer dataclass and two registered instances."""
 
-    def test_module_importable(self):
+    def test_module_importable(self) -> None:
         import batou_type.fixer  # noqa: F401
 
-    def test_fixer_dataclass_exists(self):
+    def test_fixer_dataclass_exists(self) -> None:
         from batou_type.fixer import Fixer
 
         assert hasattr(Fixer, "__dataclass_fields__")
 
-    def test_fixer_has_slug_field(self):
+    def test_fixer_has_slug_field(self) -> None:
         from batou_type.fixer import Fixer
 
         fields = Fixer.__dataclass_fields__
         assert "slug" in fields
 
-    def test_fixer_has_diagnostic_codes_field(self):
+    def test_fixer_has_diagnostic_codes_field(self) -> None:
         from batou_type.fixer import Fixer
 
         fields = Fixer.__dataclass_fields__
         assert "diagnostic_codes" in fields
 
-    def test_fixer_has_apply_field(self):
+    def test_fixer_has_apply_field(self) -> None:
         from batou_type.fixer import Fixer
 
         assert callable(getattr(Fixer, "apply", None))
 
-    def test_add_missing_import_fixer_registered(self):
+    def test_add_missing_import_fixer_registered(self) -> None:
         from batou_type.fixer import ADD_MISSING_IMPORT
 
         assert ADD_MISSING_IMPORT.slug == "add-missing-import"
         assert "possibly-missing-submodule" in ADD_MISSING_IMPORT.diagnostic_codes
 
-    def test_self_deref_fixer_registered(self):
+    def test_self_deref_fixer_registered(self) -> None:
         from batou_type.fixer import SELF_DEREF
 
         assert SELF_DEREF.slug == "self-deref"
 
-    def test_diagnostic_codes_is_frozenset(self):
+    def test_diagnostic_codes_is_frozenset(self) -> None:
         from batou_type.fixer import ADD_MISSING_IMPORT
 
         assert isinstance(ADD_MISSING_IMPORT.diagnostic_codes, frozenset)
 
-    def test_apply_callable(self):
+    def test_apply_callable(self) -> None:
         from batou_type.fixer import ADD_MISSING_IMPORT
 
         assert callable(ADD_MISSING_IMPORT.apply)
 
-    def test_apply_returns_none_when_no_change(self):
+    def test_apply_returns_none_when_no_change(self) -> None:
         """apply(source, diagnostics) must return None when nothing changes."""
         from batou_type.fixer import ADD_MISSING_IMPORT
 
         result = ADD_MISSING_IMPORT.apply("x = 1\n", [])
         assert result is None
 
-    def test_apply_returns_str_on_change(self):
+    def test_apply_returns_str_on_change(self) -> None:
         """apply(source, diagnostics) must return str when changes are made."""
         from batou_type.fixer import ADD_MISSING_IMPORT
 
@@ -114,7 +114,7 @@ class TestAddMissingImportFixer:
         "        )\n"
     )
 
-    def test_inserts_from_import(self):
+    def test_inserts_from_import(self) -> None:
         """Fixer must insert `from batou_ext.ssl import Certificate`."""
         from batou_type.fixer import ADD_MISSING_IMPORT
 
@@ -130,7 +130,7 @@ class TestAddMissingImportFixer:
         assert result is not None
         assert "from batou_ext.ssl import" in result
 
-    def test_merges_into_existing_import(self):
+    def test_merges_into_existing_import(self) -> None:
         """Fixer must merge name into existing `from batou_ext.ssl import X`."""
         from batou_type.fixer import ADD_MISSING_IMPORT
 
@@ -155,7 +155,7 @@ class TestAddMissingImportFixer:
         ]
         assert len(lines) == 1
 
-    def test_inserts_after_existing_imports(self):
+    def test_inserts_after_existing_imports(self) -> None:
         """New import must go after existing imports, before first non-import."""
         from batou_type.fixer import ADD_MISSING_IMPORT
 
@@ -192,7 +192,7 @@ class TestSelfDerefFixer:
         "        self._.address\n"
     )
 
-    def test_walrus_wrap_when_self_deref_referenced(self):
+    def test_walrus_wrap_when_self_deref_referenced(self) -> None:
         """Must transform `self += X` to `self += (_ := X)` when self._ follows."""
         from batou_type.fixer import SELF_DEREF
 
@@ -210,7 +210,7 @@ class TestSelfDerefFixer:
         assert result is not None
         assert "_ := " in result
 
-    def test_replaces_self_dot_underscore_with_underscore(self):
+    def test_replaces_self_dot_underscore_with_underscore(self) -> None:
         """Must replace `self._.attr` with `_.attr` in scope."""
         from batou_type.fixer import SELF_DEREF
 
@@ -229,7 +229,7 @@ class TestSelfDerefFixer:
         assert "_.address" in result
         assert "self._" not in result
 
-    def test_no_transform_when_self_deref_not_referenced(self):
+    def test_no_transform_when_self_deref_not_referenced(self) -> None:
         """Must not transform `self += X` if no `self._` follows in scope."""
         from batou_type.fixer import SELF_DEREF
 
@@ -244,7 +244,7 @@ class TestSelfDerefFixer:
         result = SELF_DEREF.apply(source, [diag])
         assert result is None
 
-    def test_chained_access_transformed(self):
+    def test_chained_access_transformed(self) -> None:
         """`self._.address` → `_.address` (chained attribute access)."""
         from batou_type.fixer import SELF_DEREF
 
@@ -271,7 +271,7 @@ class TestSelfDerefFixer:
 class TestCLIFlags:
     """The `check` command must accept --fix, --diff, --fix-only, --virtual."""
 
-    def test_fix_flag_exists(self):
+    def test_fix_flag_exists(self) -> None:
         """--fix boolean option on check command."""
         from typer.testing import CliRunner
         from batou_type.cli import app
@@ -280,7 +280,7 @@ class TestCLIFlags:
         result = runner.invoke(app, ["check", "--help"])
         assert "--fix" in _ANSI_RE.sub("", result.output)
 
-    def test_diff_flag_exists(self):
+    def test_diff_flag_exists(self) -> None:
         """--diff boolean option on check command."""
         from typer.testing import CliRunner
         from batou_type.cli import app
@@ -289,7 +289,7 @@ class TestCLIFlags:
         result = runner.invoke(app, ["check", "--help"])
         assert "--diff" in _ANSI_RE.sub("", result.output)
 
-    def test_fix_only_flag_exists(self):
+    def test_fix_only_flag_exists(self) -> None:
         """--fix-only boolean option on check command."""
         from typer.testing import CliRunner
         from batou_type.cli import app
@@ -298,7 +298,7 @@ class TestCLIFlags:
         result = runner.invoke(app, ["check", "--help"])
         assert "--fix-only" in _ANSI_RE.sub("", result.output)
 
-    def test_virtual_flag_exists(self):
+    def test_virtual_flag_exists(self) -> None:
         """--virtual boolean option on check command."""
         from typer.testing import CliRunner
         from batou_type.cli import app
@@ -316,7 +316,7 @@ class TestCLIFlags:
 class TestFlagImplications:
     """--diff → --fix-only → --fix implication chain."""
 
-    def test_diff_implies_fix_only(self):
+    def test_diff_implies_fix_only(self) -> None:
         """Passing --diff must set fix_only=True internally."""
         import inspect
         from batou_type.cli import check
@@ -325,7 +325,7 @@ class TestFlagImplications:
         params = sig.parameters
         assert "fix_only" in params or "fix-only" in str(params)
 
-    def test_fix_only_implies_fix(self):
+    def test_fix_only_implies_fix(self) -> None:
         """Passing --fix-only must internally set fix=True."""
         import inspect
         from batou_type.cli import check
@@ -336,7 +336,7 @@ class TestFlagImplications:
         assert "fix_only" in params or "fix-only" in str(sig.parameters)
         assert "fix" in params or "fix" in str(sig.parameters)
 
-    def test_diff_implies_both(self):
+    def test_diff_implies_both(self) -> None:
         """--diff must internally imply both fix_only and fix."""
         import inspect
         from batou_type.cli import check
@@ -356,12 +356,12 @@ class TestFlagImplications:
 class TestRunFixFunction:
     """run_fix() must be importable from batou_type.cli."""
 
-    def test_run_fix_importable(self):
+    def test_run_fix_importable(self) -> None:
         from batou_type.cli import run_fix
 
         assert callable(run_fix)
 
-    def test_run_fix_accepts_expected_params(self):
+    def test_run_fix_accepts_expected_params(self) -> None:
         """run_fix must accept fix, diff, fix_only, virtual boolean flags."""
         import inspect
         from batou_type.cli import run_fix
@@ -380,7 +380,7 @@ class TestRunFixFunction:
 class TestFixerArchitecture:
     """fixer.py must follow layer constraints: may import output.py, not cli/plugin/frameworks."""
 
-    def test_fixer_may_import_output(self):
+    def test_fixer_may_import_output(self) -> None:
         """fixer.py may import from output.py (Diagnostic model)."""
         archrule("fixer may import output").match("batou_type.fixer").should_not_import(
             "batou_type*"
@@ -388,50 +388,50 @@ class TestFixerArchitecture:
             "batou_type.output",
         ).check(PACKAGE, only_direct_imports=True)
 
-    def test_fixer_no_cli_import(self):
+    def test_fixer_no_cli_import(self) -> None:
         """fixer.py must not import from cli.py."""
         archrule("fixer has no cli").match("batou_type.fixer").should_not_import(
             "batou_type.cli*"
         ).check(PACKAGE)
 
-    def test_fixer_no_plugin_import(self):
+    def test_fixer_no_plugin_import(self) -> None:
         """fixer.py must not import from pytest_plugin.py."""
         archrule("fixer has no plugin").match("batou_type.fixer").should_not_import(
             "batou_type.pytest_plugin*"
         ).check(PACKAGE)
 
-    def test_fixer_no_core_direct(self):
+    def test_fixer_no_core_direct(self) -> None:
         """fixer.py must not import from core.py directly (go through output.py)."""
         archrule("fixer has no core").match("batou_type.fixer").should_not_import(
             "batou_type.core"
         ).check(PACKAGE, only_direct_imports=True)
 
-    def test_fixer_no_typer(self):
+    def test_fixer_no_typer(self) -> None:
         archrule("fixer has no typer").match("batou_type.fixer").should_not_import(
             "typer*"
         ).check(PACKAGE)
 
-    def test_fixer_no_rich(self):
+    def test_fixer_no_rich(self) -> None:
         archrule("fixer has no rich").match("batou_type.fixer").should_not_import(
             "rich*"
         ).check(PACKAGE)
 
-    def test_fixer_no_pytest(self):
+    def test_fixer_no_pytest(self) -> None:
         archrule("fixer has no pytest").match("batou_type.fixer").should_not_import(
             "pytest*"
         ).check(PACKAGE)
 
-    def test_fixer_no_structlog(self):
+    def test_fixer_no_structlog(self) -> None:
         archrule("fixer has no structlog").match("batou_type.fixer").should_not_import(
             "structlog*"
         ).check(PACKAGE)
 
-    def test_fixer_no_stogger(self):
+    def test_fixer_no_stogger(self) -> None:
         archrule("fixer has no stogger").match("batou_type.fixer").should_not_import(
             "stogger*"
         ).check(PACKAGE)
 
-    def test_cli_may_import_fixer(self):
+    def test_cli_may_import_fixer(self) -> None:
         """cli.py may import from fixer.py (top of dependency calls bottom)."""
         archrule("cli may import fixer").match("batou_type.cli").should_not_import(
             "batou_type*"
@@ -451,10 +451,10 @@ class TestFixerArchitecture:
 class TestLibcstDependency:
     """libcst must be importable (declared as project dependency)."""
 
-    def test_libcst_importable(self):
+    def test_libcst_importable(self) -> None:
         import libcst  # noqa: F401
 
-    def test_libcst_in_pyproject_dependencies(self):
+    def test_libcst_in_pyproject_dependencies(self) -> None:
         """pyproject.toml must list libcst in dependencies."""
         pyproject = SRC.parent.parent / "pyproject.toml"
         content = pyproject.read_text()

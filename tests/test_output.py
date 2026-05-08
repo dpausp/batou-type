@@ -18,7 +18,7 @@ from batou_type.output import (
 class TestDiagnosticModel:
     """Diagnostic Pydantic model structure and defaults."""
 
-    def test_creation_with_required_fields(self):
+    def test_creation_with_required_fields(self) -> None:
         diag = Diagnostic(
             file="components/foo.py",
             line=10,
@@ -30,7 +30,7 @@ class TestDiagnosticModel:
         assert diag.message == "Incompatible return type"
         assert diag.checker == "ty"
 
-    def test_optional_fields_default_none(self):
+    def test_optional_fields_default_none(self) -> None:
         diag = Diagnostic(
             file="x.py",
             line=1,
@@ -44,14 +44,14 @@ class TestDiagnosticModel:
         assert diag.code is None
         assert diag.severity is None
 
-    def test_is_pydantic_base_model(self):
+    def test_is_pydantic_base_model(self) -> None:
         assert issubclass(Diagnostic, BaseModel)
 
 
 class TestFromTyGitlab:
     """from_ty_gitlab converter: GitLab Code Quality JSON → Diagnostic."""
 
-    def test_conversion_of_gitlab_json(self):
+    def test_conversion_of_gitlab_json(self) -> None:
         gitlab_input = json.dumps(
             [
                 {
@@ -72,7 +72,7 @@ class TestFromTyGitlab:
         assert len(diags) == 1
         assert isinstance(diags[0], Diagnostic)
 
-    def test_field_mapping(self):
+    def test_field_mapping(self) -> None:
         gitlab_input = json.dumps(
             [
                 {
@@ -96,11 +96,11 @@ class TestFromTyGitlab:
         assert diag.severity == "minor"
         assert diag.checker == "ty"
 
-    def test_empty_array(self):
+    def test_empty_array(self) -> None:
         diags = from_ty_gitlab("[]")
         assert diags == []
 
-    def test_missing_column(self):
+    def test_missing_column(self) -> None:
         gitlab_input = json.dumps(
             [
                 {
@@ -123,7 +123,7 @@ class TestFromTyGitlab:
 class TestFromMypyJsonl:
     """from_mypy_jsonl converter: mypy JSON Lines → Diagnostic."""
 
-    def test_conversion_of_jsonl(self):
+    def test_conversion_of_jsonl(self) -> None:
         mypy_input = (
             '{"file": "components/foo.py", "line": 10, "column": 5, '
             '"message": "Incompatible types", "severity": "error"}\n'
@@ -132,7 +132,7 @@ class TestFromMypyJsonl:
         assert len(diags) == 1
         assert isinstance(diags[0], Diagnostic)
 
-    def test_field_mapping(self):
+    def test_field_mapping(self) -> None:
         mypy_input = (
             '{"file": "components/baz.py", "line": 20, "column": 8, '
             '"message": "Argument 1 has incompatible type", '
@@ -146,7 +146,7 @@ class TestFromMypyJsonl:
         assert diag.code == "arg-type"
         assert diag.checker == "mypy"
 
-    def test_multiple_lines(self):
+    def test_multiple_lines(self) -> None:
         mypy_input = (
             '{"file": "a.py", "line": 1, "column": 1, '
             '"message": "err1", "severity": "error"}\n'
@@ -158,7 +158,7 @@ class TestFromMypyJsonl:
         assert diags[0].file == "a.py"
         assert diags[1].file == "b.py"
 
-    def test_empty_input(self):
+    def test_empty_input(self) -> None:
         diags = from_mypy_jsonl("")
         assert diags == []
 
@@ -166,7 +166,7 @@ class TestFromMypyJsonl:
 class TestBuildOutput:
     """build_output serializer: TypeCheckResult list → CheckOutput."""
 
-    def test_with_empty_results(self):
+    def test_with_empty_results(self) -> None:
         output = build_output([])
         assert isinstance(output, CheckOutput)
         assert output.projects[0].components == []
@@ -174,7 +174,7 @@ class TestBuildOutput:
         assert output.summary["total_components"] == 0
         assert output.summary["total_errors"] == 0
 
-    def test_with_results_no_errors(self):
+    def test_with_results_no_errors(self) -> None:
         results = [
             TypeCheckResult(
                 path="components/foo.py",
@@ -188,7 +188,7 @@ class TestBuildOutput:
         assert output.summary["total_components"] == 1
         assert output.summary["total_errors"] == 0
 
-    def test_summary_computation(self):
+    def test_summary_computation(self) -> None:
         results = [
             TypeCheckResult(
                 path="components/a.py",
@@ -211,11 +211,11 @@ class TestBuildOutput:
 class TestExportSchema:
     """export_schema: CheckOutput JSON Schema export."""
 
-    def test_returns_dict(self):
+    def test_returns_dict(self) -> None:
         schema = export_schema()
         assert isinstance(schema, dict)
 
-    def test_has_type_and_properties(self):
+    def test_has_type_and_properties(self) -> None:
         schema = export_schema()
         assert "properties" in schema
         assert "projects" in schema["properties"]

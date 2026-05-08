@@ -26,7 +26,7 @@ from components.attribute_types.attribute_types import (  # noqa: E402
 
 
 @pytest.fixture
-def component(tmp_path):
+def component(tmp_path: Path) -> AttributeTypes:
     """Create and prepare an AttributeTypes component via batou infrastructure."""
     os.chdir(str(tmp_path))
     environment = Environment("test", basedir=str(tmp_path))
@@ -45,7 +45,7 @@ def component(tmp_path):
 class TestAttributeTypesRuntime:
     """Runtime type verification — checks what batou actually produces."""
 
-    def test_clean_types_match_declaration(self, component: AttributeTypes):
+    def test_clean_types_match_declaration(self, component: AttributeTypes) -> None:
         """Matching conversion+default should produce the declared type."""
         assert type(component.str_clean) is str
         assert type(component.int_clean) is int
@@ -53,7 +53,7 @@ class TestAttributeTypesRuntime:
         assert type(component.list_clean) is list
         assert type(component.none_str) is NoneType
 
-    def test_mismatched_types_are_coerced(self, component: AttributeTypes):
+    def test_mismatched_types_are_coerced(self, component: AttributeTypes) -> None:
         """Mismatched defaults keep their original type — batou does NOT coerce defaults.
 
         Coercion only applies to values from environment overrides (ConfigString).
@@ -79,18 +79,18 @@ class TestAttributeTypesRuntime:
         assert type(component.int_float) is float
         assert component.int_float == 3.14
 
-    def test_none_defaults_stay_none(self, component: AttributeTypes):
+    def test_none_defaults_stay_none(self, component: AttributeTypes) -> None:
         """None defaults without override remain None at runtime."""
         assert component.str_none is None
         assert component.int_none is None
         assert component.none_str is None
 
-    def test_expected_types_table_is_complete(self):
+    def test_expected_types_table_is_complete(self) -> None:
         """Every attribute with EXPECTED_TYPES entry actually exists."""
         for attr_name in EXPECTED_TYPES:
             assert hasattr(AttributeTypes, attr_name), f"missing attribute: {attr_name}"
 
-    def test_runtime_matches_expected(self, component: AttributeTypes):
+    def test_runtime_matches_expected(self, component: AttributeTypes) -> None:
         """Cross-check runtime types against the EXPECTED_TYPES table."""
         mismatches: list[str] = []
         for attr_name, (ty_type, expected_runtime) in EXPECTED_TYPES.items():

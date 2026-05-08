@@ -13,12 +13,12 @@ SRC = Path(__file__).resolve().parent.parent / "src" / "batou_type"
 # --- 1. cli.py exists and contains the CLI app ---
 
 
-def test_cli_module_exists():
+def test_cli_module_exists() -> None:
     """cli.py must exist as a module in batou_type package."""
     assert (SRC / "cli.py").is_file()
 
 
-def test_cli_module_has_typer_app():
+def test_cli_module_has_typer_app() -> None:
     """cli.py must define a Typer app instance."""
     # Don't import (would fail), parse AST
     tree = ast.parse((SRC / "cli.py").read_text())
@@ -35,7 +35,7 @@ def test_cli_module_has_typer_app():
 # --- 2. __init__.py is lean ---
 
 
-def test_init_no_typer_import():
+def test_init_no_typer_import() -> None:
     """__init__.py must NOT import typer."""
     source = (SRC / "__init__.py").read_text()
     tree = ast.parse(source)
@@ -47,7 +47,7 @@ def test_init_no_typer_import():
             assert node.module is None or "typer" not in node.module
 
 
-def test_init_no_rich_import():
+def test_init_no_rich_import() -> None:
     """__init__.py must NOT import rich."""
     source = (SRC / "__init__.py").read_text()
     tree = ast.parse(source)
@@ -59,7 +59,7 @@ def test_init_no_rich_import():
             assert node.module is None or "rich" not in node.module
 
 
-def test_init_exports_version():
+def test_init_exports_version() -> None:
     """__init__.py must define __version__."""
     source = (SRC / "__init__.py").read_text()
     tree = ast.parse(source)
@@ -74,7 +74,7 @@ def test_init_exports_version():
 # --- 3. __main__.py imports from cli ---
 
 
-def test_main_imports_from_cli():
+def test_main_imports_from_cli() -> None:
     """__main__.py must import app from batou_type.cli, not batou_type."""
     source = (SRC / "__main__.py").read_text()
     tree = ast.parse(source)
@@ -87,7 +87,7 @@ def test_main_imports_from_cli():
 # --- 4. Entry point in pyproject.toml ---
 
 
-def test_pyproject_entry_point_uses_cli():
+def test_pyproject_entry_point_uses_cli() -> None:
     """pyproject.toml must reference batou_type.cli:app."""
     pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
     content = pyproject.read_text()
@@ -97,7 +97,7 @@ def test_pyproject_entry_point_uses_cli():
 # --- 5. core.py: top-level imports ---
 
 
-def test_core_no_lazy_json_import():
+def test_core_no_lazy_json_import() -> None:
     """core.py must import json at top level, not lazily in a function."""
     source = (SRC / "core.py").read_text()
     # Check that `import json` is NOT inside any function
@@ -112,7 +112,7 @@ def test_core_no_lazy_json_import():
                         )
 
 
-def test_core_no_lazy_io_import():
+def test_core_no_lazy_io_import() -> None:
     """core.py must import io at top level, not lazily in a function."""
     source = (SRC / "core.py").read_text()
     tree = ast.parse(source)
@@ -129,7 +129,7 @@ def test_core_no_lazy_io_import():
 # --- 6. pytest_plugin.py: dead code removed ---
 
 
-def test_plugin_no_batou_ty_error():
+def test_plugin_no_batou_ty_error() -> None:
     """BatouTyError class must be removed (dead code)."""
     source = (SRC / "pytest_plugin.py").read_text()
     tree = ast.parse(source)
@@ -142,7 +142,7 @@ def test_plugin_no_batou_ty_error():
 # --- 7. No bare except Exception in __init__.py ---
 
 
-def test_init_no_bare_except_exception():
+def test_init_no_bare_except_exception() -> None:
     """__init__.py must not contain bare 'except Exception' after refactoring."""
     source = (SRC / "__init__.py").read_text()
     tree = ast.parse(source)
@@ -156,7 +156,7 @@ def test_init_no_bare_except_exception():
 # --- 8. Functional: imports still work ---
 
 
-def test_core_imports_still_work():
+def test_core_imports_still_work() -> None:
     """Core module must still be importable with same public API."""
     from batou_type.core import (  # noqa: F401
         Checker,
@@ -169,14 +169,14 @@ def test_core_imports_still_work():
     assert Checker.ty.value == "ty"
 
 
-def test_cli_imports_work():
+def test_cli_imports_work() -> None:
     """CLI module must be importable."""
     from batou_type.cli import app
 
     assert app is not None
 
 
-def test_init_reexports_core():
+def test_init_reexports_core() -> None:
     """__init__.py must re-export core types."""
     import batou_type
 

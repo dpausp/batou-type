@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from typing import Any
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -15,7 +16,7 @@ def _strip_ansi(text: str) -> str:
     return _ANSI_RE.sub("", text)
 
 
-def extract_json(stdout: str) -> dict:
+def extract_json(stdout: str) -> dict[str, Any]:
     """Extract JSON object from stdout, stripping non-JSON prefix lines.
 
     stogger.init_early_logging() writes debug lines to stdout before the JSON payload.
@@ -30,14 +31,14 @@ BATOU_TYPE_CLI = [sys.executable, "-m", "batou_type"]
 
 
 @pytest.fixture
-def temp_project(tmp_path):
+def temp_project(tmp_path: Path) -> Path:
     """Create a temporary batou project with components directory."""
     components = tmp_path / "components"
     components.mkdir()
     return tmp_path
 
 
-def run_cli(*args, cwd=None):
+def run_cli(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     """Run batou-type CLI and return result."""
     import os
 
@@ -56,13 +57,13 @@ def run_cli(*args, cwd=None):
 class TestVersion:
     """Tests for version command."""
 
-    def test_version_shows_batou_type_version(self, tmp_path):
+    def test_version_shows_batou_type_version(self, tmp_path) -> None:
         """Version command shows batou-type version."""
         result = run_cli("version", cwd=tmp_path)
         assert result.returncode == 0
         assert "batou-type" in result.stdout.lower()
 
-    def test_version_shows_stub_info(self, tmp_path):
+    def test_version_shows_stub_info(self, tmp_path) -> None:
         """Version command shows stub package info."""
         result = run_cli("version", cwd=tmp_path)
         assert "batou-stubs" in result.stdout.lower()
@@ -71,13 +72,13 @@ class TestVersion:
 class TestCheck:
     """Tests for check command."""
 
-    def test_check_no_components_exits_zero(self, tmp_path):
+    def test_check_no_components_exits_zero(self, tmp_path) -> None:
         """Check with no component files exits 0."""
         result = run_cli("check", cwd=tmp_path)
         assert result.returncode == 0
         assert "no batou projects found" in (result.stdout + result.stderr).lower()
 
-    def test_check_clean_component_exits_zero(self, temp_project):
+    def test_check_clean_component_exits_zero(self, temp_project) -> None:
         """Check with valid component files exits 0."""
         component = temp_project / "components" / "mycomponent.py"
         component.write_text("def configure():\n    pass\n")
@@ -86,7 +87,7 @@ class TestCheck:
         assert result.returncode == 0
         assert "component(s) passed" in (result.stdout + result.stderr).lower()
 
-    def test_check_component_with_type_error_exits_one(self, temp_project):
+    def test_check_component_with_type_error_exits_one(self, temp_project) -> None:
         """Check with type errors exits 1."""
         component = temp_project / "components" / "badcomponent.py"
         component.write_text("def configure() -> int:\n    return 'not an int'\n")
@@ -94,7 +95,7 @@ class TestCheck:
         result = run_cli("check", cwd=temp_project)
         assert result.returncode == 1
 
-    def test_check_with_ty_checker(self, temp_project):
+    def test_check_with_ty_checker(self, temp_project) -> None:
         """Check with explicit -c ty works."""
         component = temp_project / "components" / "mycomponent.py"
         component.write_text("def configure():\n    pass\n")
@@ -102,7 +103,7 @@ class TestCheck:
         result = run_cli("check", "-c", "ty", cwd=temp_project)
         assert result.returncode == 0
 
-    def test_check_with_mypy_checker(self, temp_project):
+    def test_check_with_mypy_checker(self, temp_project) -> None:
         """Check with explicit -c mypy works."""
         component = temp_project / "components" / "mycomponent.py"
         component.write_text("def configure():\n    pass\n")
@@ -111,7 +112,7 @@ class TestCheck:
         # mypy might not be installed, but command should not crash
         assert result.returncode in (0, 1, 2)  # 2 = checker not found
 
-    def test_check_multiple_components(self, temp_project):
+    def test_check_multiple_components(self, temp_project) -> None:
         """Check handles multiple component files."""
         (temp_project / "components" / "comp1.py").write_text("def foo():\n    pass\n")
         (temp_project / "components" / "comp2.py").write_text("def bar():\n    pass\n")
@@ -121,7 +122,7 @@ class TestCheck:
         # Diagnostic info on stderr (stogger formatted with _replace_msg)
         assert "Checking 2 component(s)" in result.stderr
 
-    def test_check_nested_components(self, temp_project):
+    def test_check_nested_components(self, temp_project) -> None:
         """Check finds components in nested directories."""
         nested = temp_project / "components" / "subpackage"
         nested.mkdir(parents=True)
@@ -134,7 +135,7 @@ class TestCheck:
 class TestHelp:
     """Tests for help output."""
 
-    def test_help_shows_commands(self):
+    def test_help_shows_commands(self) -> None:
         """--help shows available commands."""
         result = run_cli("--help")
         assert result.returncode == 0
@@ -142,14 +143,14 @@ class TestHelp:
         assert "check" in output
         assert "version" in output
 
-    def test_check_help_shows_options(self):
+    def test_check_help_shows_options(self) -> None:
         """check --help shows options."""
         result = run_cli("check", "--help")
         assert result.returncode == 0
         output = _strip_ansi(result.stdout.lower())
         assert "--checker" in output
 
-    def test_bad_command_shows_error(self):
+    def test_bad_command_shows_error(self) -> None:
         """Invalid command shows error message."""
         result = run_cli("nonexistent")
         assert result.returncode == 2
@@ -160,7 +161,7 @@ class TestHelp:
 class TestErrorHandling:
     """Tests for error handling."""
 
-    def test_invalid_checker_shows_error(self, temp_project):
+    def test_invalid_checker_shows_error(self, temp_project) -> None:
         """Invalid checker name shows clear error."""
         result = run_cli("check", "--checker", "invalid", cwd=temp_project)
         assert result.returncode == 2
@@ -171,7 +172,7 @@ class TestErrorHandling:
 class TestJsonOutput:
     """E2E tests for --json and --show-schema CLI flags."""
 
-    def test_json_clean_component_valid_json(self, temp_project):
+    def test_json_clean_component_valid_json(self, temp_project) -> None:
         """Clean component produces valid JSON with expected structure."""
         component = temp_project / "components" / "mycomponent.py"
         component.write_text("def configure():\n    pass\n")
@@ -185,7 +186,7 @@ class TestJsonOutput:
         assert data["summary"]["total_errors"] == 0
         assert "$schema" not in data
 
-    def test_json_component_with_error(self, temp_project):
+    def test_json_component_with_error(self, temp_project) -> None:
         """Component with type error produces JSON with diagnostics."""
         component = temp_project / "components" / "badcomponent.py"
         component.write_text("def configure() -> int:\n    return 'not an int'\n")
@@ -200,14 +201,14 @@ class TestJsonOutput:
         assert isinstance(diags[0]["message"], str) and len(diags[0]["message"]) > 0
         assert "badcomponent.py" in diags[0]["file"]
 
-    def test_json_no_projects(self, tmp_path):
+    def test_json_no_projects(self, tmp_path) -> None:
         """No batou projects produces valid JSON with empty components."""
         result = run_cli("check", "--json", cwd=tmp_path)
         assert result.returncode == 0
         data = extract_json(result.stdout)
         assert data["projects"][0]["components"] == []
 
-    def test_show_schema(self, tmp_path):
+    def test_show_schema(self, tmp_path) -> None:
         """--show-schema outputs valid JSON Schema."""
         result = run_cli("check", "--show-schema", cwd=tmp_path)
         assert result.returncode == 0
@@ -215,7 +216,7 @@ class TestJsonOutput:
         assert "properties" in data
         assert "projects" in data["properties"]
 
-    def test_json_stderr_has_logs(self, temp_project):
+    def test_json_stderr_has_logs(self, temp_project) -> None:
         """JSON mode: diagnostics go to stderr, not stdout."""
         component = temp_project / "components" / "mycomponent.py"
         component.write_text("def configure():\n    pass\n")
@@ -300,7 +301,7 @@ class TestFixDiff:
 # Uses pytest-structlog's `log` fixture for event capture and assertion.
 
 
-def _make_project(tmp_path, *component_files):
+def _make_project(tmp_path: Path, *component_files: tuple[str, str]) -> Path:
     """Create a batou project with component files."""
     components = tmp_path / "components"
     components.mkdir(exist_ok=True)
@@ -309,7 +310,7 @@ def _make_project(tmp_path, *component_files):
     return tmp_path
 
 
-def _run_check_capture(log, paths, **kwargs):
+def _run_check_capture(log: Any, paths: list[Path], **kwargs: Any) -> None:
     """Run run_check in-process with pytest-structlog capture."""
     import click
 
@@ -322,7 +323,7 @@ def _run_check_capture(log, paths, **kwargs):
     return log
 
 
-def test_no_projects_found_logs_warning(tmp_path, log):
+def test_no_projects_found_logs_warning(tmp_path, log) -> None:
     """Empty directory emits no-projects-found at warning level."""
     _run_check_capture(log, paths=[tmp_path])
     assert log.has("no-projects-found")
@@ -330,7 +331,7 @@ def test_no_projects_found_logs_warning(tmp_path, log):
     assert events["no-projects-found"]["level"] == "warning"
 
 
-def test_projects_found_logs_info(tmp_path, log):
+def test_projects_found_logs_info(tmp_path, log) -> None:
     """Valid project emits projects-found with count."""
     project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
     _run_check_capture(log, paths=[project])
@@ -339,14 +340,14 @@ def test_projects_found_logs_info(tmp_path, log):
     assert events["projects-found"]["count"] == 1
 
 
-def test_components_passed_logs_info(tmp_path, log):
+def test_components_passed_logs_info(tmp_path, log) -> None:
     """Clean component emits components-passed summary."""
     project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
     _run_check_capture(log, paths=[project])
     assert log.has("components-passed")
 
 
-def test_components_failed_logs_info(tmp_path, log):
+def test_components_failed_logs_info(tmp_path, log) -> None:
     """Component with type error emits components-failed summary."""
     project = _make_project(
         tmp_path, ("bad.py", "def configure() -> int:\n    return 'not an int'\n")
@@ -355,7 +356,7 @@ def test_components_failed_logs_info(tmp_path, log):
     assert log.has("components-failed")
 
 
-def test_checker_unavailable_logs_error(tmp_path, log):
+def test_checker_unavailable_logs_error(tmp_path, log) -> None:
     """Unavailable checker emits checker-unavailable event."""
     import click
     from unittest.mock import patch
@@ -382,20 +383,20 @@ def test_checker_unavailable_logs_error(tmp_path, log):
 class TestMainModule:
     """Tests for python -m batou_type trampoline (__main__.py)."""
 
-    def test_python_m_version(self, tmp_path):
+    def test_python_m_version(self, tmp_path) -> None:
         """python -m batou_type version exercises __main__.py trampoline."""
         result = run_cli("version", cwd=tmp_path)
         assert result.returncode == 0
         assert "batou-type" in result.stdout.lower()
 
-    def test_python_m_help(self, tmp_path):
+    def test_python_m_help(self, tmp_path) -> None:
         """python -m batou_type --help exercises __main__.py trampoline."""
         result = run_cli("--help", cwd=tmp_path)
         assert result.returncode == 0
         assert "check" in result.stdout.lower()
         assert "version" in result.stdout.lower()
 
-    def test_python_m_no_args(self, tmp_path):
+    def test_python_m_no_args(self, tmp_path) -> None:
         """python -m batou_type with no args shows help/usage."""
         result = run_cli(cwd=tmp_path)
         # Typer exits 2 when no command given, but shows help
