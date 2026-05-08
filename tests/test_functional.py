@@ -35,6 +35,7 @@ def run_cli(*args, cwd=None):
     import os
 
     env = os.environ.copy()
+    env["NO_COLOR"] = "1"
     env.pop("JOURNAL_STREAM", None)
     result = subprocess.run(
         [*BATOU_TYPE_CLI, *args],

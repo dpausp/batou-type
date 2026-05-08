@@ -82,8 +82,10 @@ class TestRunFixSelfDeref:
         assert "_ := SubComp()" not in source
 
         # SPEC: diff-generation — assert unified diff format headers and content
+        import re
+
         captured = capsys.readouterr()
-        diff_output = captured.out
+        diff_output = re.sub(r"\x1b\[[0-9;]*m", "", captured.out)
         # Unified diff headers with a/ and b/ prefixes
         assert "--- a/" in diff_output, f"Missing --- header in diff: {diff_output!r}"
         assert "+++ b/" in diff_output, f"Missing +++ header in diff: {diff_output!r}"
