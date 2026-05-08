@@ -1,11 +1,18 @@
 """Functional E2E tests for batou-type CLI."""
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
 
 
 def extract_json(stdout: str) -> dict:
@@ -35,7 +42,6 @@ def run_cli(*args, cwd=None):
     import os
 
     env = os.environ.copy()
-    env["NO_COLOR"] = "1"
     env.pop("JOURNAL_STREAM", None)
     result = subprocess.run(
         [*BATOU_TYPE_CLI, *args],
@@ -132,14 +138,16 @@ class TestHelp:
         """--help shows available commands."""
         result = run_cli("--help")
         assert result.returncode == 0
-        assert "check" in result.stdout.lower()
-        assert "version" in result.stdout.lower()
+        output = _strip_ansi(result.stdout.lower())
+        assert "check" in output
+        assert "version" in output
 
     def test_check_help_shows_options(self):
         """check --help shows options."""
         result = run_cli("check", "--help")
         assert result.returncode == 0
-        assert "--checker" in result.stdout.lower()
+        output = _strip_ansi(result.stdout.lower())
+        assert "--checker" in output
 
     def test_bad_command_shows_error(self):
         """Invalid command shows error message."""

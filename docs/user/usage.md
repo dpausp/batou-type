@@ -1,5 +1,47 @@
 # Usage
 
+## Project Setup
+
+Before type checking works in your IDE, run setup once in your batou deployment project:
+
+```{code-block} shell
+$ batou-type setup
+```
+
+This command:
+
+1. Detects whether your project uses `batou_ext` (by scanning `components/`)
+2. Installs `batou-stubs` and `ty` as dev dependencies via `uv add --dev`
+3. Installs `batou_ext-stubs` automatically if `batou_ext` usage is detected
+4. Writes a minimal `[tool.ty]` configuration to `pyproject.toml
+
+After setup, `ty check components/` produces the same diagnostics as `batou-type check`. Your IDE (PyCharm, Neovim with ty LSP) picks up the stubs from the project venv automatically — zero manual configuration.
+
+### Setup Options
+
+| Flag | Effect |
+|------|--------|
+| `--checker ty` | Install and configure ty (default) |
+| `--checker mypy` | Install and configure mypy instead |
+| `--no-ext` | Skip `batou_ext-stubs` even if batou_ext usage is detected |
+| `--stub-source PATH` | Use local stub packages instead of PyPI (for testing) |
+| `-v` | Verbose output |
+
+### Local Stub Testing
+
+If `batou-stubs` is not yet on PyPI, test with a local path:
+
+```{code-block} shell
+$ batou-type setup --stub-source ../batou/stubs
+```
+
+This resolves `../batou/stubs/batou-stubs` and `../batou/stubs/batou_ext-stubs` as local packages.
+
+### Requirements
+
+- The project must have a `pyproject.toml` in the root directory
+- [uv](https://docs.astral.sh/uv/) must be available
+
 ## Choosing a Checker
 
 `batou-type` supports two type checkers. Use `-c` to select which one runs:

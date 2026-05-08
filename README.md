@@ -7,6 +7,7 @@ Finds all `components/**/*.py` files in the current directory and runs type chec
 ## Usage
 
 ```
+batou-type setup                      # configure project for IDE type checking (run once)
 batou-type check                      # ty (default)
 batou-type check -c mypy              # mypy only
 batou-type check -c ty -c mypy        # both checkers
@@ -14,6 +15,8 @@ batou-type check --fix                # fix in-place
 batou-type check --diff               # preview fixes as unified diff
 batou-type check --fix --virtual      # fix with tempdir safety check
 ```
+
+After `batou-type setup`, `ty check components/` produces the same diagnostics — enabling zero-config IDE integration via ty LSP.
 
 Exit code **0** — no errors (or no component files found). Exit code **1** — at least one type error detected.
 

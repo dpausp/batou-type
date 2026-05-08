@@ -6,6 +6,7 @@ batou-type is structured as four isolated layers, each with a single responsibil
 
 ```
 cli.py / __main__.py    ← presentation (typer, rich, stogger)
+setup.py                ← project setup (stdlib + structlog only)
 fixer.py                ← AST transformations (libcst)
 output.py               ← output modeling (pydantic)
 pytest_plugin.py        ← plugin (pytest)
@@ -13,7 +14,7 @@ core.py                 ← domain (stdlib only)
 vendor/                 ← bundled stubs (leaf, no upward imports)
 ```
 
-**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependency direction is strictly downward.** `cli.py` imports from `setup.py`, `fixer.py`, `output.py`, and `core.py`. `setup.py` is isolated — it imports only stdlib and structlog, with no dependencies on any other `batou_type` module. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no imports from any `batou_type` module — it is self-contained. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
 
 This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
 
@@ -24,11 +25,27 @@ Each layer owns its framework:
 | Framework | Where it lives | Why |
 |-----------|---------------|-----|
 | typer, rich, stogger | `cli.py` only | CLI presentation and diagnostic logging |
+| structlog | `setup.py` | Structured logging for setup operations |
 | libcst | `fixer.py` only | AST parsing and transformation for autofix |
 | pydantic | `output.py` only | Output structure modeling and JSON serialization |
 | pytest | `pytest_plugin.py` only | Plugin hook protocol only |
 | stdlib | `core.py` | Domain logic has no framework opinions |
 `__init__.py` re-exports from `core.py` only — it never touches typer, rich, stogger, pydantic, or pytest. This keeps the public API importable without triggering any framework installation.
+
+## Setup Layer
+
+`setup.py` configures a batou deployment project for standalone type checking. It installs stub packages (`batou-stubs`, optionally `batou_ext-stubs`) and the type checker as dev dependencies via `uv add --dev`, then writes minimal `[tool.ty]` configuration to `pyproject.toml`.
+
+After running `batou-type setup`, `ty check components/` produces the same diagnostics as `batou-type check` — enabling zero-config IDE integration via ty LSP.
+
+The module is deliberately isolated from the rest of the package: it imports only stdlib and structlog, with no imports from any `batou_type` module. This keeps it self-contained and testable without pulling in the full dependency chain.
+
+Key functions:
+
+- `run_setup()` — main entry point: detects batou_ext usage, installs packages, writes config
+- `_detect_batou_ext_usage()` — scans `components/` for batou_ext imports
+- `_run_uv_add()` — subprocess wrapper for `uv add --dev`
+- `_write_ty_config()` — appends `[tool.ty]` to pyproject.toml if absent
 
 ## Fixer Layer
 

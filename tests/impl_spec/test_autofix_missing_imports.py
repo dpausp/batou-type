@@ -8,10 +8,13 @@ Spec: .agents/impl_specs/autofix-missing-imports.md
 """
 
 from pathlib import Path
+import re
 
 from pytest_archon import archrule
 
 from batou_type.output import Diagnostic
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 SRC = Path(__file__).resolve().parent.parent.parent / "src" / "batou_type"
 PACKAGE = "batou_type"
@@ -275,7 +278,7 @@ class TestCLIFlags:
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", "--help"])
-        assert "--fix" in result.output
+        assert "--fix" in _ANSI_RE.sub("", result.output)
 
     def test_diff_flag_exists(self):
         """--diff boolean option on check command."""
@@ -284,7 +287,7 @@ class TestCLIFlags:
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", "--help"])
-        assert "--diff" in result.output
+        assert "--diff" in _ANSI_RE.sub("", result.output)
 
     def test_fix_only_flag_exists(self):
         """--fix-only boolean option on check command."""
@@ -293,7 +296,7 @@ class TestCLIFlags:
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", "--help"])
-        assert "--fix-only" in result.output
+        assert "--fix-only" in _ANSI_RE.sub("", result.output)
 
     def test_virtual_flag_exists(self):
         """--virtual boolean option on check command."""
@@ -302,7 +305,7 @@ class TestCLIFlags:
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", "--help"])
-        assert "--virtual" in result.output
+        assert "--virtual" in _ANSI_RE.sub("", result.output)
 
 
 # ---------------------------------------------------------------------------
