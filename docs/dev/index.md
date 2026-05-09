@@ -7,4 +7,5 @@ Internal documentation for contributors working on batou-type.
 
 architecture
 testing
+adr/index
 ```

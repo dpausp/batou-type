@@ -4,43 +4,50 @@ Type-check your batou deployment components to catch errors before deploying.
 
 ## Prerequisites
 
-- A batou deployment with a `components/` directory
-- `batou-type` installed in the same environment as your deployment
+- A batou deployment with a `components/` directory containing Python files
+- `batou-type` installed (e.g. `uv add --dev batou-type` or `pip install batou-type`)
+
+The default type checker ([ty](https://github.com/astral-sh/ty)) is installed
+automatically as a dependency.
 
 ## Run Your First Check
+
+From inside your deployment directory:
 
 ```{code-block} shell
 $ batou-type check
 ```
 
-This discovers all `components/**/*.py` files in the current directory and type-checks them with [ty](https://github.com/astral-sh/ty) (the default checker).
+This discovers all `components/**/*.py` files and type-checks them with ty (the
+default).
 
-You will see output like this:
+When all components pass:
 
 ```{code-block} text
 Found 1 project(s)
-  /path/to/my-deployment
-Checking 3 component(s) in my-deployment
-app: passed
-database: passed
-webserver: passed
+Checking 3 component(s) in /deploy/my-deployment
+app passed type check (ty)
+database passed type check (ty)
+webserver passed type check (ty)
 All 3 component(s) passed
-
-All components passed type checking.
 ```
 
-## What Happens When There Are Errors
+## When Components Have Errors
 
-When a component has type errors, `batou-type` prints the diagnostics and exits with code 1:
+Type errors are shown inline.
+The command exits with code **1**:
 
 ```{code-block} text
-app: failed
+Found 1 project(s)
+Checking 3 component(s) in /deploy/my-deployment
+app failed type check (ty)
 components/app/component.py:15: error: Cannot access member "misspelled_attribute" on type "Component"
-Found 1 diagnostic
+database passed type check (ty)
+webserver passed type check (ty)
 1 component(s) failed: app
 
-================================ FAILED COMPONENTS ================================
-  /path/to/my-deployment: app
+============================================== FAILED COMPONENTS ==============================================
+  /deploy/my-deployment: app
 ============================ 1 component(s) failed type check (ty) ============================
 ```
 
@@ -52,8 +59,10 @@ Fix the reported issues in your components and re-run until all checks pass.
 $ batou-type check /path/to/deployment
 ```
 
-You can pass multiple directories. If a directory is not itself a batou project, `batou-type` scans its subdirectories for projects.
+You can pass multiple paths.
+If a directory is not itself a batou project, `batou-type` scans its subdirectories for
+projects that contain a `components/` directory.
 
 ## Next Steps
 
-- [Usage](usage.md) — checker selection, autofix flags, pytest integration, migration testing
+- [Usage](usage.md) — checker selection, autofix flags, JSON output, pytest integration

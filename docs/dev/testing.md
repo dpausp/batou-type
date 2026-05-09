@@ -1,9 +1,8 @@
 # Testing
 
-The test suite validates correctness, architecture, and the public API contract — without any mocks.
+The test suite validates correctness, architecture, and the public API contract with minimal mocking.
 
-
-All tests have a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubles. Every test exercises real code paths: unit tests hit real filesystem via `tmp_path`, integration tests run the real pytest plugin via `pytester` or the real fix pipeline on `tmp_path` projects, and E2E tests spawn real subprocesses.
+Unit and integration tests exercise real code paths without test doubles: real filesystem via `tmp_path`, real pytest plugin via `pytester`, real fix pipeline on temporary projects, real subprocesses for E2E. The exception is `test_fixer_integration.py`, which uses `unittest.mock.patch` to isolate CLI flag dispatch logic (verifying that `--diff` implies `--fix-only` implies `--fix`) without running the full check-fix pipeline. These are the only mocks in the suite.
 
 ## Test Files and Their Role
 
@@ -19,6 +18,7 @@ All tests have a **0% mock ratio** — no `MagicMock`, no `patch`, no test doubl
 | `test_refactor_contract.py` | AST-based structural contracts (module existence, import boundaries, public API) |
 | `test_attribute_types.py` | Attribute type correctness in vendor stubs |
 
+| `test_init.py` | Public API importability tests — verifies `__all__` exports are importable |
 ## Architecture Enforcement
 
 `test_architecture.py` uses `pytest-archon` to enforce the layered structure at import level:
@@ -38,7 +38,7 @@ Measured coverage does not tell the full story because E2E tests invoke the CLI 
 
 | Tier | Modules | What this means |
 |------|---------|-----------------|
-| **Well-tested** | `core.py`, `pytest_plugin.py` | Directly imported by unit and integration tests. Measured coverage reflects real usage. |
+| **Well-tested** | `core.py`, `output.py`, `fixer.py`, `pytest_plugin.py` | Directly imported by unit and integration tests. Measured coverage reflects real usage. |
 | **Functionally tested, low measured coverage** | `cli.py` | E2E subprocess tests in `test_functional.py` exercise every subcommand and flag. Coverage tooling does not see subprocess execution, so measured numbers understate actual coverage. |
 | **Trivial** | `__init__.py`, `__main__.py` | Re-exports and a two-line trampoline. No meaningful logic to test beyond what the contract tests verify. |
 
