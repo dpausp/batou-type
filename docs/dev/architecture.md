@@ -1,6 +1,6 @@
 # Architecture
 
-batou-type is structured as five isolated layers, each with a single responsibility and strict dependency rules. The separation ensures that the core type-checking logic has zero framework coupling and can be reused from both the CLI and the pytest plugin without pulling in unnecessary dependencies.
+batou-type is structured as six isolated layers, each with a single responsibility and strict dependency rules. The separation ensures that the core type-checking logic has zero framework coupling and can be reused from both the CLI and the pytest plugin without pulling in unnecessary dependencies.
 
 ## Layer Model
 
@@ -8,12 +8,13 @@ batou-type is structured as five isolated layers, each with a single responsibil
 cli.py / __main__.py    ← presentation (typer, rich, stogger, structlog)
 fixer.py                ← AST transformations (libcst)
 output.py               ← output modeling (pydantic)
+setup.py                ← project setup (stdlib, structlog, tomli-w)
 pytest_plugin.py        ← plugin (pytest)
 core.py                 ← domain (stdlib, lazy output import for JSON mode)
 vendor/                 ← bundled stubs (leaf, no upward imports)
 ```
 
-**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. `output.py` imports from `core.py`. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no top-level imports from any `batou_type` module — it is self-contained at the module level, with a lazy runtime import from `output.py` inside `check_file()` when JSON mode is active. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, `setup.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. `output.py` imports from `core.py`. `setup.py` has no imports from any `batou_type` module — it uses only stdlib, structlog, and tomli-w for TOML roundtripping. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no top-level imports from any `batou_type` module — it is self-contained at the module level, with a lazy runtime import from `output.py` inside `check_file()` when JSON mode is active. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
 
 This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
 
@@ -24,11 +25,12 @@ Each layer owns its framework:
 | Framework | Where it lives | Why |
 |-----------|---------------|-----|
 | typer, rich, stogger | `cli.py` only | CLI presentation and diagnostic logging |
-| structlog | `__init__.py`, `cli.py` | Structured logging for version fallback and CLI operations |
+| structlog | `__init__.py`, `cli.py`, `setup.py` | Structured logging for version fallback, CLI, and setup operations |
 | libcst | `fixer.py` only | AST parsing and transformation for autofix |
 | pydantic | `output.py` only | Output structure modeling and JSON serialization |
 | pytest | `pytest_plugin.py` only | Plugin hook protocol only |
 | stdlib | `core.py` | Domain logic has no framework opinions |
+| tomli-w | `setup.py` only | TOML writing (stdlib `tomllib` is read-only) |
 
 `__init__.py` imports structlog for the version fallback log message and re-exports the public API from `core.py`. It does not touch typer, rich, stogger, pydantic, or pytest — keeping the public API importable without triggering the full framework dependency chain.
 

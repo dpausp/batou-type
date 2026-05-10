@@ -16,6 +16,7 @@ dependencies = [
     "typer",
     "stogger",
     "ty>=0.0.34",
+    "tomli-w",
 ]
 
 [project.optional-dependencies]

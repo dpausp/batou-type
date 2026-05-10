@@ -440,6 +440,7 @@ class TestFixerArchitecture:
             "batou_type.core",
             "batou_type.output",
             "batou_type.fixer",
+            "batou_type.setup",
         ).check(PACKAGE, only_direct_imports=True)
 
 

@@ -1,0 +1,187 @@
+"""Project setup: copy stubs, write checker config to pyproject.toml.
+
+Stdlib + structlog + tomli-w only. No imports from other batou_type modules.
+
+Spec: .agents/impl_specs/setup-command.md
+"""
+
+import re
+import shutil
+import tomllib
+from pathlib import Path
+from typing import Any
+
+import structlog
+import tomli_w
+
+log = structlog.get_logger()
+
+MANAGED_MARKER: str = "# managed by batou-type setup"
+
+VALID_CHECKERS: list[str] = ["ty", "mypy", "pyright"]
+
+CHECKER_CONFIGS: dict[str, dict] = {
+    "ty": {
+        "extra-search-paths": ["stubs"],
+        "src": {"include": ["components"]},
+    },
+    "mypy": {
+        "mypy_path": "stubs",
+        "explicit_package_bases": True,
+        "check_untyped_defs": True,
+        "modules": ["components"],
+    },
+    "pyright": {
+        "include": ["components"],
+        "stubPath": "stubs",
+    },
+}
+
+
+class SetupError(Exception):
+    """Error during project setup for type checking."""
+
+    def __init__(
+        self, message: str, conflicting_sections: list[str] | None = None
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.conflicting_sections: list[str] = conflicting_sections or []
+        log.debug(
+            "setup-error", message=message, conflicting=conflicting_sections or []
+        )
+
+
+def copy_stubs(target_dir: Path, vendor_dir: Path) -> list[Path]:
+    """Copy vendored stubs to target project's stubs/ directory.
+
+    Copies vendor_dir/batou/ and vendor_dir/batou_ext/ into
+    target_dir/stubs/. Idempotent: overwrites existing files.
+    """
+    copied: list[Path] = []
+    for pkg in ("batou", "batou_ext"):
+        src = vendor_dir / pkg
+        dst = target_dir / "stubs" / pkg
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        for p in dst.rglob("*"):
+            if p.is_file():
+                copied.append(p)
+    log.info(
+        "stubs-copied", _replace_msg="Copied {count} stub file(s)", count=len(copied)
+    )
+    return copied
+
+
+def _find_unmanaged_sections(raw_text: str, checkers: list[str]) -> list[str]:
+    """Find checker sections that exist without the managed marker."""
+    conflicting: list[str] = []
+    lines = raw_text.splitlines()
+
+    for checker in checkers:
+        header = f"[tool.{checker}]"
+        for i, line in enumerate(lines):
+            if line.strip() == header:
+                marker_found = False
+                for j in range(i - 1, -1, -1):
+                    stripped = lines[j].strip()
+                    if stripped == "":
+                        continue
+                    if stripped == MANAGED_MARKER:
+                        marker_found = True
+                    break
+
+                if not marker_found:
+                    conflicting.append(header)
+                break
+
+    if conflicting:
+        log.debug("unmanaged-sections", count=len(conflicting), sections=conflicting)
+    return conflicting
+
+
+def _inline_arrays(toml_str: str) -> str:
+    """Convert tomli_w multi-line arrays to inline format."""
+    pattern = r'([\w-]+) = \[\n((?:\s*"[^"]*",?\n)+)\]'
+
+    def _replacer(match: re.Match[str]) -> str:
+        key = match.group(1)
+        content = match.group(2)
+        values = re.findall(r'"([^"]*)"', content)
+        formatted = ", ".join(f'"{v}"' for v in values)
+        return f"{key} = [{formatted}]"
+
+    return re.sub(pattern, _replacer, toml_str)
+
+
+def _insert_markers(toml_str: str, checkers: list[str]) -> str:
+    """Insert MANAGED_MARKER comment before managed [tool.xxx] sections."""
+    result = toml_str
+    for checker in checkers:
+        header = f"[tool.{checker}]"
+        marked_header = f"{MANAGED_MARKER}\n{header}"
+        if marked_header not in result:
+            result = result.replace(header, marked_header)
+            log.debug("marker-inserted", header=header)
+    return result
+
+
+def write_checker_config(
+    target_dir: Path,
+    checkers: list[str],
+    dry_run: bool = False,
+) -> str | None:
+    """Write checker configuration to pyproject.toml.
+
+    Reads existing pyproject.toml if present, checks for unmanaged checker
+    sections, and writes checker config with managed markers.
+
+    Args:
+        target_dir: Project directory containing pyproject.toml.
+        checkers: Checker names to configure (subset of VALID_CHECKERS).
+        dry_run: If True, return TOML content without writing to disk.
+
+    Returns:
+        TOML content string. None if no pyproject.toml existed before.
+
+    Raises:
+        SetupError: If unmanaged checker sections are found.
+    """
+    pyproject = target_dir / "pyproject.toml"
+    had_existing = pyproject.exists()
+
+    if had_existing:
+        raw_text = pyproject.read_text()
+        data = tomllib.loads(raw_text)
+        conflicting = _find_unmanaged_sections(raw_text, checkers)
+        if conflicting:
+            sections = ", ".join(conflicting)
+            raise SetupError(
+                f"Existing unmanaged checker sections: {sections}",
+                conflicting_sections=conflicting,
+            )
+    else:
+        data: dict[str, Any] = {
+            "project": {"name": target_dir.name, "version": "0.1.0"}
+        }
+
+    tool = data.setdefault("tool", {})
+    for checker in checkers:
+        tool[checker] = CHECKER_CONFIGS[checker]
+
+    toml_str = tomli_w.dumps(data)
+    toml_str = _inline_arrays(toml_str)
+    toml_str = _insert_markers(toml_str, checkers)
+
+    if dry_run:
+        return toml_str
+
+    pyproject.write_text(toml_str)
+    log.info(
+        "checker-config-written",
+        _replace_msg="Wrote config for {checkers}",
+        checkers=checkers,
+    )
+
+    if had_existing:
+        return toml_str
+    return None

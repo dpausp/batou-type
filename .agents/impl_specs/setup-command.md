@@ -7,7 +7,11 @@ lifecycle:
     completed_at: "2026-05-10T12:30:00Z"
     git_rev: "4a9b706"
   plan:
+    completed_at: "2026-05-11T09:00:00Z"
+    git_rev: "a15d442"
   workflow:
+    completed_at: "2026-05-11T10:00:00Z"
+    git_rev: "3cbb921"
   verify:
 ---
 
@@ -221,3 +225,53 @@ batou-type setup --dry-run                # preview changes
 - README.md: usage section updated
 - docs/user/quickstart.md: first-time setup step
 - docs/user/usage.md: setup subcommand reference
+
+## Appendix
+
+```yaml
+# implementation_plan
+id: setup-command
+description: "Add batou-type setup subcommand — copies vendored stubs, writes ty/mypy/pyright config to pyproject.toml"
+created_at: "2026-05-11T09:00:00Z"
+git_rev: "a15d442"
+specs:
+  - .agents/impl_specs/setup-command.md
+target_tests:
+  - file: tests/impl_spec/test_setup_command.py
+    tests:
+      - TestSetupModuleArchitecture::test_setup_module_exists
+      - TestSetupModuleArchitecture::test_setup_no_typer
+      - TestSetupModuleArchitecture::test_setup_no_rich
+      - TestSetupModuleArchitecture::test_setup_no_pytest
+      - TestSetupModuleArchitecture::test_setup_no_pydantic
+      - TestSetupModuleArchitecture::test_setup_no_libcst
+      - TestSetupModuleArchitecture::test_setup_no_stogger
+      - TestSetupModuleArchitecture::test_setup_no_batou_type_imports
+      - TestSetupModuleArchitecture::test_cli_may_import_setup
+      - TestSetupCLIRegistration::test_setup_help_exits_zero
+      - TestSetupCLIRegistration::test_setup_help_shows_description
+      - TestSetupCLIRegistration::test_setup_help_shows_options
+      - TestSetupCLIRegistration::test_root_help_lists_setup
+      - TestSetupCLIRegistration::test_setup_non_project_path_exits_one
+      - TestSetupCLIRegistration::test_setup_dry_run_exits_zero
+      - TestSetupCLIRegistration::test_setup_checkers_ty_only
+      - TestStubCopying::test_stubs_batou_dir_created
+      - TestStubCopying::test_stubs_batou_ext_dir_created
+      - TestStubCopying::test_stubs_contain_pyi_files
+      - TestStubCopying::test_stubs_have_py_typed_markers
+      - TestStubCopying::test_stub_content_matches_vendor
+      - TestPyprojectWriting::test_creates_pyproject_if_missing
+      - TestPyprojectWriting::test_new_pyproject_has_name_and_version
+      - TestPyprojectWriting::test_writes_tool_ty_section
+      - TestPyprojectWriting::test_writes_tool_ty_src_section
+      - TestPyprojectWriting::test_writes_tool_mypy_section
+      - TestPyprojectWriting::test_writes_tool_pyright_section
+      - TestPyprojectWriting::test_managed_marker_present
+      - TestIdempotency::test_second_run_succeeds
+      - TestIdempotency::test_second_run_preserves_config
+      - TestIdempotency::test_second_run_preserves_stubs
+      - TestExistingConfigProtection::test_exits_one_on_unmanaged_tool_ty
+      - TestExistingConfigProtection::test_error_mentions_conflicting_section
+      - TestExistingConfigProtection::test_succeeds_on_marked_tool_ty
+      - TestExistingConfigProtection::test_overwrites_marked_section
+```

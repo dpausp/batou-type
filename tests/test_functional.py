@@ -380,6 +380,40 @@ def test_checker_unavailable_logs_error(tmp_path, log) -> None:
     assert log.has("checker-unavailable")
 
 
+def test_setup_stubs_copied_logs_info(tmp_path, log) -> None:
+    """setup copy_stubs emits stubs-copied event."""
+    from batou_type.setup import copy_stubs
+    from batou_type.cli import VENDOR_STUBS_PATH
+
+    copy_stubs(tmp_path, VENDOR_STUBS_PATH)
+    assert log.has("stubs-copied")
+
+
+def test_setup_checker_config_written_logs_info(tmp_path, log) -> None:
+    """setup write_checker_config emits checker-config-written event."""
+    from batou_type.setup import write_checker_config
+
+    (tmp_path / "components").mkdir()
+    write_checker_config(tmp_path, ["ty"])
+    assert log.has("checker-config-written")
+
+
+def test_setup_conflict_logs_error(tmp_path, log) -> None:
+    """Setup with unmanaged checker sections emits setup-conflict event."""
+    import click
+
+    from batou_type.cli import setup
+
+    (tmp_path / "components").mkdir()
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.ty]\nstrict = true\n")
+    try:
+        setup(path=tmp_path)
+    except (SystemExit, click.exceptions.Exit):
+        pass
+    assert log.has("setup-conflict")
+
+
 class TestMainModule:
     """Tests for python -m batou_type trampoline (__main__.py)."""
 

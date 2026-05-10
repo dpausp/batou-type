@@ -6,7 +6,7 @@ Type-check batou deployment components against batou stubs.
 
 ## Documentation
 
-- docs/dev/architecture.md — Four-layer model, framework isolation, entry points, vendor stubs system, public API boundary
+- docs/dev/architecture.md — Six-layer model, framework isolation, entry points, vendor stubs system, public API boundary
 - docs/dev/testing.md — Test pyramid (0% mock ratio), test file roles, architecture enforcement
 - docs/user/quickstart.md — Getting started, first type-check run
 - docs/user/usage.md — Checker selection, JSON output, pytest integration, migration testing
@@ -27,14 +27,15 @@ Python ≥3.13 · hatchling (build) · uv (package manager) · tox (task runner)
 
 ## Structure
 
-    src/batou_type/     Main package — 6 modules + vendor/ stubs
+    src/batou_type/     Main package — 7 modules + vendor/ stubs
       core.py            Domain logic (stdlib-only)
-      cli.py             Typer CLI (version, check commands)
+      cli.py             Typer CLI (version, check, setup commands)
+      setup.py           Project setup (stdlib + structlog, tomli-w)
       output.py          Pydantic models, JSON output
       fixer.py           libcst-based autofix for common diagnostics
       pytest_plugin.py   pytest --batou-ty integration
       vendor/            Bundled .pyi stubs for batou + batou_ext
-    tests/              8 test files (unit, integration, E2E, architecture)
+    tests/              9 test files (unit, integration, E2E, architecture)
     docs/               Sphinx source (user guide, dev guide, API ref)
     examples/           Sample batou deployments (clean, error, mixed)
     pyproject.toml      All config: build, deps, ruff, ty, tox

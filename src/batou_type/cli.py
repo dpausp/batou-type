@@ -29,6 +29,12 @@ from batou_type.core import (
 )
 from batou_type.fixer import ADD_MISSING_IMPORT, SELF_DEREF
 from batou_type.output import Diagnostic
+from batou_type.setup import (
+    VALID_CHECKERS,
+    SetupError,
+    copy_stubs,
+    write_checker_config,
+)
 
 stogger.init_early_logging()
 log = structlog.get_logger()
@@ -650,3 +656,54 @@ def check(
         ty_args=parsed_ty_args,
         json_mode=json_mode,
     )
+
+
+@app.command()
+def setup(
+    path: Annotated[
+        Path | None,
+        typer.Argument(help="Path to batou project directory."),
+    ] = None,
+    checkers: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated list of checkers to configure."),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview changes without writing."),
+    ] = False,
+) -> None:
+    """Configure project for IDE-native type checking."""
+    target = (path or Path.cwd()).resolve()
+
+    if not is_batou_project(target):
+        console.print(f"[red]Not a batou project: {target}[/]")
+        raise typer.Exit(code=1)
+
+    selected = VALID_CHECKERS
+    if checkers:
+        selected = [c.strip() for c in checkers.split(",")]
+        invalid = [c for c in selected if c not in VALID_CHECKERS]
+        if invalid:
+            console.print(f"[red]Unknown checkers: {', '.join(invalid)}[/]")
+            raise typer.Exit(code=1)
+
+    try:
+        write_checker_config(target, selected, dry_run=dry_run)
+    except SetupError as exc:
+        log.exception(
+            "setup-conflict",
+            _replace_msg="Unmanaged checker sections found",
+            sections=exc.conflicting_sections,
+        )
+        for section in exc.conflicting_sections:
+            console.print(
+                f"[red]Existing {section} section \u2014 remove or rename first[/]"
+            )
+        raise typer.Exit(code=1)
+
+    if not dry_run:
+        copy_stubs(target, VENDOR_STUBS_PATH)
+        console.print("[green]Setup complete.[/]")
+    else:
+        console.print("[dim]Dry run \u2014 no files written.[/]")

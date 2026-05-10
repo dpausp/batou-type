@@ -212,9 +212,9 @@ class TestCrossLayerIsolation:
         ).check(PACKAGE, only_direct_imports=True)
 
     def test_cli_may_import_fixer(self) -> None:
-        """cli.py may import from fixer.py, core.py, and output.py (forward dependency).
+        """cli.py may import from fixer.py, core.py, output.py, and setup.py (forward dependency).
 
-        Spec decision: module-placement — 'cli.py → fixer.py'
+        Spec decision: module-placement — 'cli.py → fixer.py', 'cli.py → setup.py'
         """
         archrule("cli may import fixer").match("batou_type.cli").should_not_import(
             "batou_type*"
@@ -223,6 +223,7 @@ class TestCrossLayerIsolation:
             "batou_type.fixer",
             "batou_type.core",
             "batou_type.output",
+            "batou_type.setup",
         ).check(PACKAGE, only_direct_imports=True)
 
 

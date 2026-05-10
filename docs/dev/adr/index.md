@@ -6,5 +6,6 @@
 fix-pipeline
 fixer-autofix
 fixer-layer
+setup-pipeline
 test-architecture
 ```
