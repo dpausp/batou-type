@@ -63,6 +63,20 @@ You can pass multiple paths.
 If a directory is not itself a batou project, `batou-type` scans its subdirectories for
 projects that contain a `components/` directory.
 
+## Common Issues
+
+No components/ directory
+  `batou-type check` reports nothing or errors because no batou project was found.
+  Create a `components/` directory in your deployment root with at least one `.py` file.
+
+Empty components/ directory
+  `Found 0 component(s)` — nothing to check.
+  Add at least one component file (e.g. `components/myapp/component.py`).
+
+Permission errors
+  `Permission denied` when reading component files.
+  Check file permissions: `ls -la components/`. Fix with `chmod -R +r components/`.
+
 ## Next Steps
 
 - [Usage](usage.md) — checker selection, autofix flags, JSON output, pytest integration

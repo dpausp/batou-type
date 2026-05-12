@@ -87,6 +87,28 @@ Example JSON output (with errors):
 }
 ```
 
+Zero errors (success) — the most common CI scenario:
+
+```{code-block} json
+{
+  "schema_version": "1.0.0",
+  "projects": [
+    {
+      "path": ".",
+      "components": []
+    }
+  ],
+  "summary": {
+    "total_projects": 1,
+    "total_components": 0,
+    "total_errors": 0
+  },
+  "metadata": {
+    "checker": ["ty"]
+  }
+}
+```
+
 To print the JSON Schema that defines this format:
 
 ```{code-block} shell
