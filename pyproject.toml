@@ -14,9 +14,9 @@ dependencies = [
     "pydantic",
     "rich",
     "typer",
-    "stogger",
     "ty>=0.0.34",
     "tomli-w",
+    "stogger>=2026.5.12",
 ]
 
 [project.optional-dependencies]
@@ -120,5 +120,6 @@ suppression_budget = 0
 "pytest_plugin.py" = ["complexity-needs-log"]
 
 [tool.uv.sources]
-stogger = { git = "https://github.com/dpausp/stogger", rev = "2026.5.6" }
 pytest-stogger = { git = "https://github.com/dpausp/pytest-stogger", rev = "2026.5.6" }
+
+
