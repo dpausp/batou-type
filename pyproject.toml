@@ -108,6 +108,9 @@ commands = [["sphinx-build", "-b", "html", "docs", "docs/_build"]]
 [tool.ty.src]
 exclude = ["src/batou_type/vendor/"]
 
+[tool.pytest.ini_options]
+import_mode = "importlib"
+
 [tool.pytest-stogger]
 source = "src/batou_type"
 exempt_event_ids = []

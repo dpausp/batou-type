@@ -252,7 +252,7 @@ class TestFlagDispatchRuntime:
         project = _make_project(tmp_path, "flagdiff", _SELF_DEREF_COMPONENT)
 
         runner = CliRunner()
-        with patch("batou_type.cli.run_fix") as mock_run_fix:
+        with patch("batou_type.cli.run_fix", autospec=True) as mock_run_fix:
             mock_run_fix.return_value = None
             runner.invoke(app, ["check", "--diff", str(project)])
 
@@ -268,7 +268,7 @@ class TestFlagDispatchRuntime:
         project = _make_project(tmp_path, "flagfixonly", _SELF_DEREF_COMPONENT)
 
         runner = CliRunner()
-        with patch("batou_type.cli.run_fix") as mock_run_fix:
+        with patch("batou_type.cli.run_fix", autospec=True) as mock_run_fix:
             mock_run_fix.return_value = None
             runner.invoke(app, ["check", "--fix-only", str(project)])
 
@@ -304,7 +304,7 @@ def test_run_fix_calls_check_all_with_json_mode(tmp_path: Path) -> None:
     )
 
     with patch(
-        "batou_type.cli.check_all", return_value=[mock_result]
+        "batou_type.cli.check_all", autospec=True, return_value=[mock_result]
     ) as mock_check_all:
         with pytest.raises(click.exceptions.Exit):
             run_fix([project], fix=True, checker=[Checker.ty])

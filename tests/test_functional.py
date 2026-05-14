@@ -366,7 +366,7 @@ def test_checker_unavailable_logs_error(tmp_path, log) -> None:
 
     project = _make_project(tmp_path, ("comp.py", "def f(): pass\n"))
     with patch(
-        "batou_type.cli.ensure_checker_available", side_effect=CheckerError("not found")
+        "batou_type.cli.ensure_checker_available", autospec=True, side_effect=CheckerError("not found")
     ):
         try:
             run_check(

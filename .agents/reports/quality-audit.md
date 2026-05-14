@@ -286,3 +286,36 @@ No code changes were made. Audit-only workflow.
 ## Raw Data Location
 
 `.agents/tmp/quality/` — inventory/, baseline/, extreme/, analysis/, e2e/
+
+## Tidy Session — 2026-05-14
+
+### Mock Hardening
+- Bare mocks before: 4 → after: 0
+- Migrated to autospec: 4
+  - tests/test_fixer_integration.py: patch("batou_type.cli.run_fix", autospec=True) × 2
+  - tests/test_fixer_integration.py: patch("batou_type.cli.check_all", autospec=True) × 1
+  - tests/test_functional.py: patch("batou_type.cli.ensure_checker_available", autospec=True) × 1
+- Untouchable: 0
+
+### Suppression Cleanup
+- Linter suppressions removed: 0 (all 9 in vendor/ stubs — not project code)
+- Type-check suppressions removed: 0 (all 42 in vendor/ stubs — not project code)
+- Test skips removed: 0 (zero skips in project)
+- Restored (still needed): 0
+
+### Config Improvement
+- Added [tool.pytest.ini_options] with import_mode = "importlib" to pyproject.toml
+
+### Post-Tidy Gates
+| Tool | Before | After |
+|------|--------|-------|
+| ruff | 0 issues | 0 issues |
+| ty | 0 errors | 0 errors |
+| pytest | 240 passed | 240 passed |
+
+### Skipped (Not Mechanical)
+- NAV-1: run_fix/run_check decomposition — design decision
+- NAV-2: core.py coverage improvement — needs new tests, design decision
+- NAV-3: Test classes → plain functions — 41 classes, significant refactor, design decision
+- NAV-5: Migration testing test — needs design decision
+
