@@ -1,6 +1,6 @@
 # Architecture
 
-batou-type is structured as six isolated layers, each with a single responsibility and strict dependency rules. The separation ensures that the core type-checking logic has zero framework coupling and can be reused from both the CLI and the pytest plugin without pulling in unnecessary dependencies.
+batou-type has six isolated layers. Each layer owns a single responsibility and follows strict dependency rules. This keeps the core type-checking logic free of framework coupling — both the CLI and the pytest plugin reuse it without pulling in extra dependencies.
 
 ## Layer Model
 
@@ -14,9 +14,19 @@ core.py                 ← domain (stdlib, lazy output import for JSON mode)
 vendor/                 ← bundled stubs (leaf, no upward imports)
 ```
 
-**Dependency direction is strictly downward.** `cli.py` imports from `fixer.py`, `output.py`, `setup.py`, and `core.py`. `fixer.py` imports from `output.py` (the `Diagnostic` model) and libcst. `output.py` imports from `core.py`. `setup.py` has no imports from any `batou_type` module — it uses only stdlib, structlog, and tomli-w for TOML roundtripping. `pytest_plugin.py` imports from `core.py` only. Neither `cli.py` nor `pytest_plugin.py` imports the other. `core.py` has no top-level imports from any `batou_type` module — it is self-contained at the module level, with a lazy runtime import from `output.py` inside `check_file()` when JSON mode is active. `vendor/` is a leaf: stub packages sit there for type-checker discovery, nothing in the package imports from `vendor/`.
+**Dependencies flow strictly downward:**
 
-This is enforced at test time by `pytest-archon` rules in `tests/test_architecture.py`.
+| Module | Imports from |
+|--------|-------------|
+| `cli.py` | `fixer.py`, `output.py`, `setup.py`, `core.py` |
+| `fixer.py` | `output.py` (`Diagnostic`), libcst |
+| `output.py` | `core.py` |
+| `setup.py` | (none from batou_type) — stdlib, structlog, tomli-w |
+| `pytest_plugin.py` | `core.py` only |
+| `core.py` | (none at top-level) — lazy import from `output.py` in `check_file()` |
+| `vendor/` | (leaf — no upward imports) |
+
+`pytest-archon` enforces these rules at test time (`tests/test_architecture.py`).
 
 ## Framework Isolation
 
@@ -32,7 +42,7 @@ Each layer owns its framework:
 | stdlib | `core.py` | Domain logic has no framework opinions |
 | tomli-w | `setup.py` only | TOML writing (stdlib `tomllib` is read-only) |
 
-`__init__.py` imports structlog for the version fallback log message and re-exports the public API from `core.py`. It does not touch typer, rich, stogger, pydantic, or pytest — keeping the public API importable without triggering the full framework dependency chain.
+`__init__.py` imports structlog for the version fallback log message and re-exports the public API from `core.py`. It never touches typer, rich, stogger, pydantic, or pytest, so importing the public API never triggers the full framework dependency chain.
 
 ## Fixer Layer
 
@@ -53,7 +63,7 @@ Two fixer instances are provided:
 
 ## Output Layer
 
-`output.py` sits between the CLI and the domain layer, providing structured machine-readable output via Pydantic models. It is imported by `cli.py` only when JSON mode is active (`--json` / `--output-format json`).
+`output.py` bridges the CLI and the domain layer. It builds structured machine-readable output using Pydantic models. The CLI imports it only when JSON mode is active (`--json` / `--output-format json`).
 
 The module contains:
 
@@ -61,9 +71,9 @@ The module contains:
 - **Serializer** — `build_output()` converts internal `TypeCheckResult` dataclasses from `core.py` into the Pydantic output tree, then serializes to JSON.
 - **Schema export** — `export_schema()` exposes the JSON Schema for validation and tooling integration.
 
-The stdout/stderr split is enforced at the CLI layer: JSON payload goes to stdout (pipeable), all diagnostic logging goes to stderr via stogger. `output.py` itself is transport-agnostic — it builds data structures, the CLI decides where they go.
+The CLI enforces the stdout/stderr split: JSON payload goes to stdout (pipeable), all diagnostic logging goes to stderr via stogger. `output.py` is transport-agnostic — it builds data structures, the CLI decides where they go.
 
-`TypeCheckResult` in `core.py` remains a plain dataclass. The output layer bridges to Pydantic via converter functions, keeping the domain layer dependency-free.
+`TypeCheckResult` in `core.py` stays a plain dataclass. Converter functions in the output layer bridge to Pydantic, so the domain layer stays dependency-free.
 
 ## Public API Boundary
 
@@ -83,13 +93,13 @@ batou-type ships bundled `.pyi` type stubs for `batou` and `batou_ext` inside `v
 1. Check for an **installed** stub package (e.g., `batou-stubs` via pip).
 2. If not found, fall back to the **vendored** stubs bundled with batou-type.
 
-This two-tier resolution means batou-type works out-of-the-box without requiring separate stub installations, while allowing projects to override with external stubs if needed. The `version` subcommand shows which stubs are loaded and whether they are vendored or external.
+This two-tier resolution lets batou-type work out of the box — no separate stub installation needed. Projects can still override with external stubs. The `version` subcommand shows which stubs are loaded and whether they come from the vendor directory or an external package.
 
 The vendored stubs also serve a **migration testing** purpose: installing a newer batou-type with updated stubs in an existing deployment reveals type errors from API changes *before* the actual batou upgrade.
 
 ## Entry Points
 
-Two entry points defined in `pyproject.toml` connect the package to the outside world:
+`pyproject.toml` defines two entry points that connect the package to the outside world:
 
 - **`console_scripts`** — `batou-type` maps to `batou_type.cli:app`, the typer application.
 - **`pytest11`** — `batou_type` maps to `batou_type.pytest_plugin`, registering the `--batou-ty` flag.

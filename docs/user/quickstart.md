@@ -5,12 +5,11 @@ Type-check your batou deployment components to catch errors before deploying.
 ## Prerequisites
 
 - A batou deployment with a `components/` directory containing Python files
-- `batou-type` installed (e.g. `uv add --dev batou-type` or `pip install batou-type`)
+- `batou-type` installed (`uv add --dev batou-type` or `pip install batou-type`)
 
-The default type checker ([ty](https://github.com/astral-sh/ty)) is installed
-automatically as a dependency.
+The default type checker ([ty](https://github.com/astral-sh/ty)) is installed automatically as a dependency.
 
-## Run Your First Check
+## Run your first check
 
 From inside your deployment directory:
 
@@ -18,10 +17,9 @@ From inside your deployment directory:
 $ batou-type check
 ```
 
-This discovers all `components/**/*.py` files and type-checks them with ty (the
-default).
+Discovers all `components/**/*.py` files and type-checks them with ty.
 
-When all components pass:
+Expected output when all components pass:
 
 ```{code-block} text
 Found 1 project(s)
@@ -32,10 +30,9 @@ webserver passed type check (ty)
 All 3 component(s) passed
 ```
 
-## When Components Have Errors
+## When components have errors
 
-Type errors are shown inline.
-The command exits with code **1**:
+Type errors appear inline. The command exits with code **1**:
 
 ```{code-block} text
 Found 1 project(s)
@@ -51,32 +48,18 @@ webserver passed type check (ty)
 ============================ 1 component(s) failed type check (ty) ============================
 ```
 
-Fix the reported issues in your components and re-run until all checks pass.
+Fix the reported issues and re-run until all checks pass.
 
-## Check a Specific Directory
+## Check a specific directory
 
 ```{code-block} shell
 $ batou-type check /path/to/deployment
 ```
 
-You can pass multiple paths.
-If a directory is not itself a batou project, `batou-type` scans its subdirectories for
-projects that contain a `components/` directory.
+Pass multiple paths to check several directories. When a directory is not itself a batou project, `batou-type` scans its subdirectories for projects with a `components/` directory.
 
-## Common Issues
+## Next steps
 
-No components/ directory
-  `batou-type check` reports nothing or errors because no batou project was found.
-  Create a `components/` directory in your deployment root with at least one `.py` file.
-
-Empty components/ directory
-  `Found 0 component(s)` — nothing to check.
-  Add at least one component file (e.g. `components/myapp/component.py`).
-
-Permission errors
-  `Permission denied` when reading component files.
-  Check file permissions: `ls -la components/`. Fix with `chmod -R +r components/`.
-
-## Next Steps
-
-- [Usage](usage.md) — checker selection, autofix flags, JSON output, pytest integration
+- [Autofix](autofix.md) — preview and apply automatic fixes
+- [pytest integration](pytest.md) — add type checks to your test suite
+- [Reference](reference.md) — all flags, exit codes, JSON format

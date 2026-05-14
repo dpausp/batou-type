@@ -93,7 +93,7 @@ def _detect_all_stubs() -> list[StubInfo]:
 
 @app.command()
 def version() -> None:
-    """Show version information."""
+    """Prints batou-type version and available stub packages with their locations."""
     console.print(f"batou-type [cyan]{__version__}[/]")
     for info in _detect_all_stubs():
         if info.version and info.path:
@@ -550,34 +550,34 @@ def run_fix(
 def check(
     paths: list[Path] = typer.Argument(
         None,
-        help="Project directories to check (default: current directory)",
+        help="Scans for batou components to type-check. Non-project directories are searched for batou subdirectories (default: current directory)",
     ),
     checker: list[Checker] | None = typer.Option(
         None,
         "--checker",
         "-c",
-        help="Type checker(s) to run (default: ty)",
+        help="Which type checker backs the analysis. Pass multiple times to run several (default: ty)",
     ),
     verbose: bool = typer.Option(
         False,
         "--verbose",
         "-v",
-        help="Show detailed debug info (PYTHONPATH, site-packages)",
+        help="Shows PYTHONPATH, site-packages paths, and per-component checker details",
     ),
     ty_args: str = typer.Option(
         "",
         "--ty-args",
-        help='Extra flags passed to ty, e.g. --ty-args "--output-format concise"',
+        help='Forwards flags directly to the ty checker, e.g. --ty-args "--output-format concise"',
     ),
     output_format: Literal["human", "json"] = typer.Option(
         "human",
         "--output-format",
-        help="Output format: human (default) or json",
+        help="human prints colored terminal output; json prints machine-readable results to stdout",
     ),
     json_output: bool = typer.Option(
         False,
         "--json",
-        help="Output results as JSON to stdout (shorthand for --output-format json)",
+        help="Prints machine-readable JSON — same as --output-format json",
     ),
     show_schema: bool = typer.Option(
         False,
@@ -587,7 +587,7 @@ def check(
     fix: Annotated[
         bool,
         typer.Option(
-            "--fix", help="Apply automated fixes for common type-check diagnostics"
+            "--fix", help="Automatically fixes common type-check errors in-place"
         ),
     ] = False,
     diff: Annotated[
@@ -599,7 +599,8 @@ def check(
     fix_only: Annotated[
         bool,
         typer.Option(
-            "--fix-only", help="Fix and suppress remaining error report (implies --fix)"
+            "--fix-only",
+            help="Fixes what it can, skips the error summary (implies --fix)",
         ),
     ] = False,
     virtual: Annotated[
@@ -609,7 +610,7 @@ def check(
         ),
     ] = False,
 ) -> None:
-    """Type-check batou deployment components."""
+    """Type-check batou deployment components against bundled stubs."""
     if show_schema:
         import json as _json
 
@@ -662,18 +663,22 @@ def check(
 def setup(
     path: Annotated[
         Path | None,
-        typer.Argument(help="Path to batou project directory."),
+        typer.Argument(
+            help="Sets up type checking in this batou project (default: current directory)"
+        ),
     ] = None,
     checkers: Annotated[
         str | None,
-        typer.Option(help="Comma-separated list of checkers to configure."),
+        typer.Option(
+            help="Installs stubs and config for these checkers (default: all supported)"
+        ),
     ] = None,
     dry_run: Annotated[
         bool,
-        typer.Option("--dry-run", help="Preview changes without writing."),
+        typer.Option("--dry-run", help="Shows what would change without writing files"),
     ] = False,
 ) -> None:
-    """Configure project for IDE-native type checking."""
+    """Sets up pyproject.toml and stubs for IDE-native type checking of batou components."""
     target = (path or Path.cwd()).resolve()
 
     if not is_batou_project(target):

@@ -6,5 +6,8 @@ Guides for using batou-type in your batou deployments.
 :maxdepth: 2
 
 quickstart
-usage
+reference
+autofix
+pytest
+migration
 ```

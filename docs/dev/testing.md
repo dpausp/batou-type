@@ -2,7 +2,7 @@
 
 The test suite validates correctness, architecture, and the public API contract with minimal mocking.
 
-Unit and integration tests exercise real code paths without test doubles: real filesystem via `tmp_path`, real pytest plugin via `pytester`, real fix pipeline on temporary projects, real subprocesses for E2E. The exception is `test_fixer_integration.py`, which uses `unittest.mock.patch` to isolate CLI flag dispatch logic (verifying that `--diff` implies `--fix-only` implies `--fix`) without running the full check-fix pipeline. These are the only mocks in the suite.
+Unit and integration tests exercise real code paths with real dependencies: `tmp_path` for filesystem, `pytester` for the plugin, real subprocesses for E2E. The only exception is `test_fixer_integration.py`, which uses `unittest.mock.patch` to isolate CLI flag dispatch logic (checking that `--diff` implies `--fix-only` implies `--fix`). These are the only mocks in the suite.
 
 ## Test Files and Their Role
 
@@ -17,6 +17,8 @@ Unit and integration tests exercise real code paths without test doubles: real f
 | `test_architecture.py` | Architecture enforcement via `pytest-archon` import rules |
 | `test_refactor_contract.py` | AST-based structural contracts (module existence, import boundaries, public API) |
 | `test_attribute_types.py` | Attribute type correctness in vendor stubs |
+| `test_autofix_missing_imports.py` | Spec validation tests for autofix missing-import fixer |
+| `test_setup_command.py` | Spec validation tests for setup command |
 
 | `test_init.py` | Public API importability tests — verifies `__all__` exports are importable |
 ## Architecture Enforcement
@@ -28,11 +30,11 @@ Unit and integration tests exercise real code paths without test doubles: real f
 - **Cross-layer isolation** — CLI and plugin must not import each other; `__main__.py` may only import from `cli.py`.
 - **Init purity** — `__init__.py` must only import from `core.py`, never from `cli.py` or `pytest_plugin.py`.
 
-These rules are negative constraints ("must not import X") checked against the actual import graph, not convention. They make accidental layer violations fail at CI time.
+These rules specify negative constraints ("must not import X") and check them against the actual import graph, not convention. Accidental layer violations fail at CI time.
 
 ## Coverage Characteristics
 
-Measured coverage does not tell the full story because E2E tests invoke the CLI as a subprocess — coverage tooling does not instrument the child process.
+Coverage reports don't tell the full story. E2E tests invoke the CLI as a subprocess, so coverage tooling never sees the child process.
 
 ### Coverage Tiers
 
