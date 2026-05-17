@@ -548,42 +548,56 @@ def run_fix(
 
 @app.command()
 def check(
-    paths: list[Path] = typer.Argument(
-        None,
-        help="Scans for batou components to type-check. Non-project directories are searched for batou subdirectories (default: current directory)",
-    ),
-    checker: list[Checker] | None = typer.Option(
-        None,
-        "--checker",
-        "-c",
-        help="Which type checker backs the analysis. Pass multiple times to run several (default: ty)",
-    ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Shows PYTHONPATH, site-packages paths, and per-component checker details",
-    ),
-    ty_args: str = typer.Option(
-        "",
-        "--ty-args",
-        help='Forwards flags directly to the ty checker, e.g. --ty-args "--output-format concise"',
-    ),
-    output_format: Literal["human", "json"] = typer.Option(
-        "human",
-        "--output-format",
-        help="human prints colored terminal output; json prints machine-readable results to stdout",
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Prints machine-readable JSON — same as --output-format json",
-    ),
-    show_schema: bool = typer.Option(
-        False,
-        "--show-schema",
-        help="Print the JSON Schema for the output format and exit",
-    ),
+    paths: Annotated[
+        list[Path] | None,
+        typer.Argument(
+            help="Scans for batou components to type-check. Non-project directories are searched for batou subdirectories (default: current directory)",
+        ),
+    ] = None,
+    checker: Annotated[
+        list[Checker] | None,
+        typer.Option(
+            "--checker",
+            "-c",
+            help="Which type checker backs the analysis. Pass multiple times to run several (default: ty)",
+        ),
+    ] = None,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Shows PYTHONPATH, site-packages paths, and per-component checker details",
+        ),
+    ] = False,
+    ty_args: Annotated[
+        str,
+        typer.Option(
+            "--ty-args",
+            help='Forwards flags directly to the ty checker, e.g. --ty-args "--output-format concise"',
+        ),
+    ] = "",
+    output_format: Annotated[
+        Literal["human", "json"],
+        typer.Option(
+            "--output-format",
+            help="human prints colored terminal output; json prints machine-readable results to stdout",
+        ),
+    ] = "human",
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Prints machine-readable JSON — same as --output-format json",
+        ),
+    ] = False,
+    show_schema: Annotated[
+        bool,
+        typer.Option(
+            "--show-schema",
+            help="Print the JSON Schema for the output format and exit",
+        ),
+    ] = False,
     fix: Annotated[
         bool,
         typer.Option(
