@@ -19,3 +19,6 @@ components/app/component.py:42: error: unresolved-attribute  [ty]
 
 Found 1 error in 1 file (checked 12 component files)
 ```
+
+- [Reference](reference.md) — all flags and exit codes
+- [Quickstart](quickstart.md) — initial setup

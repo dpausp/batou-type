@@ -6,6 +6,8 @@ Add type checking to your pytest test suite with `--batou-ty`:
 $ pytest --batou-ty
 ```
 
+The plugin registers automatically via the `pytest11` entry point — no extra configuration needed.
+
 The plugin collects all `components/**/*.py` files as test items, runs ty on each component before the test session, and reports type errors as test failures.
 
 Each component file appears as a single test item marked with the `batou_ty` marker.

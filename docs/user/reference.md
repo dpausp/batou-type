@@ -22,6 +22,8 @@ Pass additional arguments to ty with `--ty-args`:
 $ batou-type check --ty-args "--output-format concise"
 ```
 
+Available formats: `concise`, `rich` (default). See `ty --help` for the full list.
+
 ## JSON Output
 
 ```{code-block} shell

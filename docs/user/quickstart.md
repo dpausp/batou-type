@@ -20,6 +20,7 @@ $ batou-type check
 Discovers all `components/**/*.py` files and type-checks them with ty.
 
 Expected output when all components pass:
+Counts depend on your directory structure — one project per `components/` directory, one component per `.py` file.
 
 ```{code-block} text
 Found 1 project(s)
@@ -63,3 +64,4 @@ Pass multiple paths to check several directories. When a directory is not itself
 - [Autofix](autofix.md) — preview and apply automatic fixes
 - [pytest integration](pytest.md) — add type checks to your test suite
 - [Reference](reference.md) — all flags, exit codes, JSON format
+- Run `batou-type setup` once for IDE-native type checking (zero-config `ty check components/`)

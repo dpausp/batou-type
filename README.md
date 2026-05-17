@@ -32,4 +32,4 @@ Exit code **0** — no errors (or no component files found). Exit code **1** —
 - **Only checks `components/**/*.py`** — other Python files in your project are ignored
 - **Stub coverage isn't complete** — some batou APIs may not have stubs yet, which can cause false positives. [Report them](https://github.com/flyingcircusio/batou-type/issues)
 
-[Full documentation](docs/user/quickstart.md)
+[Full documentation](docs/user/index.md)

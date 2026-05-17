@@ -41,7 +41,7 @@ Coverage reports don't tell the full story. E2E tests invoke the CLI as a subpro
 | Tier | Modules | What this means |
 |------|---------|-----------------|
 | **Well-tested** | `core.py`, `output.py`, `fixer.py`, `pytest_plugin.py` | Directly imported by unit and integration tests. Measured coverage reflects real usage. |
-| **Functionally tested, low measured coverage** | `cli.py` | E2E subprocess tests in `test_functional.py` exercise every subcommand and flag. Coverage tooling does not see subprocess execution, so measured numbers understate actual coverage. |
+| **Functionally tested, measured coverage incomplete** | `cli.py` | E2E subprocess tests in `test_functional.py` exercise every subcommand and flag. Coverage tooling does not see subprocess execution, so measured numbers understate actual coverage. |
 | **Trivial** | `__init__.py`, `__main__.py` | Re-exports and a two-line trampoline. No meaningful logic to test beyond what the contract tests verify. |
 
 When reading coverage reports, treat `cli.py` as tested-by-E2E rather than undertested. The subprocess tests assert on exit codes, stdout, and stderr — they verify behavior end-to-end.

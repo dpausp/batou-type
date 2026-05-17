@@ -6,6 +6,20 @@
 
 **`self._` dereferencing** (`unresolved-attribute`): transforms `self += X` to `self += (_ := X)` where `self._` is referenced in the same scope, then replaces `self._` with `_`.
 
+Example transformation:
+
+```diff
+--- a/components/database/component.py
++++ b/components/database/component.py
+@@ -1,4 +1,4 @@
+ class Database(Component):
+     def configure(self):
+-        self += PostgreSQL(port=5432)
+-        self._.port = 5432
++        self += (_ := PostgreSQL(port=5432))
++        _.port = 5432
+```
+
 ## Preview fixes
 
 ```{code-block} shell
