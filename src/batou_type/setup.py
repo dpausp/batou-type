@@ -1,8 +1,6 @@
 """Project setup: copy stubs, write checker config to pyproject.toml.
 
 Stdlib + structlog + tomli-w only. No imports from other batou_type modules.
-
-Spec: .agents/impl_specs/setup-command.md
 """
 
 import re
@@ -22,7 +20,7 @@ VALID_CHECKERS: list[str] = ["ty", "mypy", "pyright"]
 
 CHECKER_CONFIGS: dict[str, dict] = {
     "ty": {
-        "extra-search-paths": ["stubs"],
+        "environment": {"extra-paths": ["stubs"]},
         "src": {"include": ["components"]},
     },
     "mypy": {
@@ -67,7 +65,9 @@ def copy_stubs(target_dir: Path, vendor_dir: Path) -> list[Path]:
             if p.is_file():
                 copied.append(p)
     log.info(
-        "stubs-copied", _replace_msg="Copied {count} stub file(s)", count=len(copied)
+        "stubs-copied",
+        count=len(copied),
+        _replace_msg="Copied {count} stub file(s) to stubs/",
     )
     return copied
 
@@ -117,6 +117,7 @@ def _insert_markers(toml_str: str, checkers: list[str]) -> str:
     """Insert MANAGED_MARKER comment before managed [tool.xxx] sections."""
     result = toml_str
     for checker in checkers:
+        # XXX: broken for nested tables like tool.ty.src
         header = f"[tool.{checker}]"
         marked_header = f"{MANAGED_MARKER}\n{header}"
         if marked_header not in result:
@@ -179,7 +180,7 @@ def write_checker_config(
     log.info(
         "checker-config-written",
         _replace_msg="Wrote config for {checkers}",
-        checkers=checkers,
+        checkers=", ".join(checkers),
     )
 
     if had_existing:
