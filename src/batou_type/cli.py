@@ -91,6 +91,19 @@ def _detect_all_stubs() -> list[StubInfo]:
     ]
 
 
+@app.callback()
+def main(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed debug info (PYTHONPATH, site-packages)",
+    ),
+):
+    stogger.init_logging(syslog_identifier="batou-type", verbose=verbose)
+    log.debug("batou-type-main", verbose=verbose, version=__version__)
+
+
 @app.command()
 def version() -> None:
     """Show version information."""
@@ -558,12 +571,6 @@ def check(
         "-c",
         help="Type checker(s) to run (default: ty)",
     ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Show detailed debug info (PYTHONPATH, site-packages)",
-    ),
     ty_args: str = typer.Option(
         "",
         "--ty-args",
@@ -618,13 +625,11 @@ def check(
         typer.echo(_json.dumps(export_schema(), indent=2))
         raise typer.Exit(0)
 
-    stogger.init_logging(verbose=verbose)
     log.debug(
         "cli-invoked",
         command="check",
         paths=[str(p) for p in (paths or [Path.cwd()])],
         json_mode=json_output or output_format == "json",
-        verbose=verbose,
     )
     effective_format = "json" if json_output else output_format
     json_mode = effective_format == "json"
