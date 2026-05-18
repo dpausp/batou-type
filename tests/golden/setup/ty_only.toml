@@ -1,0 +1,10 @@
+[project]
+name = "TEST_PROJECT_NAME"
+version = "0.1.0"
+
+# managed by batou-type setup
+[tool.ty.environment]
+extra-paths = ["stubs"]
+
+[tool.ty.src]
+include = ["components"]

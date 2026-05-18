@@ -1,0 +1,25 @@
+[project]
+name = "example-clean-project"
+version = "0.1.0"
+description = "Example batou project with no type errors"
+dependencies = ["batou", "batou_ext", "boto", "httpx>=0.28.1"]
+requires-python = ">=3.12"
+
+# managed by batou-type setup
+[tool.ty.environment]
+extra-paths = ["stubs"]
+
+[tool.ty.src]
+include = ["components"]
+
+# managed by batou-type setup
+[tool.mypy]
+mypy_path = "stubs"
+explicit_package_bases = true
+check_untyped_defs = true
+modules = ["components"]
+
+# managed by batou-type setup
+[tool.pyright]
+include = ["components"]
+stubPath = "stubs"
