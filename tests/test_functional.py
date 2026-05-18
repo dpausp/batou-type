@@ -61,12 +61,12 @@ class TestVersion:
         """Version command shows batou-type version."""
         result = run_cli("version", cwd=tmp_path)
         assert result.returncode == 0
-        assert "batou-type" in result.stdout.lower()
+        assert "batou-type" in (result.stdout + result.stderr).lower()
 
     def test_version_shows_stub_info(self, tmp_path) -> None:
         """Version command shows stub package info."""
         result = run_cli("version", cwd=tmp_path)
-        assert "batou-stubs" in result.stdout.lower()
+        assert "batou-stubs" in (result.stdout + result.stderr).lower()
 
 
 class TestCheck:
@@ -337,7 +337,8 @@ def test_projects_found_logs_info(tmp_path, log) -> None:
     _run_check_capture(log, paths=[project])
     assert log.has("projects-found")
     events = {e["event"]: e for e in log.events}
-    assert events["projects-found"]["count"] == 1
+    events = {e["event"]: e for e in log.events}
+    assert events["projects-found"]["project_count"] == 1
 
 
 def test_components_passed_logs_info(tmp_path, log) -> None:
@@ -354,7 +355,9 @@ def test_components_failed_logs_info(tmp_path, log) -> None:
     )
     _run_check_capture(log, paths=[project])
     assert log.has("components-failed")
-
+    assert log.has("components-failed-header")
+    assert log.has("components-failed-project")
+    assert log.has("components-failed-summary")
 
 def test_checker_unavailable_logs_error(tmp_path, log) -> None:
     """Unavailable checker emits checker-unavailable event."""
@@ -415,6 +418,82 @@ def test_setup_conflict_logs_error(tmp_path, log) -> None:
         pass
     assert log.has("setup-conflict")
 
+def test_version_logs_events(log) -> None:
+    """Version command emits version and stub-info events."""
+    from batou_type.cli import version
+
+    version()
+    assert log.has("version")
+    assert log.has("stub-info")
+
+
+def test_stub_not_installed_logs_warning(log) -> None:
+    """Missing stub emits stub-not-installed event."""
+    from unittest.mock import patch
+
+    from batou_type.cli import version, StubInfo
+
+    with patch(
+        "batou_type.cli._detect_all_stubs",
+        return_value=[StubInfo(name="test-stubs", version=None, path=None)],
+    ):
+        version()
+    assert log.has("stub-not-installed")
+
+
+def test_setup_not_batou_project_logs_error(tmp_path, log) -> None:
+    """Setup on non-batou directory emits not-a-batou-project event."""
+    import click
+
+    from batou_type.cli import setup
+
+    try:
+        setup(path=tmp_path)
+    except (SystemExit, click.exceptions.Exit):
+        pass
+    assert log.has("not-a-batou-project")
+
+
+def test_setup_unknown_checkers_logs_error(tmp_path, log) -> None:
+    """Setup with unknown checkers emits unknown-checkers event."""
+    import click
+
+    from batou_type.cli import setup
+
+    (tmp_path / "components").mkdir()
+    try:
+        setup(path=tmp_path, checkers="nonexistent")
+    except (SystemExit, click.exceptions.Exit):
+        pass
+    assert log.has("unknown-checkers")
+
+
+def test_setup_complete_logs_info(tmp_path, log) -> None:
+    """Successful setup emits setup-complete event."""
+    import click
+
+    from batou_type.cli import setup
+
+    (tmp_path / "components").mkdir()
+    try:
+        setup(path=tmp_path)
+    except (SystemExit, click.exceptions.Exit):
+        pass
+    assert log.has("setup-complete")
+
+
+def test_setup_dry_run_logs_info(tmp_path, log) -> None:
+    """Dry run setup emits setup-dry-run event."""
+    import click
+
+    from batou_type.cli import setup
+
+    (tmp_path / "components").mkdir()
+    try:
+        setup(path=tmp_path, dry_run=True)
+    except (SystemExit, click.exceptions.Exit):
+        pass
+    assert log.has("setup-dry-run")
 
 class TestMainModule:
     """Tests for python -m batou_type trampoline (__main__.py)."""
@@ -423,7 +502,7 @@ class TestMainModule:
         """python -m batou_type version exercises __main__.py trampoline."""
         result = run_cli("version", cwd=tmp_path)
         assert result.returncode == 0
-        assert "batou-type" in result.stdout.lower()
+        assert "batou-type" in (result.stdout + result.stderr).lower()
 
     def test_python_m_help(self, tmp_path) -> None:
         """python -m batou_type --help exercises __main__.py trampoline."""

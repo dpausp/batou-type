@@ -71,6 +71,21 @@ def copy_stubs(target_dir: Path, vendor_dir: Path) -> list[Path]:
     )
     return copied
 
+def _is_checker_section(line: str, checker: str) -> bool:
+    """Return True if line is a TOML section header for the given checker.
+
+    Matches both exact ``[tool.{checker}]`` and nested tables like
+    ``[tool.{checker}.environment]``.
+    """
+    stripped = line.strip()
+    prefix = f"[tool.{checker}"
+    if not stripped.startswith(prefix):
+        return False
+    next_char = stripped[len(prefix) : len(prefix) + 1]
+    matched = next_char in ("]", ".")
+    if matched:
+        log.debug("checker-section-found", header=stripped)
+    return matched
 
 def _find_unmanaged_sections(raw_text: str, checkers: list[str]) -> list[str]:
     """Find checker sections that exist without the managed marker."""
@@ -78,9 +93,8 @@ def _find_unmanaged_sections(raw_text: str, checkers: list[str]) -> list[str]:
     lines = raw_text.splitlines()
 
     for checker in checkers:
-        header = f"[tool.{checker}]"
         for i, line in enumerate(lines):
-            if line.strip() == header:
+            if _is_checker_section(line, checker):
                 marker_found = False
                 for j in range(i - 1, -1, -1):
                     stripped = lines[j].strip()
@@ -91,7 +105,7 @@ def _find_unmanaged_sections(raw_text: str, checkers: list[str]) -> list[str]:
                     break
 
                 if not marker_found:
-                    conflicting.append(header)
+                    conflicting.append(line.strip())
                 break
 
     if conflicting:
@@ -115,15 +129,19 @@ def _inline_arrays(toml_str: str) -> str:
 
 def _insert_markers(toml_str: str, checkers: list[str]) -> str:
     """Insert MANAGED_MARKER comment before managed [tool.xxx] sections."""
-    result = toml_str
+    lines = toml_str.splitlines()
     for checker in checkers:
-        # XXX: broken for nested tables like tool.ty.src
-        header = f"[tool.{checker}]"
-        marked_header = f"{MANAGED_MARKER}\n{header}"
-        if marked_header not in result:
-            result = result.replace(header, marked_header)
-            log.debug("marker-inserted", header=header)
-    return result
+        for i, line in enumerate(lines):
+            if _is_checker_section(line, checker):
+                header = line.strip()
+                # Check if marker already on line before
+                if i > 0 and lines[i - 1].strip() == MANAGED_MARKER:
+                    log.debug("marker-exists", header=header)
+                else:
+                    lines.insert(i, MANAGED_MARKER)
+                    log.debug("marker-inserted", header=header)
+                break
+    return "\n".join(lines)
 
 
 def write_checker_config(

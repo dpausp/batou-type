@@ -107,15 +107,13 @@ def main(
 @app.command()
 def version() -> None:
     """Prints batou-type version and available stub packages with their locations."""
-    console.print(f"batou-type [cyan]{__version__}[/]")
+    log.info("version", _replace_msg="batou-type {version}", version=__version__)
     for info in _detect_all_stubs():
         if info.version and info.path:
             label = "vendored" if info.vendored else info.version
-            console.print(
-                f"  [cyan]{info.name}[/] [dim]{label}[/] @ [dim]{info.path}[/]"
-            )
+            log.info("stub-info", _replace_msg="  {name} {label} @ {path}", name=info.name, label=label, path=info.path)
         else:
-            console.print(f"  [yellow]{info.name}[/] [dim]<not installed>[/]")
+            log.warning("stub-not-installed", _replace_msg="  {name} <not installed>", name=info.name)
 
 
 _ERROR_PATTERN = re.compile(r"\berror\b", re.IGNORECASE)
@@ -181,7 +179,7 @@ def run_check(
         raise typer.Exit(0)
 
     log.info(
-        "projects-found", _replace_msg="Found {count} project(s)", count=len(projects)
+        "projects-found", _replace_msg="Found {project_count} project(s)", project_count=len(projects)
     )
 
     checkers = checker or [Checker.ty]
@@ -210,7 +208,7 @@ def run_check(
         if not components:
             plog.debug("project-skip-no-components")
             continue
-        plog.debug("components-found", count=len(components))
+        plog.debug("components-found", component_count=len(components))
 
         # Detect project venv (check_all adds its site-packages to search paths)
         venv = find_project_venv(project)
@@ -222,9 +220,10 @@ def run_check(
 
         plog.info(
             "checking-components",
-            _replace_msg="Checking {count} component(s) in {project}",
-            count=len(components),
+            _replace_msg="Checking {component_count} component(s) in {project}",
+            component_count=len(components),
         )
+        plog.debug("check-all-start", checkers=[c.value for c in checkers], extra_search_paths=extra_search_paths)
         results = check_all(
             project,
             checkers,
@@ -279,16 +278,16 @@ def run_check(
         all_failed_names = [name for names in failed_summary.values() for name in names]
         log.warning(
             "components-failed",
-            _replace_msg="{count} component(s) failed: {names}",
-            count=total_failed,
+            _replace_msg="{failed_count} component(s) failed: {names}",
+            failed_count=total_failed,
             names=", ".join(all_failed_names),
         )
     else:
         total_count = len(all_results) or 1
         log.info(
             "components-passed",
-            _replace_msg="All {count} component(s) passed",
-            count=total_count,
+            _replace_msg="All {passed_count} component(s) passed",
+            passed_count=total_count,
         )
 
     # JSON mode: output results
@@ -303,11 +302,13 @@ def run_check(
     # Human mode: final summary
     if total_failed:
         checker_names = "/".join(c.value for c in checkers)
-        console.print(f"[red]{'=' * 46} FAILED COMPONENTS {'=' * 46}[/]")
+        log.error("components-failed-header", _replace_msg="  FAILED COMPONENTS")
         for project, comp_names in failed_summary.items():
-            console.print(f"  [red]{project}[/]: {', '.join(comp_names)}")
-        console.print(
-            f"[red]{'=' * 28} {total_failed} component(s) failed type check ({checker_names}) {'=' * 28}[/]"
+            log.error("components-failed-project", _replace_msg="  {project}: {names}", project=project, names=", ".join(comp_names))
+        log.error(
+            "components-failed-summary",
+            _replace_msg="  {total_failed} component(s) failed type check ({checkers})",
+            total_failed=total_failed, checkers=checker_names,
         )
 
     raise typer.Exit(1 if total_failed else 0)
@@ -364,6 +365,7 @@ def run_fix(
 
     checkers = checker or [Checker.ty]
     fixers = [ADD_MISSING_IMPORT, SELF_DEREF]
+    log.debug("fix-fixers", fixers=[f.slug for f in fixers])
 
     all_results: list[TypeCheckResult] = []
     all_fixed_files: list[tuple[str, str, str]] = []
@@ -439,6 +441,7 @@ def run_fix(
                 all_fixed_files.append((file_path_str, source, current))
 
         all_results.extend(results)
+        flog.debug("fix-files-changed", count=len(all_fixed_files))
 
     # Handle output flags — diff-generation, virtual-mode-impl, fix-only-semantics
     if not all_fixed_files:
@@ -646,6 +649,7 @@ def check(
     )
     effective_format = "json" if json_output else output_format
     json_mode = effective_format == "json"
+    log.debug("check-mode", json_mode=json_mode, fix=fix, diff=diff, fix_only=fix_only)
 
     parsed_ty_args = shlex.split(ty_args) if ty_args else []
 
@@ -697,17 +701,19 @@ def setup(
 ) -> None:
     """Sets up pyproject.toml and stubs for IDE-native type checking of batou components."""
     target = (path or Path.cwd()).resolve()
+    log.debug("setup-target", target=str(target))
 
     if not is_batou_project(target):
-        console.print(f"[red]Not a batou project: {target}[/]")
+        log.error("not-a-batou-project", _replace_msg="Not a batou project: {target}", target=target)
         raise typer.Exit(code=1)
 
     selected = VALID_CHECKERS
+    log.debug("setup-checkers", selected=selected)
     if checkers:
         selected = [c.strip() for c in checkers.split(",")]
         invalid = [c for c in selected if c not in VALID_CHECKERS]
         if invalid:
-            console.print(f"[red]Unknown checkers: {', '.join(invalid)}[/]")
+            log.error("unknown-checkers", _replace_msg="Unknown checkers: {checkers}", checkers=", ".join(invalid))
             raise typer.Exit(code=1)
 
     try:
@@ -715,17 +721,13 @@ def setup(
     except SetupError as exc:
         log.exception(
             "setup-conflict",
-            _replace_msg="Unmanaged checker sections found",
-            sections=exc.conflicting_sections,
+            _replace_msg="Unmanaged checker sections found: {sections}",
+            sections=", ".join(exc.conflicting_sections),
         )
-        for section in exc.conflicting_sections:
-            console.print(
-                f"[red]Existing {section} section \u2014 remove or rename first[/]"
-            )
         raise typer.Exit(code=1)
 
     if not dry_run:
         copy_stubs(target, VENDOR_STUBS_PATH)
-        console.print("[green]Setup complete.[/]")
+        log.info("setup-complete", _replace_msg="Setup complete.")
     else:
-        console.print("[dim]Dry run \u2014 no files written.[/]")
+        log.info("setup-dry-run", _replace_msg="Dry run \u2014 no files written.")
