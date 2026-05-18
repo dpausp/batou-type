@@ -166,7 +166,7 @@ class TestSetupCLIRegistration:
         result = run_cli("setup", "--checkers", "ty", str(batou_project))
         assert result.returncode == 0
         content = (batou_project / "pyproject.toml").read_text()
-        assert "[tool.ty]" in content
+        assert "[tool.ty.environment]" in content
         assert "[tool.mypy]" not in content
         assert "[tool.pyright]" not in content
 
@@ -238,11 +238,11 @@ class TestPyprojectWriting:
         assert "name" in toml
 
     def test_writes_tool_ty_section(self, batou_project: Path) -> None:
-        """Writes [tool.ty] with extra-search-paths."""
+        """Writes [tool.ty.environment] with extra-paths."""
         run_cli("setup", str(batou_project))
         toml = (batou_project / "pyproject.toml").read_text()
-        assert "[tool.ty]" in toml
-        assert 'extra-search-paths = ["stubs"]' in toml
+        assert "[tool.ty.environment]" in toml
+        assert 'extra-paths = ["stubs"]' in toml
 
     def test_writes_tool_ty_src_section(self, batou_project: Path) -> None:
         """Writes [tool.ty.src] with include = ["components"]."""
@@ -356,5 +356,5 @@ class TestExistingConfigProtection:
         )
         run_cli("setup", str(batou_project))
         toml = (batou_project / "pyproject.toml").read_text()
-        assert 'extra-search-paths = ["stubs"]' in toml
+        assert 'extra-paths = ["stubs"]' in toml
         assert 'extra-search-paths = ["old"]' not in toml

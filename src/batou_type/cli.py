@@ -91,6 +91,19 @@ def _detect_all_stubs() -> list[StubInfo]:
     ]
 
 
+@app.callback()
+def main(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed debug info (PYTHONPATH, site-packages)",
+    ),
+):
+    stogger.init_logging(syslog_identifier="batou-type", verbose=verbose)
+    log.debug("batou-type-main", verbose=verbose, version=__version__)
+
+
 @app.command()
 def version() -> None:
     """Prints batou-type version and available stub packages with their locations."""
@@ -551,7 +564,7 @@ def check(
     paths: Annotated[
         list[Path] | None,
         typer.Argument(
-            help="Scans for batou components to type-check. Non-project directories are searched for batou subdirectories (default: current directory)",
+            help="Project directories to check (default: current directory)",
         ),
     ] = None,
     checker: Annotated[
@@ -559,36 +572,28 @@ def check(
         typer.Option(
             "--checker",
             "-c",
-            help="Which type checker backs the analysis. Pass multiple times to run several (default: ty)",
+            help="Type checker(s) to run (default: ty)",
         ),
     ] = None,
-    verbose: Annotated[
-        bool,
-        typer.Option(
-            "--verbose",
-            "-v",
-            help="Shows PYTHONPATH, site-packages paths, and per-component checker details",
-        ),
-    ] = False,
     ty_args: Annotated[
         str,
         typer.Option(
             "--ty-args",
-            help='Forwards flags directly to the ty checker, e.g. --ty-args "--output-format concise"',
+            help='Extra flags passed to ty, e.g. --ty-args "--output-format concise"',
         ),
     ] = "",
     output_format: Annotated[
         Literal["human", "json"],
         typer.Option(
             "--output-format",
-            help="human prints colored terminal output; json prints machine-readable results to stdout",
+            help="Output format: human (default) or json",
         ),
     ] = "human",
     json_output: Annotated[
         bool,
         typer.Option(
             "--json",
-            help="Prints machine-readable JSON — same as --output-format json",
+            help="Output results as JSON to stdout (shorthand for --output-format json)",
         ),
     ] = False,
     show_schema: Annotated[
@@ -633,13 +638,11 @@ def check(
         typer.echo(_json.dumps(export_schema(), indent=2))
         raise typer.Exit(0)
 
-    stogger.init_logging(verbose=verbose)
     log.debug(
         "cli-invoked",
         command="check",
         paths=[str(p) for p in (paths or [Path.cwd()])],
         json_mode=json_output or output_format == "json",
-        verbose=verbose,
     )
     effective_format = "json" if json_output else output_format
     json_mode = effective_format == "json"
