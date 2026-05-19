@@ -3,6 +3,7 @@
 pytest-stogger AST-scans for log.has("event-id") in test files.
 Uses pytest-structlog's `log` fixture for event capture and assertion.
 """
+
 import click
 from pathlib import Path
 from typing import Any

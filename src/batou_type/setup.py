@@ -71,6 +71,7 @@ def copy_stubs(target_dir: Path, vendor_dir: Path) -> list[Path]:
     )
     return copied
 
+
 def _is_checker_section(line: str, checker: str) -> bool:
     """Return True if line is a TOML section header for the given checker.
 
@@ -86,6 +87,7 @@ def _is_checker_section(line: str, checker: str) -> bool:
     if matched:
         log.debug("checker-section-found", header=stripped)
     return matched
+
 
 def _find_unmanaged_sections(raw_text: str, checkers: list[str]) -> list[str]:
     """Find checker sections that exist without the managed marker."""

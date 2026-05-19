@@ -4,6 +4,7 @@ Runs the real CLI as subprocess and compares the resulting pyproject.toml
 against checked-in golden files. Fails on ANY character difference —
 this catches config drift, formatting changes, and missing sections.
 """
+
 import os
 import subprocess
 import sys
@@ -16,16 +17,16 @@ BATOU_TYPE_CLI = [sys.executable, "-m", "batou_type"]
 
 # Pre-existing pyproject.toml for the "existing project" scenario
 EXISTING_PYPROJECT = (
-    '[project]\n'
+    "[project]\n"
     'name = "example-clean-project"\n'
     'version = "0.1.0"\n'
     'description = "Example batou project with no type errors"\n'
-    'dependencies = [\n'
+    "dependencies = [\n"
     '    "batou",\n'
     '    "batou_ext",\n'
     '    "boto",\n'
     '    "httpx>=0.28.1",\n'
-    ']\n'
+    "]\n"
     'requires-python = ">=3.12"\n'
 )
 
@@ -85,8 +86,7 @@ def test_existing_project_all_checkers(existing_project: Path) -> None:
     actual = (existing_project / "pyproject.toml").read_text()
     golden = (GOLDEN_DIR / "existing_all_checkers.toml").read_text()
     assert actual == golden, (
-        "Golden file mismatch!\n"
-        "--- golden (existing_all_checkers.toml)\n+++ actual\n"
+        "Golden file mismatch!\n--- golden (existing_all_checkers.toml)\n+++ actual\n"
     )
 
 
@@ -99,8 +99,7 @@ def test_fresh_project_ty_only(fresh_project: Path) -> None:
     actual = _normalize_name(actual, fresh_project)
     golden = (GOLDEN_DIR / "ty_only.toml").read_text()
     assert actual == golden, (
-        "Golden file mismatch!\n"
-        "--- golden (ty_only.toml)\n+++ actual\n"
+        "Golden file mismatch!\n--- golden (ty_only.toml)\n+++ actual\n"
     )
 
 

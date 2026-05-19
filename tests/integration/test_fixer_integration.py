@@ -3,6 +3,7 @@
 Spec decision: test-strategy — run_fix() on tmp_path projects with real component files.
 Real ty invocations, real file operations, real Diagnostic objects.
 """
+
 import re
 from pathlib import Path
 
@@ -219,9 +220,7 @@ class MyComp(Component):
 def test_virtual_mode_clean_project_exits_zero(tmp_path: Path) -> None:
     """Virtual mode on a clean project exits 0 (no fixable diagnostics)."""
     # SPEC: virtual-mode-impl — clean project with no fixable diagnostics
-    project = _make_project(
-        tmp_path, "virtual_clean", "def configure():\n    pass\n"
-    )
+    project = _make_project(tmp_path, "virtual_clean", "def configure():\n    pass\n")
     with pytest.raises(click.exceptions.Exit) as exc_info:
         run_fix(
             [project],

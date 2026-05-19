@@ -1,4 +1,5 @@
 """Unit tests for batou_type.core pure path functions."""
+
 import stat
 from pathlib import Path
 

@@ -1,4 +1,5 @@
 """E2E tests for batou-type check --fix --diff."""
+
 from pathlib import Path
 
 
@@ -20,7 +21,9 @@ class MyComp(Component):
 """
 
 
-def test_fix_diff_exits_one_when_diffs_present(tmp_path: Path, run_cli, strip_stogger_lines) -> None:
+def test_fix_diff_exits_one_when_diffs_present(
+    tmp_path: Path, run_cli, strip_stogger_lines
+) -> None:
     """--fix --diff on a project with fixable errors exits 1 (diffs present)."""
     components = tmp_path / "components"
     components.mkdir()
@@ -44,7 +47,9 @@ def test_fix_diff_exits_zero_when_clean(tmp_path: Path, run_cli) -> None:
     assert result.returncode == 0
 
 
-def test_fix_only_diff_output_format(tmp_path: Path, run_cli, strip_stogger_lines) -> None:
+def test_fix_only_diff_output_format(
+    tmp_path: Path, run_cli, strip_stogger_lines
+) -> None:
     """--fix-only --diff produces unified diff with summary line."""
     components = tmp_path / "components"
     components.mkdir()

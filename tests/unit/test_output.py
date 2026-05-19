@@ -1,4 +1,5 @@
 """Tests for the output layer: Pydantic models, converters, and serializers."""
+
 import json
 
 from pydantic import BaseModel

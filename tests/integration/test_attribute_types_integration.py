@@ -3,6 +3,7 @@
 Type-time:  ty/mypy verify assert_type() in attribute_types.py
 Runtime:    pytest instantiates AttributeTypes and checks type() matches expected
 """
+
 import os
 import sys
 from pathlib import Path
@@ -15,7 +16,9 @@ from batou.environment import Environment
 from batou.host import Host
 
 # Example project uses hyphenated directory name — add to sys.path for import
-_example_project = Path(__file__).resolve().parent.parent.parent / "examples" / "clean-project"
+_example_project = (
+    Path(__file__).resolve().parent.parent.parent / "examples" / "clean-project"
+)
 sys.path.insert(0, str(_example_project))
 
 from components.attribute_types.attribute_types import (  # noqa: E402  # ty: ignore[unresolved-import]

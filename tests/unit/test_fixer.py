@@ -4,7 +4,7 @@ Spec decision: test-strategy — fixer functions receive source string + diagnos
 assert on transformed source string comparison. No subprocess, no ty invocation.
 """
 
-from batou_type.fixer import ADD_MISSING_IMPORT, SELF_DEREF
+from batou_type.fixer import ADD_MISSING_IMPORT, Fixer, SELF_DEREF
 from batou_type.output import Diagnostic
 
 
@@ -217,3 +217,61 @@ def test_self_deref_invalid_python_returns_none() -> None:
     )
     result = SELF_DEREF.apply(source, [diag])
     assert result is None
+
+
+# --- Fixer protocol contract ---
+
+
+def test_fixer_dataclass_exists() -> None:
+    """Fixer is a dataclass with __dataclass_fields__."""
+    assert hasattr(Fixer, "__dataclass_fields__")
+
+
+def test_fixer_has_slug_field() -> None:
+    """Fixer dataclass has a 'slug' field."""
+    assert "slug" in Fixer.__dataclass_fields__
+
+
+def test_fixer_has_diagnostic_codes_field() -> None:
+    """Fixer dataclass has a 'diagnostic_codes' field."""
+    assert "diagnostic_codes" in Fixer.__dataclass_fields__
+
+
+def test_add_missing_import_fixer_registered() -> None:
+    """ADD_MISSING_IMPORT has correct slug and claims possibly-missing-submodule."""
+    assert ADD_MISSING_IMPORT.slug == "add-missing-import"
+    assert "possibly-missing-submodule" in ADD_MISSING_IMPORT.diagnostic_codes
+
+
+def test_self_deref_fixer_registered() -> None:
+    """SELF_DEREF has correct slug."""
+    assert SELF_DEREF.slug == "self-deref"
+
+
+def test_diagnostic_codes_is_frozenset() -> None:
+    """Fixer diagnostic_codes field holds a frozenset."""
+    assert isinstance(ADD_MISSING_IMPORT.diagnostic_codes, frozenset)
+
+
+def test_fixer_apply_callable() -> None:
+    """Fixer.apply is callable on registered instances."""
+    assert callable(ADD_MISSING_IMPORT.apply)
+
+
+# --- Import ordering contract ---
+
+
+def test_add_missing_import_inserts_after_existing_imports() -> None:
+    """New import goes after existing imports, before first non-import code."""
+    source = "import os\n\ncomponent = batou_ext.ssl.Certificate()\n"
+    diag = _diag(
+        message='attribute "Certificate" of module "batou_ext.ssl"',
+        code="possibly-missing-submodule",
+        line=3,
+    )
+    result = ADD_MISSING_IMPORT.apply(source, [diag])
+    assert result is not None
+    lines = result.split("\n")
+    from_idx = next(i for i, ln in enumerate(lines) if "from batou_ext.ssl" in ln)
+    comp_idx = next(i for i, ln in enumerate(lines) if "component" in ln)
+    assert from_idx < comp_idx

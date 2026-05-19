@@ -111,9 +111,19 @@ def version() -> None:
     for info in _detect_all_stubs():
         if info.version and info.path:
             label = "vendored" if info.vendored else info.version
-            log.info("stub-info", _replace_msg="  {name} {label} @ {path}", name=info.name, label=label, path=info.path)
+            log.info(
+                "stub-info",
+                _replace_msg="  {name} {label} @ {path}",
+                name=info.name,
+                label=label,
+                path=info.path,
+            )
         else:
-            log.warning("stub-not-installed", _replace_msg="  {name} <not installed>", name=info.name)
+            log.warning(
+                "stub-not-installed",
+                _replace_msg="  {name} <not installed>",
+                name=info.name,
+            )
 
 
 _ERROR_PATTERN = re.compile(r"\berror\b", re.IGNORECASE)
@@ -179,7 +189,9 @@ def run_check(
         raise typer.Exit(0)
 
     log.info(
-        "projects-found", _replace_msg="Found {project_count} project(s)", project_count=len(projects)
+        "projects-found",
+        _replace_msg="Found {project_count} project(s)",
+        project_count=len(projects),
     )
 
     checkers = checker or [Checker.ty]
@@ -223,7 +235,11 @@ def run_check(
             _replace_msg="Checking {component_count} component(s) in {project}",
             component_count=len(components),
         )
-        plog.debug("check-all-start", checkers=[c.value for c in checkers], extra_search_paths=extra_search_paths)
+        plog.debug(
+            "check-all-start",
+            checkers=[c.value for c in checkers],
+            extra_search_paths=extra_search_paths,
+        )
         results = check_all(
             project,
             checkers,
@@ -304,11 +320,17 @@ def run_check(
         checker_names = "/".join(c.value for c in checkers)
         log.error("components-failed-header", _replace_msg="  FAILED COMPONENTS")
         for project, comp_names in failed_summary.items():
-            log.error("components-failed-project", _replace_msg="  {project}: {names}", project=project, names=", ".join(comp_names))
+            log.error(
+                "components-failed-project",
+                _replace_msg="  {project}: {names}",
+                project=project,
+                names=", ".join(comp_names),
+            )
         log.error(
             "components-failed-summary",
             _replace_msg="  {total_failed} component(s) failed type check ({checkers})",
-            total_failed=total_failed, checkers=checker_names,
+            total_failed=total_failed,
+            checkers=checker_names,
         )
 
     raise typer.Exit(1 if total_failed else 0)
@@ -704,7 +726,11 @@ def setup(
     log.debug("setup-target", target=str(target))
 
     if not is_batou_project(target):
-        log.error("not-a-batou-project", _replace_msg="Not a batou project: {target}", target=target)
+        log.error(
+            "not-a-batou-project",
+            _replace_msg="Not a batou project: {target}",
+            target=target,
+        )
         raise typer.Exit(code=1)
 
     selected = VALID_CHECKERS
@@ -713,7 +739,11 @@ def setup(
         selected = [c.strip() for c in checkers.split(",")]
         invalid = [c for c in selected if c not in VALID_CHECKERS]
         if invalid:
-            log.error("unknown-checkers", _replace_msg="Unknown checkers: {checkers}", checkers=", ".join(invalid))
+            log.error(
+                "unknown-checkers",
+                _replace_msg="Unknown checkers: {checkers}",
+                checkers=", ".join(invalid),
+            )
             raise typer.Exit(code=1)
 
     try:
