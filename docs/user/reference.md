@@ -142,12 +142,12 @@ $ batou-type version
 Output:
 
 ```{code-block} text
-batou-type 1.2.3
-  batou-stubs 0.5.0 @ /path/to/batou
-  batou_ext-stubs vendored @ /path/to/vendor/batou_ext
+2026-05-19T20:03:12Z I version                        batou-type 2.8.0
+2026-05-19T20:03:12Z I stub-info                        batou-stubs vendored @ /path/to/vendor/batou
+2026-05-19T20:03:12Z I stub-info                        batou_ext-stubs vendored @ /path/to/vendor/batou_ext
 ```
 
-Stubs marked `<not installed>` means no external stub package was found and no vendored fallback exists.
+Stubs marked `<not installed>` means no external stub package was found and no vendored fallback exists. Timestamps vary per run.
 
 ## Exit Codes
 

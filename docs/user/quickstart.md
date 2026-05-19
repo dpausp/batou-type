@@ -20,33 +20,36 @@ $ batou-type check
 Discovers all `components/**/*.py` files and type-checks them with ty.
 
 Expected output when all components pass:
-Counts depend on your directory structure — one project per `components/` directory, one component per `.py` file.
 
 ```{code-block} text
-Found 1 project(s)
-Checking 3 component(s) in /deploy/my-deployment
-app passed type check (ty)
-database passed type check (ty)
-webserver passed type check (ty)
-All 3 component(s) passed
+2026-05-19T20:03:12Z I projects-found                 Found 1 project(s)
+2026-05-19T20:03:12Z I checking-components            Checking 1 component(s) in /deploy/my-deployment
+2026-05-19T20:03:13Z I component-passed               myapp passed type check (ty)
+2026-05-19T20:03:13Z I components-passed              All 1 component(s) passed
 ```
+
+Output uses structured logging: ISO timestamps, severity (`I` = info, `W` = warning, `E` = error), and event names. In a terminal, errors appear in red.
 
 ## When components have errors
 
 Type errors appear inline. The command exits with code **1**:
 
 ```{code-block} text
-Found 1 project(s)
-Checking 3 component(s) in /deploy/my-deployment
-app failed type check (ty)
-components/app/component.py:15: error: Cannot access member "misspelled_attribute" on type "Component"
-database passed type check (ty)
-webserver passed type check (ty)
-1 component(s) failed: app
-
-============================================== FAILED COMPONENTS ==============================================
-  /deploy/my-deployment: app
-============================ 1 component(s) failed type check (ty) ============================
+2026-05-19T20:03:27Z I projects-found                 Found 1 project(s)
+2026-05-19T20:03:27Z I checking-components            Checking 3 component(s) in /deploy/my-deployment
+2026-05-19T20:03:27Z E component-errors               app failed type check (ty)
+error-project/app: error[invalid-argument-type]: Argument to `Address.__init__` is incorrect
+error-project/app:   --> components/app/component.py:10:29
+error-project/app:    |
+error-project/app: 10 |         self.addr = Address(42, 8080)
+error-project/app:    |                             ^^ Expected `str`, found `Literal[42]`
+error-project/app:    |
+2026-05-19T20:03:27Z I component-passed               database passed type check (ty)
+2026-05-19T20:03:27Z I component-passed               webserver passed type check (ty)
+2026-05-19T20:03:27Z W components-failed              1 component(s) failed: app
+2026-05-19T20:03:27Z E components-failed-header         FAILED COMPONENTS
+2026-05-19T20:03:27Z E components-failed-project        /deploy/my-deployment: app
+2026-05-19T20:03:27Z E components-failed-summary        1 component(s) failed type check (ty)
 ```
 
 Fix the reported issues and re-run until all checks pass.

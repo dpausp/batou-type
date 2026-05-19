@@ -16,13 +16,13 @@ $ batou-type check
 Expected output when all components pass:
 
 ```{code-block} text
-Found 1 project(s)
-Checking 3 component(s) in /deploy/my-deployment
-app passed type check (ty)
-database passed type check (ty)
-webserver passed type check (ty)
-All 3 component(s) passed
+2026-05-19T20:03:12Z I projects-found                 Found 1 project(s)
+2026-05-19T20:03:12Z I checking-components            Checking 1 component(s) in /deploy/my-deployment
+2026-05-19T20:03:13Z I component-passed               myapp passed type check (ty)
+2026-05-19T20:03:13Z I components-passed              All 1 component(s) passed
 ```
+
+Output uses structured logging with ISO timestamps. In a terminal, errors appear in red.
 
 ```{toctree}
 :maxdepth: 2
