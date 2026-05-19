@@ -1,5 +1,4 @@
 """Tests for batou_type pytest plugin via pytester."""
-
 from _pytest.pytester import Pytester
 
 

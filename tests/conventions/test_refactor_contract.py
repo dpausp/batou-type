@@ -7,7 +7,7 @@ Currently xfail — Phase 2 makes them green.
 import ast
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parent.parent / "src" / "batou_type"
+SRC = Path(__file__).resolve().parent.parent.parent / "src" / "batou_type"
 
 
 # --- 1. cli.py exists and contains the CLI app ---
@@ -89,7 +89,7 @@ def test_main_imports_from_cli() -> None:
 
 def test_pyproject_entry_point_uses_cli() -> None:
     """pyproject.toml must reference batou_type.cli:app."""
-    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    pyproject = Path(__file__).resolve().parent.parent.parent / "pyproject.toml"
     content = pyproject.read_text()
     assert "batou_type.cli:app" in content
 
