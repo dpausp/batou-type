@@ -204,7 +204,6 @@ def run_check(
         except CheckerError:
             log.exception(
                 "checker-unavailable",
-                _replace_msg="Type checker '{checker}' is not available",
                 checker=c.value,
             )
             raise typer.Exit(2) from None
@@ -751,7 +750,6 @@ def setup(
     except SetupError as exc:
         log.exception(
             "setup-conflict",
-            _replace_msg="Unmanaged checker sections found: {sections}",
             sections=", ".join(exc.conflicting_sections),
         )
         raise typer.Exit(code=1)
