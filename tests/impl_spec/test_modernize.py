@@ -6,14 +6,11 @@ Changes covered:
   1. Keep ``from __future__ import annotations`` in core.py — required for
      Python 3.13 compatibility (TYPE_CHECKING guard with Diagnostic type).
   2. Add ``slots=True`` to all dataclass decorators in core.py.
-  3. Add ``pip-audit`` to the ``[dependency-groups.lint]`` in pyproject.toml.
+  3. Use ``uv audit`` (built into uv) instead of pip-audit for vulnerability scanning.
 """
 
 import ast
 import subprocess
-import sys
-import tomllib
-
 
 from pathlib import Path
 
@@ -93,36 +90,41 @@ def test_core_dataclasses_have_slots() -> None:
             )
 
 
-# --- 3. Add ``pip-audit`` to lint dependency group ---
+# --- 3. ``uv audit`` for vulnerability scanning ---
 
 
-def test_pip_audit_in_lint_dependencies() -> None:
-    """pyproject.toml ``[dependency-groups.lint]`` must include ``pip-audit``.
+def test_uv_audit_available() -> None:
+    """``uv audit`` must be available (built into uv, no separate package).
 
-    Phase 2 must: add ``"pip-audit"`` to the ``lint`` dependency group
-    in pyproject.toml, alongside the existing ``pyupgrade`` and ``ruff``
-    entries.
-    """
-    pyproject = ROOT / "pyproject.toml"
-    data = tomllib.loads(pyproject.read_text())
-    lint_deps = data["dependency-groups"]["lint"]
-    assert any("pip-audit" in dep for dep in lint_deps), (
-        f"pip-audit not found in dependency-groups.lint: {lint_deps}"
-    )
-
-
-def test_pip_audit_runnable() -> None:
-    """pip-audit must be installed and report its version.
-
-    Phase 2 must: add pip-audit to lint dependencies so ``uv run pip-audit``
-    works in the project environment.
+    uv audit replaces pip-audit. It is a built-in subcommand of uv,
+    so no entry in dependency-groups.lint is needed.
     """
     result = subprocess.run(
-        [sys.executable, "-m", "pip_audit", "--version"],
+        ["uv", "audit", "--help"],
         capture_output=True,
         text=True,
     )
     assert result.returncode == 0, (
-        f"pip-audit not runnable: exit {result.returncode}, "
+        f"uv audit not available: exit {result.returncode}, "
+        f"stderr={result.stderr.strip()}"
+    )
+
+
+def test_uv_audit_runnable() -> None:
+    """``uv audit`` must run successfully on the project dependencies.
+
+    Known false positives are ignored via ``--ignore``. PYSEC-2022-42969
+    is a withdrawn advisory that still appears in OSV — it affects the
+    ``py`` package and has no fix version.
+    """
+    result = subprocess.run(
+        ["uv", "audit", "--ignore", "PYSEC-2022-42969"],
+        capture_output=True,
+        text=True,
+        cwd=str(ROOT),
+    )
+    assert result.returncode == 0, (
+        f"uv audit failed: exit {result.returncode}, "
+        f"stdout={result.stdout.strip()}\n"
         f"stderr={result.stderr.strip()}"
     )
