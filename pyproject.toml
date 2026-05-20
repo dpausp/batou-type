@@ -50,6 +50,7 @@ test = [
     "pytest-structlog>=1.2",
 ]
 lint = [
+    "pip-audit",
     "pyupgrade",
     "ruff",
 ]

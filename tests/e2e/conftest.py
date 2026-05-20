@@ -39,11 +39,13 @@ def temp_project(tmp_path: Path) -> Path:
     components.mkdir()
     return tmp_path
 
+
 @pytest.fixture
 def batou_project(tmp_path: Path) -> Path:
     """Create a minimal batou project with components/ directory."""
     (tmp_path / "components").mkdir()
     return tmp_path
+
 
 @pytest.fixture
 def run_cli() -> Callable[..., subprocess.CompletedProcess[str]]:

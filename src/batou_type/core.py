@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from batou_type.output import Diagnostic
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class VenvInfo:
     """Detected venv information."""
 
@@ -106,7 +106,7 @@ class CheckerError(Exception):
     """Raised when a type checker itself fails (not installed, crash, etc.)."""
 
 
-@dataclass
+@dataclass(slots=True)
 class TypeCheckResult:
     """Result of type checking a single file."""
 
