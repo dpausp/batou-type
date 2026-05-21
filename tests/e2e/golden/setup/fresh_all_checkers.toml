@@ -14,9 +14,12 @@ include = ["components"]
 mypy_path = "stubs"
 explicit_package_bases = true
 check_untyped_defs = true
-modules = ["components"]
+files = ["components"]
+python_executable = ".venv/bin/python"
 
 # managed by batou-type setup
 [tool.pyright]
 include = ["components"]
 stubPath = "stubs"
+venvPath = "."
+venv = ".venv"
