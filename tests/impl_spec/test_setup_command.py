@@ -262,12 +262,14 @@ class TestPyprojectWriting:
         assert 'modules = ["components"]' in toml
 
     def test_writes_tool_pyright_section(self, batou_project: Path) -> None:
-        """Writes [tool.pyright] with include and stubPath."""
+        """Writes [tool.pyright] with include, stubPath, and venv config."""
         run_cli("setup", str(batou_project))
         toml = (batou_project / "pyproject.toml").read_text()
         assert "[tool.pyright]" in toml
         assert 'include = ["components"]' in toml
         assert 'stubPath = "stubs"' in toml
+        assert 'venvPath = "."' in toml
+        assert 'venv = ".venv"' in toml
 
     def test_managed_marker_present(self, batou_project: Path) -> None:
         """Comment marker '# managed by batou-type setup' on managed sections."""
