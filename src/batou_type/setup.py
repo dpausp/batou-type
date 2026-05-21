@@ -27,7 +27,8 @@ CHECKER_CONFIGS: dict[str, dict] = {
         "mypy_path": "stubs",
         "explicit_package_bases": True,
         "check_untyped_defs": True,
-        "modules": ["components"],
+        "files": ["components"],
+        "python_executable": ".venv/bin/python",
     },
     "pyright": {
         "include": ["components"],
