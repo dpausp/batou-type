@@ -32,6 +32,8 @@ CHECKER_CONFIGS: dict[str, dict] = {
     "pyright": {
         "include": ["components"],
         "stubPath": "stubs",
+        "venvPath": ".",
+        "venv": ".venv",
     },
 }
 
