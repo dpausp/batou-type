@@ -1,9 +1,22 @@
-"""Unit tests for batou_type.core pure path functions."""
+"""Unit tests for batou_type.core domain functions."""
 
 import stat
+import sys
 from pathlib import Path
 
-from batou_type.core import find_components, find_project_venv, is_batou_project
+import pytest
+
+from batou_type.core import (
+    Checker,
+    CheckerError,
+    TypeCheckResult,
+    check_all,
+    check_file,
+    ensure_checker_available,
+    find_components,
+    find_project_venv,
+    is_batou_project,
+)
 
 
 # --- find_project_venv ---
@@ -179,3 +192,119 @@ def test_find_components_results_are_sorted(tmp_path: Path) -> None:
         files.append(f)
     result = find_components(tmp_path)
     assert result == sorted(files)
+
+
+# --- ensure_checker_available ---
+
+
+def test_ensure_checker_available_ty_succeeds() -> None:
+    """ty is installed in this project."""
+    ensure_checker_available(Checker.ty)
+
+
+def test_ensure_checker_available_missing_checker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """CheckerError raised when checker binary exits non-zero."""
+    fake_python = tmp_path / "fake_python"
+    fake_python.write_text("#!/bin/sh\necho 'No module named ty' >&2\nexit 1\n")
+    fake_python.chmod(fake_python.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setattr(sys, "executable", str(fake_python))
+    with pytest.raises(CheckerError, match="not available"):
+        ensure_checker_available(Checker.ty)
+
+
+# --- check_file ---
+
+
+def test_check_file_clean(tmp_path: Path) -> None:
+    """Type-checking a clean file returns has_errors=False."""
+    f = tmp_path / "clean.py"
+    f.write_text("x: int = 42\n")
+    result = check_file(str(f), [Checker.ty])
+    assert isinstance(result, TypeCheckResult)
+    assert not result.has_errors
+    assert result.path == str(f)
+
+
+def test_check_file_with_type_error(tmp_path: Path) -> None:
+    """Type-checking a file with a type error returns has_errors=True."""
+    f = tmp_path / "error.py"
+    f.write_text('x: int = "string"\n')
+    result = check_file(str(f), [Checker.ty])
+    assert isinstance(result, TypeCheckResult)
+    assert result.has_errors
+    assert "invalid-assignment" in result.output or "string" in result.output
+
+
+def test_check_file_json_mode_with_error(tmp_path: Path) -> None:
+    """json_mode=True returns parsed Diagnostic errors on failure."""
+    f = tmp_path / "error.py"
+    f.write_text('x: int = "string"\n')
+    result = check_file(str(f), [Checker.ty], json_mode=True)
+    assert result.has_errors
+    assert result.errors is not None
+    assert len(result.errors) > 0
+    assert result.errors[0].checker == "ty"
+    assert result.errors[0].line == 1
+    assert result.errors[0].code == "invalid-assignment"
+
+
+def test_check_file_json_mode_clean(tmp_path: Path) -> None:
+    """json_mode=True with a clean file returns no parsed errors."""
+    f = tmp_path / "clean.py"
+    f.write_text("x: int = 42\n")
+    result = check_file(str(f), [Checker.ty], json_mode=True)
+    assert not result.has_errors
+    assert result.errors is None
+
+
+def test_check_file_extra_search_paths(tmp_path: Path) -> None:
+    """extra_search_paths are forwarded to ty as --extra-search-path flags."""
+    f = tmp_path / "clean.py"
+    f.write_text("x: int = 42\n")
+    extra = tmp_path / "stubs"
+    extra.mkdir()
+    result = check_file(str(f), [Checker.ty], extra_search_paths=[str(extra)])
+    assert not result.has_errors
+    assert "--extra-search-path" in result.command
+    assert str(extra) in result.command
+
+
+# --- check_all ---
+
+
+def test_check_all_with_components(tmp_path: Path) -> None:
+    """check_all type-checks all .py files in components/."""
+    comp = tmp_path / "components"
+    comp.mkdir()
+    (comp / "app.py").write_text("x: int = 42\n")
+    (comp / "db.py").write_text("y: str = 'hello'\n")
+    results = check_all(tmp_path, checkers=[Checker.ty])
+    assert len(results) == 2
+    paths = {r.path for r in results}
+    assert "components/app.py" in paths
+    assert "components/db.py" in paths
+    assert all(not r.has_errors for r in results)
+
+
+def test_check_all_non_project_dir(tmp_path: Path) -> None:
+    """check_all with no components/ dir returns empty list."""
+    results = check_all(tmp_path)
+    assert results == []
+
+
+def test_check_all_with_type_errors(tmp_path: Path) -> None:
+    """check_all reports errors and parsed diagnostics for bad files."""
+    comp = tmp_path / "components"
+    comp.mkdir()
+    (comp / "bad.py").write_text('x: int = "not an int"\n')
+    (comp / "good.py").write_text("y: int = 42\n")
+    results = check_all(tmp_path, checkers=[Checker.ty], json_mode=True)
+    assert len(results) == 2
+    bad = [r for r in results if "bad.py" in r.path][0]
+    good = [r for r in results if "good.py" in r.path][0]
+    assert bad.has_errors
+    assert bad.errors is not None
+    assert len(bad.errors) > 0
+    assert not good.has_errors

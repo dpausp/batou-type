@@ -15,7 +15,7 @@ class BatouComponentItem(pytest.Item):
 
     name = "batou_ty"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.add_marker(self.name)
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from importlib import metadata
 from importlib.resources import files
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 import stogger
 import structlog
@@ -28,7 +28,7 @@ from batou_type.core import (
     is_batou_project,
 )
 from batou_type.fixer import ADD_MISSING_IMPORT, SELF_DEREF
-from batou_type.output import Diagnostic
+from batou_type.output import CheckOutput, Diagnostic
 from batou_type.setup import (
     VALID_CHECKERS,
     SetupError,
@@ -99,7 +99,7 @@ def main(
         "-v",
         help="Show detailed debug info (PYTHONPATH, site-packages)",
     ),
-):
+) -> None:
     stogger.init_logging(syslog_identifier="batou-type", verbose=verbose)
     log.debug("batou-type-main", verbose=verbose, version=__version__)
 
@@ -134,15 +134,13 @@ def _has_error_pattern(output: str) -> bool:
     return bool(_ERROR_PATTERN.search(output))
 
 
-def run_check(
-    checker: list[Checker] | None,
-    paths: list[Path],
-    *,
-    ty_args: list[str] | None = None,
-    json_mode: bool = False,
-) -> None:
-    """Execute type checking."""
-    # Show stub versions and paths
+def _emit_json(output: CheckOutput) -> None:
+    """Emit structured JSON to stdout."""
+    print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+
+
+def _resolve_stub_paths() -> list[str]:
+    """Detect all stubs and return extra search paths for type checkers."""
     stub_infos = _detect_all_stubs()
     extra_search_paths: list[str] = []
     for info in stub_infos:
@@ -152,10 +150,12 @@ def run_check(
             extra_search_paths.append(str(Path(info.path).parent.resolve()))
         else:
             log.debug("stub-not-installed", name=info.name)
+    return extra_search_paths
 
-    log.debug("python-info", executable=sys.executable)
 
-    # Discover batou projects: direct paths + scan subdirs of non-project dirs
+def _discover_projects(paths: list[Path]) -> list[Path]:
+    """Discover batou projects from input paths (direct or by scanning children)."""
+    log.debug("discover-projects", input_count=len(paths))
     projects: list[Path] = []
     for p in paths:
         if is_batou_project(p):
@@ -166,6 +166,228 @@ def run_check(
                 for child in sorted(p.iterdir())
                 if child.is_dir() and is_batou_project(child)
             )
+    return projects
+
+
+def _verify_checkers_available(checkers: list[Checker]) -> None:
+    """Pre-check all checkers are installed. Raises typer.Exit(2) on failure."""
+    for c in checkers:
+        try:
+            ensure_checker_available(c)
+        except CheckerError:
+            log.exception("checker-unavailable", checker=c.value)
+            raise typer.Exit(2) from None
+
+
+def _display_check_results(
+    results: list[TypeCheckResult],
+    checkers: list[Checker],
+    project: Path,
+    plog: Any,
+) -> tuple[int, dict[str, list[str]]]:
+    """Display per-component results and return failure counts."""
+    log.debug("display-check-results", project=str(project), results=len(results))
+    checker_names = ", ".join(c.value for c in checkers)
+    for result in results:
+        # Skip __init__.py and empty files
+        if Path(result.path).name == "__init__.py":
+            continue
+        component_name = Path(result.path).parent.name
+        file_path = project / result.path
+        if not file_path.exists() or file_path.stat().st_size == 0:
+            plog.debug("component-empty", component=component_name)
+            continue
+        output = result.output.strip()
+        if result.has_errors or (output and _has_error_pattern(output)):
+            plog.error(
+                "component-errors",
+                _replace_msg="{component} failed type check ({checkers})",
+                component=component_name,
+                checkers=checker_names,
+                _raw_output_prefix=f"{project.name}/{component_name}",
+                _raw_output=output if output else None,
+            )
+        else:
+            plog.info(
+                "component-passed",
+                _replace_msg="{component} passed type check ({checkers})",
+                component=component_name,
+                checkers=checker_names,
+            )
+
+    # Collect failures for summary
+    project_failed: list[str] = []
+    for result in results:
+        if result.has_errors:
+            project_failed.append(Path(result.path).parent.name)
+
+    return (
+        len(project_failed),
+        {str(project): project_failed} if project_failed else {},
+    )
+
+
+def _display_fix_preresults(
+    results: list[TypeCheckResult],
+    checkers: list[Checker],
+    project: Path,
+    flog: Any,
+) -> None:
+    """Show type-check results before fixing."""
+    log.debug("display-fix-preresults", project=str(project), results=len(results))
+    checker_names = ", ".join(c.value for c in checkers)
+    for result in results:
+        if Path(result.path).name == "__init__.py":
+            continue
+        component_name = Path(result.path).parent.name
+        file_path = project / result.path
+        if not file_path.exists() or file_path.stat().st_size == 0:
+            continue
+        output = result.output.strip()
+        if result.has_errors or (output and _has_error_pattern(output)):
+            flog.error(
+                "component-errors",
+                _replace_msg="{component} failed type check ({checkers})",
+                component=component_name,
+                checkers=checker_names,
+                _raw_output_prefix=f"{project.name}/{component_name}",
+                _raw_output=output if output else None,
+            )
+        else:
+            flog.info(
+                "component-passed",
+                _replace_msg="{component} passed type check ({checkers})",
+                component=component_name,
+                checkers=checker_names,
+            )
+
+
+def _group_diagnostics_by_file(
+    results: list[TypeCheckResult],
+) -> dict[str, list[Diagnostic]]:
+    """Group diagnostics by file path."""
+    log.debug("group-diagnostics", results=len(results))
+    file_diagnostics: dict[str, list[Diagnostic]] = {}
+    for result in results:
+        if result.errors:
+            file_diagnostics.setdefault(result.path, []).extend(result.errors)
+    return file_diagnostics
+
+
+def _apply_fixes_to_files(
+    file_diagnostics: dict[str, list[Diagnostic]],
+    fixers: list[Any],
+    project: Path,
+) -> list[tuple[str, str, str]]:
+    """Apply matching fixers per file, returning (path, original, fixed) tuples."""
+    fixed: list[tuple[str, str, str]] = []
+    for file_path_str, diagnostics in file_diagnostics.items():
+        source_path = project / file_path_str
+        if not source_path.is_file():
+            continue
+        source = source_path.read_text()
+        current = source
+        for fixer in fixers:
+            matched = [d for d in diagnostics if d.code in fixer.diagnostic_codes]
+            if matched:
+                transformed = fixer.apply(current, matched)
+                if transformed is not None:
+                    current = transformed
+                    log.debug("fix-applied", file=file_path_str, fixer=fixer.slug)
+        if current != source:
+            fixed.append((file_path_str, source, current))
+    return fixed
+
+
+def _generate_diff(fixed_files: list[tuple[str, str, str]]) -> bool:
+    """Generate unified diff output. Returns True if any diffs found."""
+    diff_parts: list[str] = []
+    for file_path_str, original, fixed in fixed_files:
+        diff_text = "".join(
+            difflib.unified_diff(
+                original.splitlines(keepends=True),
+                fixed.splitlines(keepends=True),
+                fromfile=f"a/{file_path_str}",
+                tofile=f"b/{file_path_str}",
+            )
+        )
+        if diff_text:
+            diff_parts.append(diff_text)
+    if diff_parts:
+        full_diff = "".join(diff_parts)
+        syntax = Syntax(full_diff, "diff", theme="monokai")
+        console.print(syntax)
+    log.debug("fix-diff-summary", count=len(fixed_files))
+    return bool(diff_parts)
+
+
+def _verify_virtual_fix(
+    projects: list[Path],
+    fixed_files: list[tuple[str, str, str]],
+    checkers: list[Checker],
+    extra_search_paths: list[str],
+    ty_args: list[str],
+    all_results: list[TypeCheckResult],
+) -> None:
+    """Verify fixes in a temporary directory. Raises typer.Exit(1) if no improvement."""
+    import shutil
+    import tempfile
+
+    for project in projects:
+        components = find_components(project)
+        if not components:
+            continue
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            for comp in components:
+                rel = comp.relative_to(project)
+                dest = tmp_path / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(comp, dest)
+            for name in ("pyproject.toml", ".appenv", ".venv"):
+                src = project / name
+                if src.exists():
+                    if src.is_dir():
+                        shutil.copytree(src, tmp_path / name)
+                    else:
+                        shutil.copy2(src, tmp_path / name)
+
+            for file_path_str, _, fixed in fixed_files:
+                dest = tmp_path / file_path_str
+                dest.write_text(fixed)
+
+            verify_results = check_all(
+                tmp_path,
+                checkers,
+                extra_search_paths=extra_search_paths,
+                ty_args=ty_args,
+                json_mode=True,
+            )
+            new_errors = sum(1 for r in verify_results if r.has_errors)
+            old_errors = sum(1 for r in all_results if r.has_errors)
+            if new_errors >= old_errors:
+                log.warning(
+                    "fix-no-improvement",
+                    _replace_msg="Fix did not reduce errors, skipping",
+                )
+                raise typer.Exit(1)
+
+
+def run_check(
+    checker: list[Checker] | None,
+    paths: list[Path],
+    *,
+    ty_args: list[str] | None = None,
+    json_mode: bool = False,
+) -> None:
+    """Execute type checking."""
+    # Show stub versions and paths
+    extra_search_paths = _resolve_stub_paths()
+
+    log.debug("python-info", executable=sys.executable)
+
+    # Discover batou projects: direct paths + scan subdirs of non-project dirs
+    projects = _discover_projects(paths)
 
     log.debug(
         "project-discovery",
@@ -185,7 +407,7 @@ def run_check(
             output = build_output(
                 [], metadata={"checker": [c.value for c in (checker or [Checker.ty])]}
             )
-            print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+            _emit_json(output)
         raise typer.Exit(0)
 
     log.info(
@@ -198,15 +420,8 @@ def run_check(
     log.debug("checkers-selected", checkers=[c.value for c in checkers])
 
     # Pre-check: verify all checkers are available before doing any work
-    for c in checkers:
-        try:
-            ensure_checker_available(c)
-        except CheckerError:
-            log.exception(
-                "checker-unavailable",
-                checker=c.value,
-            )
-            raise typer.Exit(2) from None
+    _verify_checkers_available(checkers)
+
     total_failed = 0
     failed_summary: dict[str, list[str]] = {}
 
@@ -248,43 +463,11 @@ def run_check(
         )
 
         # Per-component result events — log level maps to checker output severity
-        checker_names = ", ".join(c.value for c in checkers)
-        for result in results:
-            # Skip __init__.py and empty files
-            if Path(result.path).name == "__init__.py":
-                continue
-            component_name = Path(result.path).parent.name
-            file_path = project / result.path
-            if not file_path.exists() or file_path.stat().st_size == 0:
-                plog.debug("component-empty", component=component_name)
-                continue
-            output = result.output.strip()
-            if result.has_errors or (output and _has_error_pattern(output)):
-                plog.error(
-                    "component-errors",
-                    _replace_msg="{component} failed type check ({checkers})",
-                    component=component_name,
-                    checkers=checker_names,
-                    _raw_output_prefix=f"{project.name}/{component_name}",
-                    _raw_output=output if output else None,
-                )
-            else:
-                plog.info(
-                    "component-passed",
-                    _replace_msg="{component} passed type check ({checkers})",
-                    component=component_name,
-                    checkers=checker_names,
-                )
-
-        # Collect failures for summary
-        project_failed: list[str] = []
-        for result in results:
-            if result.has_errors:
-                project_failed.append(Path(result.path).parent.name)
-
-        total_failed += len(project_failed)
-        if project_failed:
-            failed_summary[str(project)] = project_failed
+        project_failed_count, project_failures = _display_check_results(
+            results, checkers, project, plog
+        )
+        total_failed += project_failed_count
+        failed_summary.update(project_failures)
 
         all_results.extend(results)
 
@@ -311,7 +494,7 @@ def run_check(
 
         checker_names = [c.value for c in checkers]
         output = build_output(all_results, metadata={"checker": checker_names})
-        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+        _emit_json(output)
         raise typer.Exit(1 if total_failed else 0)
 
     # Human mode: final summary
@@ -359,22 +542,9 @@ def run_fix(
         diff=diff,
         fix_only=fix_only,
     )
-    stub_infos = _detect_all_stubs()
-    extra_search_paths: list[str] = []
-    for info in stub_infos:
-        if info.version and info.path:
-            extra_search_paths.append(str(Path(info.path).parent.resolve()))
+    extra_search_paths = _resolve_stub_paths()
 
-    projects: list[Path] = []
-    for p in paths:
-        if is_batou_project(p):
-            projects.append(p)
-        else:
-            projects.extend(
-                child
-                for child in sorted(p.iterdir())
-                if child.is_dir() and is_batou_project(child)
-            )
+    projects = _discover_projects(paths)
 
     if not projects:
         log.warning(
@@ -407,37 +577,10 @@ def run_fix(
 
         # Show type-check results before fixing (unless fix_only or json_mode)
         if not fix_only and not json_mode:
-            checker_names = ", ".join(c.value for c in checkers)
-            for result in results:
-                if Path(result.path).name == "__init__.py":
-                    continue
-                component_name = Path(result.path).parent.name
-                file_path = project / result.path
-                if not file_path.exists() or file_path.stat().st_size == 0:
-                    continue
-                output = result.output.strip()
-                if result.has_errors or (output and _has_error_pattern(output)):
-                    flog.error(
-                        "component-errors",
-                        _replace_msg="{component} failed type check ({checkers})",
-                        component=component_name,
-                        checkers=checker_names,
-                        _raw_output_prefix=f"{project.name}/{component_name}",
-                        _raw_output=output if output else None,
-                    )
-                else:
-                    flog.info(
-                        "component-passed",
-                        _replace_msg="{component} passed type check ({checkers})",
-                        component=component_name,
-                        checkers=checker_names,
-                    )
+            _display_fix_preresults(results, checkers, project, flog)
 
         # Group diagnostics by file
-        file_diagnostics: dict[str, list[Diagnostic]] = {}
-        for result in results:
-            if result.errors:
-                file_diagnostics.setdefault(result.path, []).extend(result.errors)
+        file_diagnostics = _group_diagnostics_by_file(results)
         flog.debug(
             "fix-diagnostics-grouped",
             files=len(file_diagnostics),
@@ -445,21 +588,8 @@ def run_fix(
         )
 
         # Apply matching fixers per file
-        for file_path_str, diagnostics in file_diagnostics.items():
-            source_path = project / file_path_str
-            if not source_path.is_file():
-                continue
-            source = source_path.read_text()
-            current = source
-            for fixer in fixers:
-                matched = [d for d in diagnostics if d.code in fixer.diagnostic_codes]
-                if matched:
-                    transformed = fixer.apply(current, matched)
-                    if transformed is not None:
-                        current = transformed
-                        log.debug("fix-applied", file=file_path_str, fixer=fixer.slug)
-            if current != source:
-                all_fixed_files.append((file_path_str, source, current))
+        project_fixed = _apply_fixes_to_files(file_diagnostics, fixers, project)
+        all_fixed_files.extend(project_fixed)
 
         all_results.extend(results)
         flog.debug("fix-files-changed", count=len(all_fixed_files))
@@ -479,76 +609,22 @@ def run_fix(
                 all_results,
                 metadata={"checker": [c.value for c in checkers]},
             )
-            print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+            _emit_json(output)
         raise typer.Exit(0)
 
     if virtual:
-        # Spec decision: virtual-mode-impl — tempdir verification
-        import shutil
-        import tempfile
-
-        for project in projects:
-            components = find_components(project)
-            if not components:
-                continue
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmp_path = Path(tmpdir)
-                for comp in components:
-                    rel = comp.relative_to(project)
-                    dest = tmp_path / rel
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(comp, dest)
-                for name in ("pyproject.toml", ".appenv", ".venv"):
-                    src = project / name
-                    if src.exists():
-                        if src.is_dir():
-                            shutil.copytree(src, tmp_path / name)
-                        else:
-                            shutil.copy2(src, tmp_path / name)
-
-                project_fixed = [
-                    (fp, orig, fixed) for fp, orig, fixed in all_fixed_files
-                ]
-                for file_path_str, _, fixed in project_fixed:
-                    dest = tmp_path / file_path_str
-                    dest.write_text(fixed)
-
-                verify_results = check_all(
-                    tmp_path,
-                    checkers,
-                    extra_search_paths=extra_search_paths,
-                    ty_args=ty_args or [],
-                    json_mode=True,
-                )
-                new_errors = sum(1 for r in verify_results if r.has_errors)
-                old_errors = sum(1 for r in all_results if r.has_errors)
-                if new_errors >= old_errors:
-                    log.warning(
-                        "fix-no-improvement",
-                        _replace_msg="Fix did not reduce errors, skipping",
-                    )
-                    raise typer.Exit(1)
+        _verify_virtual_fix(
+            projects,
+            all_fixed_files,
+            checkers,
+            extra_search_paths,
+            ty_args or [],
+            all_results,
+        )
 
     if diff:
         # Spec decision: diff-generation — Rich-colored unified diff
-        has_diffs = False
-        diff_parts: list[str] = []
-        for file_path_str, original, fixed in all_fixed_files:
-            diff_text = "".join(
-                difflib.unified_diff(
-                    original.splitlines(keepends=True),
-                    fixed.splitlines(keepends=True),
-                    fromfile=f"a/{file_path_str}",
-                    tofile=f"b/{file_path_str}",
-                )
-            )
-            if diff_text:
-                has_diffs = True
-                diff_parts.append(diff_text)
-        if diff_parts:
-            full_diff = "".join(diff_parts)
-            syntax = Syntax(full_diff, "diff", theme="monokai")
-            console.print(syntax)
+        has_diffs = _generate_diff(all_fixed_files)
         log.info(
             "fix-diff-summary",
             _replace_msg="{count} fixable file(s) (run without --diff to apply)",
@@ -578,7 +654,7 @@ def run_fix(
             all_results,
             metadata={"checker": checker_names},
         )
-        print(output.model_dump_json(indent=2, by_alias=True, exclude_none=True))
+        _emit_json(output)
 
     raise typer.Exit(0)
 
@@ -674,7 +750,7 @@ def check(
 
     parsed_ty_args = shlex.split(ty_args) if ty_args else []
 
-    # Spec decision: flag-dispatch \u2014 implication chain
+    # Spec decision: flag-dispatch — implication chain
     if diff:
         fix_only = True
     if fix_only:
@@ -758,4 +834,4 @@ def setup(
         copy_stubs(target, VENDOR_STUBS_PATH)
         log.info("setup-complete", _replace_msg="Setup complete.")
     else:
-        log.info("setup-dry-run", _replace_msg="Dry run \u2014 no files written.")
+        log.info("setup-dry-run", _replace_msg="Dry run — no files written.")
