@@ -89,7 +89,7 @@ def test_setup_error_mentions_conflicting_section(run_cli, batou_project: Path) 
     )
     result = run_cli("setup", str(batou_project))
     output = (result.stdout + result.stderr).lower()
-    assert "unmanaged checker sections" in output
+    assert "setup-conflict" in output
 
 
 def test_setup_succeeds_on_marked_tool_ty(run_cli, batou_project: Path) -> None:
