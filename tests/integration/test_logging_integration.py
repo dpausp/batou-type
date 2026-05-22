@@ -139,6 +139,7 @@ def test_stub_not_installed_logs_warning(log) -> None:
 
     with patch(
         "batou_type.cli._detect_all_stubs",
+        autospec=True,
         return_value=[StubInfo(name="test-stubs", version=None, path=None)],
     ):
         version()

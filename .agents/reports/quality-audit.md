@@ -283,3 +283,35 @@ Full CLI test not triggered — existing E2E evidence sufficient. 11/12 entry po
 ## Raw Data Location
 
 `.agents/tmp/quality/` — inventory/, baseline/, extreme/, analysis/, e2e/, post-fix/
+
+## Tidy Session — 2026-05-22
+
+### Mock Hardening
+- Bare mocks before: 1 → after: 0
+- Migrated to typed: 1
+- Untouchable: 0
+
+**Fix applied:** Added `autospec=True` to `patch("batou_type.cli._detect_all_stubs", ...)` at `tests/integration/test_logging_integration.py:140`. This was the only bare mock in the project — the other 4 patch() calls already used autospec=True.
+
+### Suppression Cleanup
+- Linter suppressions removed: 0
+- Type-check suppressions removed: 0
+- Test skips removed: 0
+- Restored (still needed): 0
+
+Zero removable suppressions. The 1 file-level noqa in core.py (`# ruff: noqa: E402`) is legitimate — module docstring precedes imports. No type:ignore in non-vendor code. Zero skip/xfail markers.
+
+### Post-Tidy Gates
+| Tool | Before | After |
+|------|--------|-------|
+| tox | 5/5 PASS | 5/5 PASS |
+| ruff | 0 issues | 0 issues |
+| ty | 0 errors | 0 errors |
+| pytest | 216 passed | 216 passed |
+
+### Skipped (Not Mechanical)
+- NAV-1: Complexity decomposition (run_fix CC=116, run_check CC=59) — architecture change, needs design
+- NAV-2: Coverage gap in core.py (62%) — needs test design decisions
+- NAV-3: Stogger warnings for print() — UNSAFE: 4 print() calls are intentional CLI stdout output for --json mode; replacing with log.debug() would break `batou-type check --json | jq .`
+- NAV-4: Migration testing — needs test architecture decisions
+- NAV-5: 46 missing type annotations (ANN001) — ty passes clean, cosmetic only
