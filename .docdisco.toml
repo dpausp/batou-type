@@ -1,0 +1,7 @@
+[build]
+command = "uv run sphinx-build -b html docs docs/_build/html"
+output = "docs/_build/html"
+
+[meta]
+tags = ["api", "cli", "ml"]
+status = "beta"

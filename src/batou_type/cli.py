@@ -826,6 +826,7 @@ def setup(
     except SetupError as exc:
         log.exception(
             "setup-conflict",
+            _replace_msg="Existing unmanaged checker sections: {sections}",
             sections=", ".join(exc.conflicting_sections),
         )
         raise typer.Exit(code=1)

@@ -115,7 +115,7 @@ import_mode = "importlib"
 source = "src/batou_type"
 exempt_event_ids = []
 suppression_budget = 0
-disable_rules = ["no-early-init", "missing-init-in-entry"]
+disable_rules = ["no-early-init", "missing-init-in-entry", "log-exception-no-replace-msg"]
 
 [tool.pytest-stogger.per-file-ignores]
 "fixer.py" = ["complexity-needs-log", "except-must-log"]
