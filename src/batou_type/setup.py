@@ -56,11 +56,11 @@ class SetupError(Exception):
 def copy_stubs(target_dir: Path, vendor_dir: Path) -> list[Path]:
     """Copy vendored stubs to target project's stubs/ directory.
 
-    Copies vendor_dir/batou/ and vendor_dir/batou_ext/ into
+    Copies vendor_dir/batou/, batou_ext/, execnet/, and configupdater/ into
     target_dir/stubs/. Idempotent: overwrites existing files.
     """
     copied: list[Path] = []
-    for pkg in ("batou", "batou_ext"):
+    for pkg in ("batou", "batou_ext", "execnet", "configupdater"):
         src = vendor_dir / pkg
         dst = target_dir / "stubs" / pkg
         shutil.copytree(src, dst, dirs_exist_ok=True)
